@@ -1,0 +1,29 @@
+/target/
+/dist/
+/.ghost/
+
+# Rust tooling and temporary files
+**/*.rs.bk
+*.pdb
+*.profraw
+*.tmp
+*.log
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Editors and operating systems
+/.idea/
+/.vscode/
+/.vs/
+*.user
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local databases
+*.db
+*.db-wal
+*.db-shm

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Ghost Prompt Bundle",
+  "type": "object",
+  "required": ["schema_version", "system_prompt", "user_intent", "analysis_text_json", "capability_text_json", "output_contract"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "ghost.prompt-bundle/1"},
+    "system_prompt": {"type": "string"},
+    "user_intent": {"type": "object"},
+    "analysis_text_json": {"type": "string"},
+    "capability_text_json": {"type": "string"},
+    "output_contract": {"type": "string"}
+  }
+}

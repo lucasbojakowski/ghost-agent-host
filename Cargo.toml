@@ -1,0 +1,55 @@
+[workspace]
+members = [
+  "crates/ghost-core",
+  "crates/ghost-db",
+  "crates/ghost-codex",
+  "crates/ghost-host",
+  "crates/ghost-clap-plugin",
+  "apps/ghost-cli",
+  "apps/ghost-agentd",
+  "apps/ghost-lab",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license-file = "LICENSE"
+publish = false
+authors = ["Konko"]
+rust-version = "1.82"
+
+[workspace.dependencies]
+anyhow = "1"
+blake3 = "1"
+clap = { version = "4", features = ["derive"] }
+clack-plugin = "0.1.1"
+clack-host = "0.1.1"
+clack-extensions = "0.1.1"
+ebur128 = "0.1"
+eframe = { version = "0.31", default-features = false, features = ["default_fonts", "glow", "x11", "wayland"] }
+egui = "0.31"
+hound = "3"
+realfft = "3"
+rusqlite = { version = "0.40.1", features = ["bundled", "serde_json"] }
+schemars = { version = "1", features = ["derive", "uuid1"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+toml = "0.9"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+zstd = "0.13"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 2

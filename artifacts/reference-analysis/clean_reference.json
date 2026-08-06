@@ -1,0 +1,61 @@
+{
+  "schema_version": "ghost.reference-analysis/1",
+  "file": "clean_reference.wav",
+  "sample_rate": 48000,
+  "channels": 2,
+  "frames": 576000,
+  "duration_seconds": 12.0,
+  "integrity": {
+    "sample_peak_dbfs": -1.0000002900227403,
+    "clipped_samples": 0,
+    "dc_offset": [
+      0.001809056636664174,
+      0.001809056647021306
+    ],
+    "silence_ratio": 0.00019791666666666666
+  },
+  "loudness_proxy": {
+    "rms_dbfs": -16.538755212732394,
+    "crest_factor_db": 15.538754922709654
+  },
+  "spectrum": {
+    "centroid_hz": 5408.840563674576,
+    "rolloff_85_hz": 9543.45703125,
+    "flatness": 0.4727331950917914,
+    "flux_mean": 1.2277269402822833e-06,
+    "bands": {
+      "sub_db": -20.387720562375936,
+      "bass_db": -23.571300386656723,
+      "low_mid_db": -49.90568524469839,
+      "mid_db": -37.78102309970993,
+      "high_mid_db": -34.172668458320956,
+      "presence_db": -33.006468536034596,
+      "air_db": -44.31893668800551
+    },
+    "resonances": [
+      {
+        "frequency_hz": 109.86328125,
+        "prominence_db": 22.848372972861377
+      },
+      {
+        "frequency_hz": 55.6640625,
+        "prominence_db": 18.350007273743383
+      },
+      {
+        "frequency_hz": 65.91796875,
+        "prominence_db": 9.49916010131647
+      }
+    ]
+  },
+  "dynamics": {
+    "transient_density_hz": 3.75,
+    "attack_strength_p90": 0.0006987302344998836,
+    "envelope_variability_db": 8.768275113313745
+  },
+  "stereo": {
+    "broadband_correlation": 0.9955850250288198,
+    "low_band_correlation": 0.9995940997854226,
+    "high_band_correlation": 0.9878153010172713,
+    "mid_side_ratio_db": 26.289689181197716
+  }
+}
