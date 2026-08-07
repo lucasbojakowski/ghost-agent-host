@@ -19,6 +19,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
     }
 
+    if std::env::args_os().any(|argument| argument == "--gui-smoke") {
+        let (width, height) = ghost_host::clack_runtime::smoke_test_clap_gui(&path)?;
+        println!("gui=clap.gui api=win32 size={width}x{height}");
+    }
+
     Ok(())
 }
 

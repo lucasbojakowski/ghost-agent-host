@@ -1,0 +1,770 @@
+{
+  "run_id": "5feda61a-b018-4791-8633-ac63be942ff7",
+  "backend": "mock-fabfilter-chain",
+  "source_analysis": {
+    "schema_version": "ghost.analysis/1",
+    "analyzer_version": "0.1.0",
+    "configuration": {
+      "profile": "maximum",
+      "fft_sizes": [
+        2048,
+        8192,
+        32768
+      ],
+      "hop_ratio": 0.125,
+      "minimum_frequency_hz": 10.0,
+      "maximum_frequency_hz": 24000.0,
+      "resonance_threshold_db": 4.5,
+      "transient_sensitivity": 2.3,
+      "true_peak_oversample": 8,
+      "retain_frame_series": true
+    },
+    "capture": {
+      "capture_id": "cbde0030-796a-45c9-9fd1-e620f071fffb",
+      "source_name": "C:\\Users\\music\\OneDrive\\Documentos\\Image-Line\\FL Studio\\Audio\\Rendered\\Track 1 (consolidated)_37.wav",
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 683353,
+      "duration_seconds": 15.495532879818594,
+      "content_hash": "d8002b7c036a287c0a456c484012cdc89958a1e6170a071f2e9b7b88a8f029df",
+      "transport_bpm": null,
+      "transport_start_samples": null
+    },
+    "signal": {
+      "integrity": {
+        "sample_peak_dbfs": -0.00026404089010842284,
+        "true_peak_dbtp": 0.39928710360868697,
+        "clipped_samples": 0,
+        "dc_offset": [
+          -0.0010972710026218877,
+          -0.0010670930417473478
+        ],
+        "silence_ratio": 0.00044193850030657656,
+        "non_finite_samples": 0
+      },
+      "loudness": {
+        "integrated_lufs": -9.347230368379247,
+        "loudness_range_lu": 0.3093090737999429,
+        "rms_dbfs": -8.151435518531185,
+        "crest_factor_db": 8.135384857993309,
+        "short_term_proxy_dbfs_p10": -9.12239553757977,
+        "short_term_proxy_dbfs_p50": -7.999082054179846,
+        "short_term_proxy_dbfs_p90": -7.54751466282447
+      },
+      "spectrum": {
+        "centroid_hz": 3829.2119501858188,
+        "rolloff_85_hz": 9929.870720629422,
+        "flatness": 0.22972941902663285,
+        "flux_mean": 0.07568668429106887,
+        "tilt_db_per_octave": -3.7375518497171316,
+        "bands": {
+          "sub_db": 73.11086727187073,
+          "bass_db": 66.56866373951112,
+          "low_mid_db": 59.1098152886934,
+          "mid_db": 52.55314554194928,
+          "high_mid_db": 47.90749994231654,
+          "presence_db": 48.99922046482448,
+          "air_db": 46.454760413670265
+        },
+        "resonances": [
+          {
+            "frequency_hz": 231.48193359375,
+            "prominence_db": 12.244102582279396,
+            "persistence": 1.0,
+            "bandwidth_octaves": 1.8181616770141868
+          },
+          {
+            "frequency_hz": 615.0421142578125,
+            "prominence_db": 12.035168600819667,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.6152806433475361
+          },
+          {
+            "frequency_hz": 697.137451171875,
+            "prominence_db": 10.69181962612127,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.5409956566629943
+          },
+          {
+            "frequency_hz": 386.2518310546875,
+            "prominence_db": 10.416763520405155,
+            "persistence": 1.0,
+            "bandwidth_octaves": 1.0037717538892086
+          },
+          {
+            "frequency_hz": 541.021728515625,
+            "prominence_db": 8.933906233876428,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.7026140893754291
+          },
+          {
+            "frequency_hz": 306.84814453125,
+            "prominence_db": 8.125152537516257,
+            "persistence": 1.0,
+            "bandwidth_octaves": 1.2954558835261714
+          },
+          {
+            "frequency_hz": 4474.8687744140625,
+            "prominence_db": 7.82925813501404,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.08333066315391906
+          },
+          {
+            "frequency_hz": 1228.7384033203125,
+            "prominence_db": 7.823855265393046,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.3045181909606739
+          },
+          {
+            "frequency_hz": 694.44580078125,
+            "prominence_db": 7.69461705430539,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.543142325026529
+          },
+          {
+            "frequency_hz": 1231.4300537109375,
+            "prominence_db": 7.670777571854735,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.30384764026200606
+          },
+          {
+            "frequency_hz": 4478.90625,
+            "prominence_db": 7.6621319510748584,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.08325550364935229
+          },
+          {
+            "frequency_hz": 457.58056640625,
+            "prominence_db": 7.571570334592678,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.8374469872140401
+          },
+          {
+            "frequency_hz": 4470.831298828125,
+            "prominence_db": 7.292722837261012,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.08340595852049668
+          },
+          {
+            "frequency_hz": 829.0283203125,
+            "prominence_db": 7.237367063646733,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.4533656179379433
+          },
+          {
+            "frequency_hz": 4482.9437255859375,
+            "prominence_db": 7.234299624443388,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.08318047963930449
+          },
+          {
+            "frequency_hz": 923.236083984375,
+            "prominence_db": 7.081418824822062,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.4064536530581486
+          }
+        ],
+        "frame_centroid_hz": [
+          4389.6084,
+          3247.828,
+          3134.0227,
+          3817.264,
+          4310.0913,
+          3852.1187,
+          3051.2922,
+          2996.9382,
+          3658.65,
+          4341.08,
+          4031.3901,
+          3188.76,
+          3036.2136,
+          3756.8752,
+          4439.974,
+          4187.609,
+          3302.1711,
+          3040.177,
+          3812.9294,
+          4666.949,
+          4730.1577,
+          3892.9395,
+          3125.0867,
+          3453.6648,
+          4267.4844,
+          4398.6553,
+          3564.5571,
+          3042.1895,
+          3460.1382,
+          4137.196,
+          4325.399,
+          3524.9744,
+          2792.6611,
+          3348.5146,
+          4236.3906,
+          4535.3335,
+          3775.7043,
+          3015.0989,
+          3182.6665,
+          3946.5366,
+          4409.6675,
+          3949.9932,
+          3158.6614,
+          3302.3904,
+          4124.4966,
+          4641.824,
+          4110.8457,
+          3225.5137,
+          3138.3352,
+          3857.3877,
+          4465.093,
+          4085.3364,
+          3148.9233,
+          3020.5662,
+          3901.0479,
+          4597.434,
+          4321.852,
+          3413.0146,
+          3148.3618,
+          4003.8726,
+          4923.702,
+          5013.2915,
+          4150.749,
+          3376.5803,
+          3851.4175,
+          4740.977,
+          4771.1943,
+          3814.6433,
+          3177.7131,
+          3601.2878,
+          4365.2744,
+          4576.142,
+          3702.563,
+          2906.5554,
+          3427.9314,
+          4304.748,
+          4560.811,
+          3776.858,
+          3042.3184,
+          3256.6934,
+          4126.371,
+          4806.6675,
+          4336.5503,
+          3280.7107,
+          3214.4417,
+          3925.666,
+          4394.649,
+          3929.3914,
+          3100.0867,
+          2984.8655,
+          3615.0408,
+          4247.525,
+          3912.4766,
+          3002.5232,
+          2813.5923,
+          3578.805,
+          4231.079,
+          4045.2673,
+          3254.2861,
+          3009.4912,
+          3745.4526,
+          4623.038,
+          4785.276,
+          4029.6655,
+          3269.4731,
+          3538.3599,
+          4284.9243,
+          4428.6167,
+          3631.4697,
+          3059.6912,
+          3498.0532,
+          4222.9976,
+          4442.4673,
+          3634.6912,
+          2883.982,
+          3362.2896,
+          4217.74,
+          4523.4146,
+          3779.7974,
+          3019.2854,
+          3237.814,
+          4148.39,
+          4722.3994,
+          4264.5947,
+          3394.36,
+          3273.6426,
+          3977.759,
+          4519.821,
+          4125.8228,
+          3268.502,
+          3131.27,
+          3811.3977,
+          4444.533,
+          4072.85,
+          3133.01,
+          2954.7893,
+          3841.8584,
+          4600.335,
+          4345.767,
+          3438.547,
+          3169.5867,
+          4013.476,
+          4917.479,
+          5036.934,
+          4196.984,
+          3399.155,
+          3824.6938,
+          4687.9116,
+          4783.4204,
+          3859.5227,
+          3198.0647,
+          3594.0837,
+          4371.1826,
+          4633.8735,
+          3755.2324,
+          2913.2002,
+          3429.4897,
+          4390.873,
+          4788.5435
+        ]
+      },
+      "dynamics": {
+        "transient_density_hz": 0.0,
+        "envelope_variability_db": 5.1416468994648845,
+        "peak_to_median_db": 3.311104816447936,
+        "attack_strength_p90": 0.0,
+        "sustained_energy_ratio": 0.5000007316862588
+      },
+      "stereo": {
+        "broadband_correlation": 0.9775068821282337,
+        "mid_side_ratio_db": 19.44049484152068,
+        "left_right_balance_db": 0.012210295120770098,
+        "low_band_correlation": 0.9952052519433807,
+        "high_band_correlation": 0.8311425914749655
+      },
+      "flags": []
+    }
+  },
+  "processed_analysis": {
+    "schema_version": "ghost.analysis/1",
+    "analyzer_version": "0.1.0",
+    "configuration": {
+      "profile": "maximum",
+      "fft_sizes": [
+        2048,
+        8192,
+        32768
+      ],
+      "hop_ratio": 0.125,
+      "minimum_frequency_hz": 10.0,
+      "maximum_frequency_hz": 24000.0,
+      "resonance_threshold_db": 4.5,
+      "transient_sensitivity": 2.3,
+      "true_peak_oversample": 8,
+      "retain_frame_series": true
+    },
+    "capture": {
+      "capture_id": "24f16813-d112-4d70-862a-accd425522e7",
+      "source_name": "mock-processed",
+      "sample_rate": 44100,
+      "channels": 2,
+      "frames": 683353,
+      "duration_seconds": 15.495532879818594,
+      "content_hash": "b4984362357c503c2d3270b76541a4af400a1ef6bbc1ebc5a7877ecbe3274eb2",
+      "transport_bpm": null,
+      "transport_start_samples": null
+    },
+    "signal": {
+      "integrity": {
+        "sample_peak_dbfs": 0.10021648307334832,
+        "true_peak_dbtp": 0.34422804469897406,
+        "clipped_samples": 11,
+        "dc_offset": [
+          -0.0010972710166306239,
+          -0.001067093041051484
+        ],
+        "silence_ratio": 0.0003570628942874327,
+        "non_finite_samples": 0
+      },
+      "loudness": {
+        "integrated_lufs": -9.391776447398273,
+        "loudness_range_lu": 0.3163514852312943,
+        "rms_dbfs": -8.167259640782293,
+        "crest_factor_db": 8.23642008870215,
+        "short_term_proxy_dbfs_p10": -9.134284010459337,
+        "short_term_proxy_dbfs_p50": -8.014196183256995,
+        "short_term_proxy_dbfs_p90": -7.5575563907026835
+      },
+      "spectrum": {
+        "centroid_hz": 3858.9402774190876,
+        "rolloff_85_hz": 10005.423146373822,
+        "flatness": 0.23094079909431325,
+        "flux_mean": 0.07553453329675851,
+        "tilt_db_per_octave": -3.6545386722202937,
+        "bands": {
+          "sub_db": 73.10831901453413,
+          "bass_db": 66.55852368616623,
+          "low_mid_db": 58.95355221065729,
+          "mid_db": 51.80885850268226,
+          "high_mid_db": 47.62727791155139,
+          "presence_db": 48.971457334168136,
+          "air_db": 46.452415228266695
+        },
+        "resonances": [
+          {
+            "frequency_hz": 231.48193359375,
+            "prominence_db": 12.207671645617019,
+            "persistence": 1.0,
+            "bandwidth_octaves": 1.8181616770141868
+          },
+          {
+            "frequency_hz": 615.0421142578125,
+            "prominence_db": 11.987905606428612,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.6152806433475361
+          },
+          {
+            "frequency_hz": 697.137451171875,
+            "prominence_db": 10.615658823468099,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.5409956566629943
+          },
+          {
+            "frequency_hz": 386.2518310546875,
+            "prominence_db": 10.354090487756846,
+            "persistence": 1.0,
+            "bandwidth_octaves": 1.0037717538892086
+          },
+          {
+            "frequency_hz": 541.021728515625,
+            "prominence_db": 8.920750839621313,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.7026140893754291
+          },
+          {
+            "frequency_hz": 306.84814453125,
+            "prominence_db": 8.204815579896078,
+            "persistence": 1.0,
+            "bandwidth_octaves": 1.2954558835261714
+          },
+          {
+            "frequency_hz": 1228.7384033203125,
+            "prominence_db": 7.8723982484872685,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.3045181909606739
+          },
+          {
+            "frequency_hz": 1231.4300537109375,
+            "prominence_db": 7.720759934282441,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.30384764026200606
+          },
+          {
+            "frequency_hz": 694.44580078125,
+            "prominence_db": 7.612710009709655,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.543142325026529
+          },
+          {
+            "frequency_hz": 4474.8687744140625,
+            "prominence_db": 7.5450560687490515,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.08333066315391906
+          },
+          {
+            "frequency_hz": 4478.90625,
+            "prominence_db": 7.531122828530366,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.08325550364935229
+          },
+          {
+            "frequency_hz": 457.58056640625,
+            "prominence_db": 7.4878672814767775,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.8374469872140401
+          },
+          {
+            "frequency_hz": 829.0283203125,
+            "prominence_db": 7.224199824077289,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.4533656179379433
+          },
+          {
+            "frequency_hz": 4482.9437255859375,
+            "prominence_db": 7.105104472082507,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.08318047963930449
+          },
+          {
+            "frequency_hz": 923.236083984375,
+            "prominence_db": 7.095696141810297,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.4064536530581486
+          },
+          {
+            "frequency_hz": 1236.8133544921875,
+            "prominence_db": 7.029898577024522,
+            "persistence": 1.0,
+            "bandwidth_octaves": 0.30251539165091285
+          }
+        ],
+        "frame_centroid_hz": [
+          4427.938,
+          3275.6667,
+          3162.768,
+          3857.1282,
+          4360.0054,
+          3891.4995,
+          3074.7847,
+          3018.1074,
+          3687.0413,
+          4379.5103,
+          4066.0981,
+          3211.2642,
+          3056.8994,
+          3785.8337,
+          4479.0293,
+          4223.57,
+          3324.2224,
+          3058.3252,
+          3840.4216,
+          4706.063,
+          4772.6763,
+          3927.079,
+          3151.2937,
+          3481.6543,
+          4303.0015,
+          4435.2446,
+          3590.6604,
+          3062.1245,
+          3484.8108,
+          4168.8604,
+          4360.341,
+          3550.566,
+          2809.8943,
+          3368.545,
+          4264.928,
+          4572.813,
+          3806.0786,
+          3036.0623,
+          3206.685,
+          3983.5986,
+          4457.2705,
+          3990.5671,
+          3187.077,
+          3329.4692,
+          4158.7646,
+          4684.0303,
+          4145.7744,
+          3247.6614,
+          3158.0068,
+          3884.0005,
+          4500.4507,
+          4117.763,
+          3170.228,
+          3038.9333,
+          3925.7637,
+          4632.195,
+          4355.6177,
+          3434.1763,
+          3165.3755,
+          4030.3315,
+          4962.082,
+          5054.411,
+          4181.2915,
+          3398.0178,
+          3874.839,
+          4774.1284,
+          4807.946,
+          3840.2124,
+          3195.3962,
+          3622.299,
+          4393.7417,
+          4610.417,
+          3728.5466,
+          2924.557,
+          3448.8003,
+          4334.802,
+          4601.745,
+          3810.4956,
+          3066.0693,
+          3283.242,
+          4165.1934,
+          4856.7124,
+          4378.0728,
+          3308.1904,
+          3241.2495,
+          3963.0034,
+          4442.8433,
+          3969.915,
+          3125.0925,
+          3006.4292,
+          3643.503,
+          4287.127,
+          3949.6052,
+          3027.6724,
+          2836.1118,
+          3608.9258,
+          4271.653,
+          4084.6902,
+          3280.068,
+          3030.604,
+          3774.5723,
+          4662.2124,
+          4826.6606,
+          4061.8945,
+          3293.4902,
+          3565.7468,
+          4320.819,
+          4465.4453,
+          3656.6724,
+          3077.2788,
+          3519.6772,
+          4251.953,
+          4475.817,
+          3659.1985,
+          2900.5234,
+          3382.1106,
+          4247.1543,
+          4562.5884,
+          3811.641,
+          3040.9912,
+          3261.777,
+          4183.9136,
+          4767.526,
+          4305.1567,
+          3423.979,
+          3301.4578,
+          4011.9963,
+          4560.076,
+          4159.3135,
+          3289.7168,
+          3150.4653,
+          3838.4446,
+          4482.589,
+          4108.327,
+          3155.6167,
+          2972.9778,
+          3866.2007,
+          4634.6777,
+          4379.19,
+          3459.4736,
+          3186.1404,
+          4039.4321,
+          4955.253,
+          5077.766,
+          4227.493,
+          3420.3835,
+          3847.159,
+          4719.3164,
+          4819.116,
+          3884.5193,
+          3214.944,
+          3614.0254,
+          4399.1777,
+          4668.2637,
+          3780.6096,
+          2930.1658,
+          3449.1987,
+          4418.2725,
+          4824.694
+        ]
+      },
+      "dynamics": {
+        "transient_density_hz": 0.0,
+        "envelope_variability_db": 5.1582898453859904,
+        "peak_to_median_db": 3.3281878151898083,
+        "attack_strength_p90": 0.0,
+        "sustained_energy_ratio": 0.5000007316862588
+      },
+      "stereo": {
+        "broadband_correlation": 0.9791368142066087,
+        "mid_side_ratio_db": 19.770817010374277,
+        "left_right_balance_db": 0.009941407241697675,
+        "low_band_correlation": 0.9954802267896756,
+        "high_band_correlation": 0.8401345292075406
+      },
+      "flags": [
+        {
+          "code": "clipping",
+          "severity": "warning",
+          "message": "Detected 11 clipped samples."
+        }
+      ]
+    }
+  },
+  "mix_plan": {
+    "schema_version": "ghost.mix-plan/1",
+    "summary": "Two conservative corrective Pro-Q 4 cuts target measured persistent low-mid and presence resonances. No compression is proposed to preserve the already constrained dynamics and punch.",
+    "confidence": 0.71,
+    "assumptions": [
+      "The capture is representative enough to support conservative local corrective EQ, but not full-track tonal decisions.",
+      "No current plugin state was supplied; this plan describes only the proposed additions.",
+      "The closely spaced 615 Hz and 697 Hz resonances represent one low-mid concentration suitable for a single broad correction."
+    ],
+    "operations": [
+      {
+        "operation": "eq_band",
+        "settings": {
+          "band_id": "low_mid_concentration",
+          "enabled": true,
+          "shape": "bell",
+          "frequency_hz": 650.0,
+          "gain_db": -1.2,
+          "q": 1.5,
+          "slope_db_oct": null,
+          "channel_mode": "stereo",
+          "dynamic": null,
+          "rationale": "A single shallow, broad stereo cut addresses the strongest adjacent persistent low-mid concentration while preserving source body.",
+          "evidence": [
+            "resonances: 615.042 Hz, prominence 12.035 dB, persistence 1.0, bandwidth 0.615 octaves",
+            "resonances: 697.137 Hz, prominence 10.692 dB, persistence 1.0, bandwidth 0.541 octaves"
+          ]
+        }
+      },
+      {
+        "operation": "eq_band",
+        "settings": {
+          "band_id": "presence_resonance",
+          "enabled": true,
+          "shape": "bell",
+          "frequency_hz": 4475.0,
+          "gain_db": -1.5,
+          "q": 10.0,
+          "slope_db_oct": null,
+          "channel_mode": "stereo",
+          "dynamic": null,
+          "rationale": "A narrow, low-magnitude static cut reduces the persistent 4.475 kHz resonance for clearer presence without broadly darkening the source.",
+          "evidence": [
+            "resonances: 4474.869 Hz, prominence 7.829 dB, persistence 1.0, bandwidth 0.083 octaves",
+            "spectrum centroid_hz: 3829.212 Hz"
+          ]
+        }
+      }
+    ],
+    "expected_changes": [
+      {
+        "metric": "resonance prominence around 615-697 Hz",
+        "direction": "decrease",
+        "maximum_delta": 1.2,
+        "unit": "dB"
+      },
+      {
+        "metric": "resonance prominence at 4474.9 Hz",
+        "direction": "decrease",
+        "maximum_delta": 1.5,
+        "unit": "dB"
+      }
+    ],
+    "cautions": [
+      "Do not add Pro-C 3 compression: loudness range is already 0.309 LU, transient density is 0.0 Hz, and no compression-specific problem is evidenced.",
+      "True peak is 0.399 dBTP despite a -0.0003 dBFS sample peak; this plan is not a peak-management solution because no limiter capability was supplied.",
+      "A/B at matched output level and revert either cut if it reduces desired body or presence."
+    ]
+  },
+  "metric_deltas": {
+    "rms_db": -0.015824122251107298,
+    "crest_db": 0.1010352307088418,
+    "spectral_centroid_hz": 29.72832723326883,
+    "low_mid_db": -0.15626307803610473,
+    "stereo_correlation": 0.0016299320783750293
+  }
+}

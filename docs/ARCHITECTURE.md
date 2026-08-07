@@ -13,6 +13,7 @@ DAW
 
 Standalone/internal validation
 ├── ghost-lab native UI
+├── ghost-ui shared egui application surface
 ├── ghost-cli
 ├── ghost-core analyzer and contracts
 ├── ghost-codex agent adapters

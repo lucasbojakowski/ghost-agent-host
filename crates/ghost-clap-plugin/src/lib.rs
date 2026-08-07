@@ -8,12 +8,28 @@
 use clack_plugin::plugin::features::{ANALYZER, AUDIO_EFFECT, STEREO};
 use clack_plugin::prelude::*;
 
+#[cfg(target_os = "windows")]
+mod editor;
+
+#[cfg(target_os = "windows")]
+type MainThreadState = editor::GhostEditorMainThread;
+#[cfg(not(target_os = "windows"))]
+type MainThreadState = ();
+
 pub struct GhostAgentHostPlugin;
 
 impl Plugin for GhostAgentHostPlugin {
     type AudioProcessor<'a> = GhostAudioProcessor;
     type Shared<'a> = ();
-    type MainThread<'a> = ();
+    type MainThread<'a> = MainThreadState;
+
+    fn declare_extensions(
+        builder: &mut PluginExtensions<Self>,
+        _shared: Option<&Self::Shared<'_>>,
+    ) {
+        #[cfg(target_os = "windows")]
+        builder.register::<clack_extensions::gui::PluginGui>();
+    }
 }
 
 impl DefaultPluginFactory for GhostAgentHostPlugin {
@@ -33,16 +49,16 @@ impl DefaultPluginFactory for GhostAgentHostPlugin {
         _host: HostMainThreadHandle<'a>,
         _shared: &'a Self::Shared<'a>,
     ) -> Result<Self::MainThread<'a>, PluginError> {
-        Ok(())
+        Ok(MainThreadState::default())
     }
 }
 
 pub struct GhostAudioProcessor;
 
-impl<'a> PluginAudioProcessor<'a, (), ()> for GhostAudioProcessor {
+impl<'a> PluginAudioProcessor<'a, (), MainThreadState> for GhostAudioProcessor {
     fn activate(
         _host: HostAudioProcessorHandle<'a>,
-        _main_thread: &mut (),
+        _main_thread: &mut MainThreadState,
         _shared: &'a (),
         _audio_config: PluginAudioConfiguration,
     ) -> Result<Self, PluginError> {

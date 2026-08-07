@@ -1,10 +1,11 @@
 use std::collections::VecDeque;
 use std::io::{BufRead, BufReader, Write};
+use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 
 use ghost_core::{
-    CompressorOperation, DynamicEqSettings, EqBandOperation, EqShape, ExpectedChange,
-    MixOperation, MixPlan, PromptBundle,
+    CompressorOperation, DynamicEqSettings, EqBandOperation, EqShape, ExpectedChange, MixOperation,
+    MixPlan, PromptBundle,
 };
 use schemars::schema_for;
 use serde_json::{json, Value};
@@ -57,8 +58,9 @@ impl MixingAgent for MockMixingAgent {
                         range_db: -1.5,
                         threshold_db: None,
                     }),
-                    rationale: "Reduce persistent low-mid concentration without removing bass weight."
-                        .into(),
+                    rationale:
+                        "Reduce persistent low-mid concentration without removing bass weight."
+                            .into(),
                     evidence: vec![format!(
                         "low_mid_db={:.2}; mid_db={:.2}",
                         bands.low_mid_db, bands.mid_db
@@ -73,9 +75,7 @@ impl MixingAgent for MockMixingAgent {
             });
         }
 
-        if signal.loudness.crest_factor_db > 12.0
-            && signal.dynamics.transient_density_hz > 1.0
-        {
+        if signal.loudness.crest_factor_db > 12.0 && signal.dynamics.transient_density_hz > 1.0 {
             operations.push(MixOperation::Compressor {
                 settings: CompressorOperation {
                     enabled: true,
@@ -88,12 +88,12 @@ impl MixingAgent for MockMixingAgent {
                     range_db: 3.0,
                     mix_percent: 70.0,
                     output_gain_db: 0.0,
-                    rationale: "Control event-to-event level variation while preserving initial attack."
-                        .into(),
+                    rationale:
+                        "Control event-to-event level variation while preserving initial attack."
+                            .into(),
                     evidence: vec![format!(
                         "crest_factor_db={:.2}; transient_density_hz={:.2}",
-                        signal.loudness.crest_factor_db,
-                        signal.dynamics.transient_density_hz
+                        signal.loudness.crest_factor_db, signal.dynamics.transient_density_hz
                     )],
                 },
             });
@@ -122,8 +122,9 @@ impl MixingAgent for MockMixingAgent {
                             range_db: -2.0,
                             threshold_db: None,
                         }),
-                        rationale: "Control the most prominent persistent narrow-band concentration."
-                            .into(),
+                        rationale:
+                            "Control the most prominent persistent narrow-band concentration."
+                                .into(),
                         evidence: vec![format!(
                             "resonance_hz={:.1}; prominence_db={:.2}",
                             resonance.frequency_hz, resonance.prominence_db
@@ -145,7 +146,8 @@ impl MixingAgent for MockMixingAgent {
             confidence: if operations.is_empty() { 0.55 } else { 0.78 },
             assumptions: vec![
                 "The captured region is representative of the requested source.".into(),
-                "The mock backend approximates, but does not duplicate, FabFilter processing.".into(),
+                "The mock backend approximates, but does not duplicate, FabFilter processing."
+                    .into(),
             ],
             operations,
             expected_changes,
@@ -166,6 +168,7 @@ pub struct CodexAppServerAgent {
 
 impl CodexAppServerAgent {
     pub fn spawn(binary: &str, model: impl Into<String>) -> Result<Self, AgentError> {
+        let binary = resolve_codex_binary(binary)?;
         let mut child = Command::new(binary)
             .args(["app-server", "--listen", "stdio://"])
             .stdin(Stdio::piped())
@@ -272,6 +275,90 @@ impl CodexAppServerAgent {
             bundle.output_contract
         ))
     }
+
+    fn output_schema() -> Result<Value, AgentError> {
+        let mut schema = serde_json::to_value(schema_for!(MixPlan))?;
+        normalize_output_schema(&mut schema);
+        Ok(schema)
+    }
+}
+
+pub fn resolve_codex_binary(binary: &str) -> Result<PathBuf, AgentError> {
+    let requested = Path::new(binary);
+    if requested.is_absolute() || requested.components().count() > 1 {
+        return requested
+            .is_file()
+            .then(|| requested.to_path_buf())
+            .ok_or_else(|| {
+                std::io::Error::new(
+                    std::io::ErrorKind::NotFound,
+                    format!("Codex binary does not exist: {}", requested.display()),
+                )
+                .into()
+            });
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        let result = Command::new("where.exe").arg(binary).output()?;
+        if result.status.success() {
+            let candidates: Vec<PathBuf> = String::from_utf8_lossy(&result.stdout)
+                .lines()
+                .map(str::trim)
+                .filter(|line| !line.is_empty())
+                .map(PathBuf::from)
+                .collect();
+            if let Some(candidate) = preferred_windows_candidate(&candidates) {
+                return Ok(candidate);
+            }
+        }
+        Err(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("Codex binary '{binary}' was not found on PATH"),
+        )
+        .into())
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    Ok(requested.to_path_buf())
+}
+
+#[cfg(target_os = "windows")]
+fn preferred_windows_candidate(candidates: &[PathBuf]) -> Option<PathBuf> {
+    candidates
+        .iter()
+        .find(|path| {
+            path.extension()
+                .is_some_and(|extension| extension.eq_ignore_ascii_case("exe"))
+        })
+        .or_else(|| candidates.first())
+        .cloned()
+}
+
+fn normalize_output_schema(value: &mut Value) {
+    match value {
+        Value::Object(object) => {
+            object.remove("$schema");
+            object.remove("format");
+            if let Some(variants) = object.remove("oneOf") {
+                object.insert("anyOf".into(), variants);
+            }
+            for child in object.values_mut() {
+                normalize_output_schema(child);
+            }
+            if let Some(properties) = object.get("properties").and_then(Value::as_object) {
+                let required = properties.keys().cloned().map(Value::String).collect();
+                object.insert("required".into(), Value::Array(required));
+                object.insert("additionalProperties".into(), Value::Bool(false));
+            }
+        }
+        Value::Array(items) => {
+            for item in items {
+                normalize_output_schema(item);
+            }
+        }
+        _ => {}
+    }
 }
 
 impl MixingAgent for CodexAppServerAgent {
@@ -284,7 +371,7 @@ impl MixingAgent for CodexAppServerAgent {
             .thread_id
             .clone()
             .ok_or_else(|| AgentError::Protocol("Codex thread is not initialized".into()))?;
-        let schema = serde_json::to_value(schema_for!(MixPlan))?;
+        let schema = Self::output_schema()?;
         let result = self.request(
             "turn/start",
             json!({
@@ -305,10 +392,17 @@ impl MixingAgent for CodexAppServerAgent {
             .to_owned();
 
         let mut final_text = None;
+        let mut turn_error = None;
         loop {
             let message = self.read_message()?;
+            if message.get("method").and_then(Value::as_str) == Some("error") {
+                turn_error = message.pointer("/params/error").cloned();
+            }
             if message.get("method").and_then(Value::as_str) == Some("item/completed") {
-                let item = message.pointer("/params/item").cloned().unwrap_or(Value::Null);
+                let item = message
+                    .pointer("/params/item")
+                    .cloned()
+                    .unwrap_or(Value::Null);
                 if item.get("type").and_then(Value::as_str) == Some("agentMessage") {
                     final_text = item.get("text").and_then(Value::as_str).map(str::to_owned);
                 }
@@ -322,8 +416,13 @@ impl MixingAgent for CodexAppServerAgent {
                     .and_then(Value::as_str)
                     .unwrap_or("failed");
                 if status != "completed" {
+                    let details = message
+                        .pointer("/params/turn/error")
+                        .or(turn_error.as_ref())
+                        .map(Value::to_string)
+                        .unwrap_or_else(|| "no error details supplied".into());
                     return Err(AgentError::Protocol(format!(
-                        "Codex turn ended with status {status}"
+                        "Codex turn ended with status {status}: {details}"
                     )));
                 }
                 break;
@@ -340,5 +439,63 @@ impl Drop for CodexAppServerAgent {
     fn drop(&mut self) {
         let _ = self.child.kill();
         let _ = self.child.wait();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn codex_output_schema_is_strict() {
+        let schema = CodexAppServerAgent::output_schema().unwrap();
+        assert_strict_objects(&schema);
+        assert!(!contains_key(&schema, "$schema"));
+        assert!(!contains_key(&schema, "format"));
+        assert!(!contains_key(&schema, "oneOf"));
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn native_windows_binary_is_preferred_over_command_shims() {
+        let candidates = vec![
+            PathBuf::from(r"C:\tools\codex.cmd"),
+            PathBuf::from(r"C:\apps\codex.exe"),
+        ];
+        assert_eq!(
+            preferred_windows_candidate(&candidates),
+            Some(PathBuf::from(r"C:\apps\codex.exe"))
+        );
+    }
+
+    fn assert_strict_objects(value: &Value) {
+        match value {
+            Value::Object(object) => {
+                if let Some(properties) = object.get("properties").and_then(Value::as_object) {
+                    assert_eq!(
+                        object.get("additionalProperties"),
+                        Some(&Value::Bool(false))
+                    );
+                    let required = object
+                        .get("required")
+                        .and_then(Value::as_array)
+                        .expect("objects with properties must list required fields");
+                    assert_eq!(required.len(), properties.len());
+                }
+                object.values().for_each(assert_strict_objects);
+            }
+            Value::Array(items) => items.iter().for_each(assert_strict_objects),
+            _ => {}
+        }
+    }
+
+    fn contains_key(value: &Value, key: &str) -> bool {
+        match value {
+            Value::Object(object) => {
+                object.contains_key(key) || object.values().any(|child| contains_key(child, key))
+            }
+            Value::Array(items) => items.iter().any(|child| contains_key(child, key)),
+            _ => false,
+        }
     }
 }

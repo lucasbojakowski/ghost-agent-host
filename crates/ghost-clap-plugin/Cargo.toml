@@ -10,4 +10,11 @@ rust-version.workspace = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+clack-extensions = { workspace = true, features = ["clack-plugin", "gui", "raw-window-handle_06"] }
 clack-plugin.workspace = true
+egui.workspace = true
+egui-baseview.workspace = true
+ghost-ui = { path = "../ghost-ui" }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys.workspace = true

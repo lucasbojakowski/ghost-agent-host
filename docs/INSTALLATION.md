@@ -51,7 +51,7 @@ The outer plugin dynamic library is produced by `ghost-clap-plugin`. Packaging i
 cargo run -p ghost-lab --release
 ```
 
-The laboratory defaults to `fixtures/muddy_bass.wav`. It runs Maximum analysis, compiles a text-only prompt bundle, generates a deterministic mock plan, validates it, renders the mock chain, and reports before/after metrics.
+The laboratory defaults to `fixtures/muddy_bass.wav`. It runs Maximum analysis, compiles a text-only prompt bundle, generates a deterministic mock plan, validates it, renders the mock chain, and reports before/after metrics. Its egui surface is provided by the shared `ghost-ui` crate. The standalone uses `eframe`; the Windows CLAP editor uses `egui-baseview` so the DAW owns a native child window with plugin-safe hide/show and teardown behavior.
 
 ## 5. Run the CLI
 
@@ -85,6 +85,8 @@ cargo run -p ghost-cli --release -- demo \
 ```
 
 The Codex path sends only text and JSON. Human-facing plots are exported separately and are not attached to the model turn.
+
+On Windows, the default `--codex-binary codex` searches `PATH` and prefers a native `codex.exe` over PowerShell, batch, or extensionless command shims. Pass an absolute path with `--codex-binary` to pin a specific Codex installation.
 
 ## 6. SQLite data
 
@@ -159,7 +161,9 @@ On macOS or Linux, first build the release library and pass it to the cross-plat
 python3 scripts/package_clap.py target/release/<ghost-clap-library>
 ```
 
-The current outer shell is transparent and has no GUI. The verified nested FabFilter processor remains the target-machine integration milestone described in `FABFILTER_INTEGRATION.md`.
+The current outer shell is transparent and exposes the `ghost-lab` egui surface through an embedded Win32 `clap.gui` editor. The editor still runs the standalone file-based mock workflow; daemon-backed capture, Codex, and nested FabFilter state are later integration milestones described in `FABFILTER_INTEGRATION.md`.
+
+Close FL Studio before replacing an installed development build, because the loaded `.clap` file may be locked. After reinstalling, restart FL Studio and rescan with **Verify plugins** and **Rescan previously verified plugins** enabled.
 
 ## 10. Custom analysis
 

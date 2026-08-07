@@ -85,9 +85,109 @@ pub mod clack_runtime {
     use std::path::Path;
 
     use super::*;
-    use clack_host::prelude::PluginEntry;
+    use clack_extensions::gui::{GuiApiType, GuiConfiguration, PluginGui, Window};
+    use clack_host::prelude::{HostHandlers, HostInfo, PluginEntry, PluginInstance};
 
-    pub fn scan_clap_file(path: impl AsRef<Path>) -> Result<Vec<PluginDescriptorRecord>, HostError> {
+    #[cfg(target_os = "windows")]
+    use windows_sys::Win32::Foundation::HWND;
+    #[cfg(target_os = "windows")]
+    use windows_sys::Win32::UI::WindowsAndMessaging::{
+        CreateWindowExW, DestroyWindow, DispatchMessageW, FindWindowExW, GetWindowLongPtrW,
+        PeekMessageW, TranslateMessage, GWL_STYLE, MSG, PM_REMOVE, WS_OVERLAPPEDWINDOW, WS_VISIBLE,
+    };
+
+    struct ValidationHost;
+
+    impl HostHandlers for ValidationHost {
+        type Shared<'a> = ();
+        type MainThread<'a> = ();
+        type AudioProcessor<'a> = ();
+    }
+
+    #[cfg(target_os = "windows")]
+    struct ValidationWindow(HWND);
+
+    #[cfg(target_os = "windows")]
+    impl ValidationWindow {
+        fn create() -> Result<Self, HostError> {
+            let class_name: Vec<u16> = "STATIC\0".encode_utf16().collect();
+            let window_name: Vec<u16> = "Ghost GUI Validator\0".encode_utf16().collect();
+            // SAFETY: The class and title are valid null-terminated UTF-16 strings. The system
+            // STATIC class permits a process-local hidden validation window.
+            let hwnd = unsafe {
+                CreateWindowExW(
+                    0,
+                    class_name.as_ptr(),
+                    window_name.as_ptr(),
+                    WS_OVERLAPPEDWINDOW,
+                    0,
+                    0,
+                    900,
+                    700,
+                    std::ptr::null_mut(),
+                    std::ptr::null_mut(),
+                    std::ptr::null_mut(),
+                    std::ptr::null(),
+                )
+            };
+            if hwnd.is_null() {
+                return Err(HostError::Scan(std::io::Error::last_os_error().to_string()));
+            }
+            Ok(Self(hwnd))
+        }
+
+        fn plugin_child(&self) -> Option<HWND> {
+            let title: Vec<u16> = "Ghost Agent Host\0".encode_utf16().collect();
+            // SAFETY: self is a live window and title is terminated UTF-16.
+            let child = unsafe {
+                FindWindowExW(
+                    self.0,
+                    std::ptr::null_mut(),
+                    std::ptr::null(),
+                    title.as_ptr(),
+                )
+            };
+            (!child.is_null()).then_some(child)
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    fn pump_messages_for(duration: std::time::Duration) {
+        let deadline = std::time::Instant::now() + duration;
+        while std::time::Instant::now() < deadline {
+            // SAFETY: An all-zero MSG is the documented initial state for PeekMessageW output.
+            let mut message: MSG = unsafe { std::mem::zeroed() };
+            // SAFETY: message points to writable storage for the duration of each Win32 call.
+            while unsafe { PeekMessageW(&mut message, std::ptr::null_mut(), 0, 0, PM_REMOVE) } != 0
+            {
+                unsafe {
+                    TranslateMessage(&message);
+                    DispatchMessageW(&message);
+                }
+            }
+            std::thread::yield_now();
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    fn child_is_shown(child: HWND) -> bool {
+        // SAFETY: child is a live HWND found under ValidationWindow.
+        unsafe { GetWindowLongPtrW(child, GWL_STYLE) as u32 & WS_VISIBLE != 0 }
+    }
+
+    #[cfg(target_os = "windows")]
+    impl Drop for ValidationWindow {
+        fn drop(&mut self) {
+            // SAFETY: This HWND was created by ValidationWindow::create and is still live.
+            unsafe {
+                DestroyWindow(self.0);
+            }
+        }
+    }
+
+    pub fn scan_clap_file(
+        path: impl AsRef<Path>,
+    ) -> Result<Vec<PluginDescriptorRecord>, HostError> {
         let path = path.as_ref();
         let entry = unsafe { PluginEntry::load(path) }
             .map_err(|error| HostError::Scan(error.to_string()))?;
@@ -123,6 +223,96 @@ pub mod clack_runtime {
             });
         }
         Ok(records)
+    }
+
+    pub fn smoke_test_clap_gui(path: impl AsRef<Path>) -> Result<(u32, u32), HostError> {
+        #[cfg(not(target_os = "windows"))]
+        {
+            let _ = path;
+            return Err(HostError::Scan(
+                "The embedded GUI smoke test currently requires Windows".into(),
+            ));
+        }
+
+        #[cfg(target_os = "windows")]
+        {
+            let entry = unsafe { PluginEntry::load(path.as_ref()) }
+                .map_err(|error| HostError::Scan(error.to_string()))?;
+            let host_info = HostInfo::new(
+                "Ghost CLAP Validator",
+                "Konko",
+                "https://github.com/free-audio/clap",
+                env!("CARGO_PKG_VERSION"),
+            )
+            .map_err(|error| HostError::Scan(error.to_string()))?;
+            let mut instance = PluginInstance::<ValidationHost>::new(
+                |_| (),
+                |_| (),
+                &entry,
+                c"ai.konko.ghost-agent-host",
+                &host_info,
+            )
+            .map_err(|error| HostError::Scan(error.to_string()))?;
+            let parent = ValidationWindow::create()?;
+            let size = {
+                let mut plugin = instance.plugin_handle();
+                let gui = plugin.get_extension::<PluginGui>().ok_or_else(|| {
+                    HostError::Scan("CLAP plugin does not expose clap.gui".into())
+                })?;
+                let configuration = GuiConfiguration {
+                    api_type: GuiApiType::WIN32,
+                    is_floating: false,
+                };
+                if !gui.is_api_supported(&mut plugin, configuration) {
+                    return Err(HostError::Scan(
+                        "CLAP plugin rejected an embedded Win32 editor".into(),
+                    ));
+                }
+
+                let mut reported_size = None;
+                for _ in 0..2 {
+                    gui.create(&mut plugin, configuration)
+                        .map_err(|error| HostError::Scan(error.to_string()))?;
+                    let size = gui.get_size(&mut plugin).ok_or_else(|| {
+                        HostError::Scan("CLAP GUI returned an invalid initial size".into())
+                    })?;
+                    // SAFETY: ValidationWindow remains alive until after gui.destroy below.
+                    unsafe { gui.set_parent(&mut plugin, Window::from_win32_hwnd(parent.0)) }
+                        .map_err(|error| HostError::Scan(error.to_string()))?;
+                    let child = parent.plugin_child().ok_or_else(|| {
+                        HostError::Scan("CLAP GUI did not create a Win32 child window".into())
+                    })?;
+                    for _ in 0..2 {
+                        gui.show(&mut plugin)
+                            .map_err(|error| HostError::Scan(error.to_string()))?;
+                        pump_messages_for(std::time::Duration::from_millis(75));
+                        if !child_is_shown(child) {
+                            return Err(HostError::Scan(
+                                "CLAP GUI child remained hidden after show".into(),
+                            ));
+                        }
+                        gui.hide(&mut plugin)
+                            .map_err(|error| HostError::Scan(error.to_string()))?;
+                        pump_messages_for(std::time::Duration::from_millis(25));
+                        if child_is_shown(child) {
+                            return Err(HostError::Scan(
+                                "CLAP GUI child remained visible after hide".into(),
+                            ));
+                        }
+                    }
+                    gui.destroy(&mut plugin);
+                    pump_messages_for(std::time::Duration::from_millis(25));
+                    if parent.plugin_child().is_some() {
+                        return Err(HostError::Scan(
+                            "CLAP GUI child remained alive after destroy".into(),
+                        ));
+                    }
+                    reported_size = Some(size);
+                }
+                reported_size.expect("the GUI validation loop always runs")
+            };
+            Ok((size.width, size.height))
+        }
     }
 }
 

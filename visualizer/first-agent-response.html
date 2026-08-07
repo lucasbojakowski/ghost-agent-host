@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en" class="bg-[#080b0f]">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <title>First Agent Response | Ghost Agent Host</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">
+      @theme {
+        --font-sans: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+        --font-mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+        --color-ghost: #b7ff4a;
+        --color-cyan: #4de4ff;
+        --color-ink: #080b0f;
+        --color-panel: #10161d;
+      }
+
+      @layer base {
+        :focus-visible {
+          outline: 3px solid #4de4ff;
+          outline-offset: 3px;
+        }
+      }
+    </style>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      body {
+        min-width: 20rem;
+        background:
+          radial-gradient(circle at 12% 4%, rgb(77 228 255 / 0.10), transparent 28rem),
+          radial-gradient(circle at 88% 16%, rgb(183 255 74 / 0.08), transparent 30rem),
+          #080b0f;
+      }
+
+      .noise {
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.12'/%3E%3C/svg%3E");
+      }
+
+      .hairline {
+        background: linear-gradient(90deg, transparent, rgb(77 228 255 / 0.55), rgb(183 255 74 / 0.45), transparent);
+      }
+
+      .metric-grid,
+      .operation-shell {
+        container-type: inline-size;
+      }
+
+      .confidence-ring {
+        background: conic-gradient(#b7ff4a 0 71%, #26313a 71% 100%);
+      }
+
+      .frequency-grid {
+        background-image: linear-gradient(90deg, rgb(255 255 255 / 0.05) 1px, transparent 1px);
+        background-size: 12.5% 100%;
+      }
+
+      @container (min-width: 32rem) {
+        .operation-layout {
+          grid-template-columns: 10rem minmax(0, 1fr);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+        }
+      }
+
+      @media print {
+        body { background: #fff; color: #111; }
+        .noise { display: none; }
+        .print-card { break-inside: avoid; border-color: #bbb; background: #fff; }
+        .screen-only { display: none; }
+      }
+    </style>
+  </head>
+  <body class="font-sans text-slate-100 antialiased selection:bg-ghost/30 selection:text-white">
+    <div class="noise pointer-events-none fixed inset-0 opacity-[0.035]" aria-hidden="true"></div>
+    <a href="#report" class="fixed left-4 top-4 z-50 -translate-y-24 rounded-md bg-cyan px-4 py-2 font-semibold text-ink transition focus:translate-y-0">
+      Skip to report
+    </a>
+
+    <header class="border-b border-white/10">
+      <div class="mx-auto flex max-w-7xl items-center justify-between gap-6 px-5 py-5 sm:px-8 lg:px-10">
+        <div class="flex items-center gap-3">
+          <div class="grid size-10 place-items-center rounded-xl border border-ghost/30 bg-ghost/10 font-mono text-sm font-bold text-ghost shadow-[0_0_28px_rgb(183_255_74/0.12)]" aria-hidden="true">GH</div>
+          <div>
+            <p class="font-semibold tracking-tight">Ghost Agent Host</p>
+            <p class="font-mono text-xs text-slate-500">analysis / decision / validation</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 rounded-full border border-ghost/25 bg-ghost/8 px-3 py-1.5 font-mono text-xs text-ghost">
+          <span class="size-1.5 rounded-full bg-ghost shadow-[0_0_10px_#b7ff4a]" aria-hidden="true"></span>
+          Live Codex result
+        </div>
+      </div>
+    </header>
+
+    <main id="report" tabindex="-1" class="mx-auto max-w-7xl px-5 py-10 sm:px-8 lg:px-10 lg:py-14">
+      <section aria-labelledby="report-title" class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-end">
+        <div>
+          <p class="mb-4 font-mono text-xs uppercase tracking-[0.24em] text-cyan">First agent response · 06 Aug 2026</p>
+          <h1 id="report-title" class="max-w-4xl text-4xl font-semibold leading-[1.05] tracking-[-0.04em] text-white sm:text-6xl">
+            Surgical correction.<br><span class="text-slate-500">Dynamics left intact.</span>
+          </h1>
+          <p class="mt-6 max-w-3xl text-base leading-7 text-slate-300 sm:text-lg">
+            Two conservative Pro-Q 4 cuts target measured low-mid and presence resonances. Codex declined compression because the capture already shows tightly constrained dynamics and no measured transient activity.
+          </p>
+        </div>
+
+        <aside aria-label="Decision confidence" class="print-card flex items-center gap-5 rounded-2xl border border-white/10 bg-panel/80 p-5 shadow-2xl shadow-black/20 backdrop-blur">
+          <div class="confidence-ring grid size-24 shrink-0 place-items-center rounded-full p-2" role="img" aria-label="Confidence: 71 percent">
+            <div class="grid size-full place-items-center rounded-full bg-panel">
+              <span class="font-mono text-xl font-bold text-ghost">71%</span>
+            </div>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-white">Moderate confidence</p>
+            <p class="mt-1 text-sm leading-5 text-slate-400">Strong local resonance evidence; limited context for whole-track tonal decisions.</p>
+          </div>
+        </aside>
+      </section>
+
+      <div class="hairline my-10 h-px sm:my-14" aria-hidden="true"></div>
+
+      <section aria-labelledby="source-heading">
+        <div class="mb-5 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p class="font-mono text-xs uppercase tracking-[0.2em] text-slate-500">01 / source evidence</p>
+            <h2 id="source-heading" class="mt-2 text-2xl font-semibold tracking-tight text-white">What the analyzer measured</h2>
+          </div>
+          <p class="max-w-xl break-all text-right font-mono text-xs text-slate-500">Track 1 (consolidated)_37.wav</p>
+        </div>
+
+        <div class="metric-grid grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 sm:grid-cols-4 lg:grid-cols-8">
+          <article class="bg-panel p-4 sm:p-5">
+            <p class="text-xs text-slate-500">Integrated</p>
+            <p class="mt-3 font-mono text-xl font-semibold text-white">−9.35</p>
+            <p class="mt-1 font-mono text-[0.68rem] uppercase tracking-wider text-slate-500">LUFS</p>
+          </article>
+          <article class="bg-panel p-4 sm:p-5">
+            <p class="text-xs text-slate-500">True peak</p>
+            <p class="mt-3 font-mono text-xl font-semibold text-amber-300">+0.40</p>
+            <p class="mt-1 font-mono text-[0.68rem] uppercase tracking-wider text-slate-500">dBTP</p>
+          </article>
+          <article class="bg-panel p-4 sm:p-5">
+            <p class="text-xs text-slate-500">RMS</p>
+            <p class="mt-3 font-mono text-xl font-semibold text-white">−8.15</p>
+            <p class="mt-1 font-mono text-[0.68rem] uppercase tracking-wider text-slate-500">dBFS</p>
+          </article>
+          <article class="bg-panel p-4 sm:p-5">
+            <p class="text-xs text-slate-500">Crest</p>
+            <p class="mt-3 font-mono text-xl font-semibold text-white">8.14</p>
+            <p class="mt-1 font-mono text-[0.68rem] uppercase tracking-wider text-slate-500">dB</p>
+          </article>
+          <article class="bg-panel p-4 sm:p-5">
+            <p class="text-xs text-slate-500">Loudness range</p>
+            <p class="mt-3 font-mono text-xl font-semibold text-white">0.31</p>
+            <p class="mt-1 font-mono text-[0.68rem] uppercase tracking-wider text-slate-500">LU</p>
+          </article>
+          <article class="bg-panel p-4 sm:p-5">
+            <p class="text-xs text-slate-500">Centroid</p>
+            <p class="mt-3 font-mono text-xl font-semibold text-white">3.83k</p>
+            <p class="mt-1 font-mono text-[0.68rem] uppercase tracking-wider text-slate-500">Hz</p>
+          </article>
+          <article class="bg-panel p-4 sm:p-5">
+            <p class="text-xs text-slate-500">Stereo corr.</p>
+            <p class="mt-3 font-mono text-xl font-semibold text-cyan">0.978</p>
+            <p class="mt-1 font-mono text-[0.68rem] uppercase tracking-wider text-slate-500">coefficient</p>
+          </article>
+          <article class="bg-panel p-4 sm:p-5">
+            <p class="text-xs text-slate-500">Clipped samples</p>
+            <p class="mt-3 font-mono text-xl font-semibold text-ghost">0</p>
+            <p class="mt-1 font-mono text-[0.68rem] uppercase tracking-wider text-slate-500">clean</p>
+          </article>
+        </div>
+
+        <figure class="print-card mt-5 rounded-2xl border border-white/10 bg-panel/75 p-5 sm:p-7">
+          <figcaption class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p class="font-semibold text-white">Persistent resonance map</p>
+              <p class="mt-1 text-sm text-slate-500">Log-frequency placement, 20 Hz–20 kHz. Marker size follows measured prominence.</p>
+            </div>
+            <div class="flex gap-4 font-mono text-xs text-slate-500" aria-hidden="true">
+              <span><i class="mr-1.5 inline-block size-2 rounded-full bg-ghost"></i>selected</span>
+              <span><i class="mr-1.5 inline-block size-2 rounded-full bg-slate-500"></i>observed</span>
+            </div>
+          </figcaption>
+          <div class="frequency-grid relative mt-8 h-32 rounded-xl border border-white/8 bg-black/20" role="img" aria-label="Frequency map showing selected corrections near 650 hertz and 4.475 kilohertz among observed resonances from 231 hertz to 4.48 kilohertz">
+            <div class="absolute inset-x-4 top-1/2 h-px bg-white/15" aria-hidden="true"></div>
+            <span class="absolute left-[35.4%] top-[58%] size-4 -translate-x-1/2 rounded-full border border-slate-300/40 bg-slate-500/70" aria-hidden="true"></span>
+            <span class="absolute left-[49.6%] top-[42%] size-7 -translate-x-1/2 rounded-full border-2 border-ghost bg-ghost/25 shadow-[0_0_20px_rgb(183_255_74/0.35)]" aria-hidden="true"></span>
+            <span class="absolute left-[51.4%] top-[62%] size-6 -translate-x-1/2 rounded-full border border-slate-300/40 bg-slate-500/60" aria-hidden="true"></span>
+            <span class="absolute left-[59.6%] top-[35%] size-4 -translate-x-1/2 rounded-full border border-slate-300/40 bg-slate-500/60" aria-hidden="true"></span>
+            <span class="absolute left-[78.3%] top-[45%] size-6 -translate-x-1/2 rounded-full border-2 border-cyan bg-cyan/20 shadow-[0_0_20px_rgb(77_228_255/0.3)]" aria-hidden="true"></span>
+            <div class="absolute inset-x-3 bottom-2 flex justify-between font-mono text-[0.62rem] text-slate-600" aria-hidden="true">
+              <span>20</span><span>50</span><span>100</span><span>250</span><span>500</span><span>1k</span><span>5k</span><span>20k Hz</span>
+            </div>
+          </div>
+        </figure>
+      </section>
+
+      <section aria-labelledby="plan-heading" class="mt-14">
+        <div class="mb-5">
+          <p class="font-mono text-xs uppercase tracking-[0.2em] text-slate-500">02 / agent decision</p>
+          <h2 id="plan-heading" class="mt-2 text-2xl font-semibold tracking-tight text-white">The proposed chain</h2>
+        </div>
+
+        <div class="grid gap-5 lg:grid-cols-2">
+          <article class="operation-shell print-card overflow-hidden rounded-2xl border border-ghost/20 bg-panel/80">
+            <div class="border-b border-white/8 bg-ghost/[0.035] px-5 py-4 sm:px-6">
+              <div class="flex items-center justify-between gap-3">
+                <p class="font-mono text-xs uppercase tracking-[0.18em] text-ghost">Pro-Q 4 · Bell 01</p>
+                <span class="rounded-full border border-ghost/25 px-2.5 py-1 font-mono text-[0.65rem] text-ghost">enabled</span>
+              </div>
+              <h3 class="mt-2 text-xl font-semibold text-white">Low-mid concentration</h3>
+            </div>
+            <div class="operation-layout grid gap-6 p-5 sm:p-6">
+              <dl class="grid grid-cols-3 gap-3 sm:grid-cols-1">
+                <div><dt class="text-xs text-slate-500">Frequency</dt><dd class="mt-1 font-mono font-semibold text-white">650 Hz</dd></div>
+                <div><dt class="text-xs text-slate-500">Gain</dt><dd class="mt-1 font-mono font-semibold text-ghost">−1.2 dB</dd></div>
+                <div><dt class="text-xs text-slate-500">Q</dt><dd class="mt-1 font-mono font-semibold text-white">1.50</dd></div>
+              </dl>
+              <div>
+                <p class="leading-6 text-slate-300">A shallow, broad stereo cut consolidates two adjacent persistent resonances without removing source body.</p>
+                <details class="mt-5 rounded-xl border border-white/8 bg-black/20 px-4 py-3">
+                  <summary class="cursor-pointer text-sm font-medium text-slate-300">Measured evidence</summary>
+                  <ul class="mt-3 space-y-2 border-t border-white/8 pt-3 font-mono text-xs leading-5 text-slate-500">
+                    <li>615.0 Hz · +12.04 dB prominence · 1.0 persistence</li>
+                    <li>697.1 Hz · +10.69 dB prominence · 1.0 persistence</li>
+                  </ul>
+                </details>
+              </div>
+            </div>
+          </article>
+
+          <article class="operation-shell print-card overflow-hidden rounded-2xl border border-cyan/20 bg-panel/80">
+            <div class="border-b border-white/8 bg-cyan/[0.035] px-5 py-4 sm:px-6">
+              <div class="flex items-center justify-between gap-3">
+                <p class="font-mono text-xs uppercase tracking-[0.18em] text-cyan">Pro-Q 4 · Bell 02</p>
+                <span class="rounded-full border border-cyan/25 px-2.5 py-1 font-mono text-[0.65rem] text-cyan">enabled</span>
+              </div>
+              <h3 class="mt-2 text-xl font-semibold text-white">Presence resonance</h3>
+            </div>
+            <div class="operation-layout grid gap-6 p-5 sm:p-6">
+              <dl class="grid grid-cols-3 gap-3 sm:grid-cols-1">
+                <div><dt class="text-xs text-slate-500">Frequency</dt><dd class="mt-1 font-mono font-semibold text-white">4.475 kHz</dd></div>
+                <div><dt class="text-xs text-slate-500">Gain</dt><dd class="mt-1 font-mono font-semibold text-cyan">−1.5 dB</dd></div>
+                <div><dt class="text-xs text-slate-500">Q</dt><dd class="mt-1 font-mono font-semibold text-white">10.0</dd></div>
+              </dl>
+              <div>
+                <p class="leading-6 text-slate-300">A narrow, low-magnitude static cut controls persistent presence energy without broadly darkening the source.</p>
+                <details class="mt-5 rounded-xl border border-white/8 bg-black/20 px-4 py-3">
+                  <summary class="cursor-pointer text-sm font-medium text-slate-300">Measured evidence</summary>
+                  <ul class="mt-3 space-y-2 border-t border-white/8 pt-3 font-mono text-xs leading-5 text-slate-500">
+                    <li>4,474.9 Hz · +7.83 dB prominence · 1.0 persistence</li>
+                    <li>Spectral centroid · 3,829.2 Hz</li>
+                  </ul>
+                </details>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <article class="print-card mt-5 grid gap-5 rounded-2xl border border-amber-300/20 bg-amber-300/[0.045] p-5 sm:grid-cols-[auto_1fr] sm:p-6">
+          <div class="grid size-11 place-items-center rounded-xl border border-amber-300/25 bg-amber-300/10 font-mono font-bold text-amber-300" aria-hidden="true">—</div>
+          <div>
+            <h3 class="font-semibold text-amber-200">Pro-C 3 deliberately bypassed</h3>
+            <p class="mt-2 max-w-4xl leading-6 text-slate-300">No compression-specific problem is evidenced: loudness range is only 0.309 LU, transient density measured 0.0 Hz, and added compression would conflict with the instruction to preserve punch.</p>
+          </div>
+        </article>
+      </section>
+
+      <section aria-labelledby="outcome-heading" class="mt-14">
+        <div class="mb-5">
+          <p class="font-mono text-xs uppercase tracking-[0.2em] text-slate-500">03 / mock validation render</p>
+          <h2 id="outcome-heading" class="mt-2 text-2xl font-semibold tracking-tight text-white">Measured after the proposed moves</h2>
+          <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-500">These values come from Ghost’s mock DSP approximation, not a render through the installed FabFilter plugins.</p>
+        </div>
+
+        <div class="print-card overflow-x-auto rounded-2xl border border-white/10 bg-panel/75">
+          <table class="w-full min-w-[42rem] border-collapse text-left">
+            <caption class="sr-only">Comparison of source and mock-processed audio measurements</caption>
+            <thead class="border-b border-white/10 font-mono text-xs uppercase tracking-wider text-slate-500">
+              <tr>
+                <th scope="col" class="px-5 py-4 sm:px-6">Measurement</th>
+                <th scope="col" class="px-5 py-4">Before</th>
+                <th scope="col" class="px-5 py-4">After</th>
+                <th scope="col" class="px-5 py-4 sm:px-6">Delta</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/8 font-mono text-sm">
+              <tr><th scope="row" class="px-5 py-4 font-sans font-medium text-slate-300 sm:px-6">RMS level</th><td class="px-5 py-4 text-slate-400">−8.151 dBFS</td><td class="px-5 py-4 text-white">−8.167 dBFS</td><td class="px-5 py-4 text-slate-400 sm:px-6">−0.016 dB</td></tr>
+              <tr><th scope="row" class="px-5 py-4 font-sans font-medium text-slate-300 sm:px-6">Crest factor</th><td class="px-5 py-4 text-slate-400">8.135 dB</td><td class="px-5 py-4 text-white">8.236 dB</td><td class="px-5 py-4 text-ghost sm:px-6">+0.101 dB</td></tr>
+              <tr><th scope="row" class="px-5 py-4 font-sans font-medium text-slate-300 sm:px-6">Spectral centroid</th><td class="px-5 py-4 text-slate-400">3,829.2 Hz</td><td class="px-5 py-4 text-white">3,858.9 Hz</td><td class="px-5 py-4 text-slate-400 sm:px-6">+29.7 Hz</td></tr>
+              <tr><th scope="row" class="px-5 py-4 font-sans font-medium text-slate-300 sm:px-6">Low-mid band energy</th><td class="px-5 py-4 text-slate-400">59.110 dB</td><td class="px-5 py-4 text-white">58.954 dB</td><td class="px-5 py-4 text-ghost sm:px-6">−0.156 dB</td></tr>
+              <tr><th scope="row" class="px-5 py-4 font-sans font-medium text-slate-300 sm:px-6">Stereo correlation</th><td class="px-5 py-4 text-slate-400">0.9775</td><td class="px-5 py-4 text-white">0.9791</td><td class="px-5 py-4 text-slate-400 sm:px-6">+0.0016</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="screen-only mt-5 rounded-2xl border border-white/10 bg-panel/75 p-5 sm:flex sm:items-center sm:justify-between sm:gap-6 sm:p-6">
+          <div>
+            <h3 class="font-semibold text-white">Audition the mock render</h3>
+            <p class="mt-1 text-sm text-slate-500">Level-match against the source inside your DAW before accepting either move.</p>
+          </div>
+          <audio class="mt-4 w-full sm:mt-0 sm:max-w-xl" controls preload="metadata">
+            <source src="../artifacts/first-agent-response/processed.wav" type="audio/wav">
+            Your browser cannot play this WAV file.
+          </audio>
+        </div>
+      </section>
+
+      <section aria-labelledby="notes-heading" class="mt-14 grid gap-5 lg:grid-cols-2">
+        <div class="print-card rounded-2xl border border-white/10 bg-panel/75 p-5 sm:p-6">
+          <p class="font-mono text-xs uppercase tracking-[0.2em] text-slate-500">04 / review notes</p>
+          <h2 id="notes-heading" class="mt-2 text-xl font-semibold text-white">Assumptions</h2>
+          <ul class="mt-5 space-y-4 text-sm leading-6 text-slate-300">
+            <li class="flex gap-3"><span class="mt-2 size-1.5 shrink-0 rounded-full bg-cyan" aria-hidden="true"></span><span>The capture supports local corrective EQ, but not full-track tonal decisions.</span></li>
+            <li class="flex gap-3"><span class="mt-2 size-1.5 shrink-0 rounded-full bg-cyan" aria-hidden="true"></span><span>No current plugin state was supplied; the plan describes proposed additions only.</span></li>
+            <li class="flex gap-3"><span class="mt-2 size-1.5 shrink-0 rounded-full bg-cyan" aria-hidden="true"></span><span>The 615 Hz and 697 Hz resonances are treated as one low-mid concentration.</span></li>
+          </ul>
+        </div>
+        <div class="print-card rounded-2xl border border-amber-300/15 bg-panel/75 p-5 sm:p-6">
+          <p class="font-mono text-xs uppercase tracking-[0.2em] text-slate-500">before committing</p>
+          <h2 class="mt-2 text-xl font-semibold text-white">Cautions</h2>
+          <ul class="mt-5 space-y-4 text-sm leading-6 text-slate-300">
+            <li class="flex gap-3"><span class="mt-2 size-1.5 shrink-0 rounded-full bg-amber-300" aria-hidden="true"></span><span>The +0.40 dBTP reading needs peak management elsewhere; no limiter capability was supplied.</span></li>
+            <li class="flex gap-3"><span class="mt-2 size-1.5 shrink-0 rounded-full bg-amber-300" aria-hidden="true"></span><span>Revert the 650 Hz cut if it reduces desired body.</span></li>
+            <li class="flex gap-3"><span class="mt-2 size-1.5 shrink-0 rounded-full bg-amber-300" aria-hidden="true"></span><span>Revert the 4.475 kHz cut if presence or articulation becomes too soft.</span></li>
+          </ul>
+        </div>
+      </section>
+
+      <footer class="mt-14 border-t border-white/10 pt-7 text-xs text-slate-500">
+        <div class="grid gap-5 sm:grid-cols-[1fr_auto] sm:items-end">
+          <dl class="grid gap-x-8 gap-y-2 font-mono sm:grid-cols-2">
+            <div><dt class="inline text-slate-600">Agent </dt><dd class="inline">Codex App Server · gpt-5.6-terra</dd></div>
+            <div><dt class="inline text-slate-600">Render </dt><dd class="inline">mock-fabfilter-chain</dd></div>
+            <div><dt class="inline text-slate-600">Capture </dt><dd class="inline">15.496 s · 44.1 kHz · stereo</dd></div>
+            <div><dt class="inline text-slate-600">Run </dt><dd class="inline">5feda61a-b018-4791-8633-ac63be942ff7</dd></div>
+          </dl>
+          <nav aria-label="Report data" class="screen-only flex flex-wrap gap-4 font-medium">
+            <a class="text-cyan underline decoration-cyan/30 underline-offset-4 hover:decoration-cyan" href="../artifacts/first-agent-response/evaluation.json">Evaluation JSON</a>
+            <a class="text-cyan underline decoration-cyan/30 underline-offset-4 hover:decoration-cyan" href="../artifacts/first-agent-response/prompt_bundle.json">Prompt bundle</a>
+          </nav>
+        </div>
+      </footer>
+    </main>
+  </body>
+</html>

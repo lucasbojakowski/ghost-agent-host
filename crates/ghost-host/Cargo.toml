@@ -12,8 +12,11 @@ clack-runtime = ["dep:clack-host", "dep:clack-extensions"]
 
 [dependencies]
 clack-host = { workspace = true, optional = true }
-clack-extensions = { workspace = true, optional = true }
+clack-extensions = { workspace = true, optional = true, features = ["clack-host", "gui"] }
 ghost-core = { path = "../ghost-core" }
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-sys.workspace = true
