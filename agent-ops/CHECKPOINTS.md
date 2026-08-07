@@ -4,7 +4,7 @@ The coordinator fills in commit SHAs as waves are reconciled. Agents must branch
 
 | Name | Commit SHA | Produced after |
 |---|---|---|
-| `OPS_SHA` | `<unset>` | This operations packet and current functional code are committed |
+| `OPS_SHA` | `063546ad256e5e6df369f1616452ea95a16da2f9` | This operations packet and current functional code are committed |
 | `BASE_SHA` | `<unset>` | T00 baseline audit |
 | `ADR_SHA` | `<unset>` | T01 |
 | `SCAFFOLD_SHA` | `<unset>` | T02 |
