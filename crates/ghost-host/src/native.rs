@@ -31,7 +31,6 @@ use crate::{
 
 #[derive(Debug, Clone)]
 struct ChildAudioPort {
-    name: String,
     channel_count: usize,
     is_main: bool,
 }
@@ -167,7 +166,6 @@ fn audio_topology(instance: &mut PluginInstance<NativeHost>) -> Result<ChildAudi
                 )));
             }
             result.push(ChildAudioPort {
-                name: String::from_utf8_lossy(info.name).into_owned(),
                 channel_count: info.channel_count as usize,
                 is_main: info.flags.contains(AudioPortFlags::IS_MAIN),
             });
@@ -840,8 +838,15 @@ impl NativeClapAudio {
         match main_input.len() {
             0 => return Err(ChildError::BlockShapeMismatch),
             1 => {
-                for frame in 0..block.frames {
-                    main_input[0][frame] = 0.5 * (block.channels[0][frame] + block.channels[1][frame]);
+                for (destination, (left, right)) in main_input[0][..block.frames]
+                    .iter_mut()
+                    .zip(
+                        block.channels[0][..block.frames]
+                            .iter()
+                            .zip(block.channels[1][..block.frames].iter()),
+                    )
+                {
+                    *destination = 0.5 * (*left + *right);
                 }
             }
             _ => {
