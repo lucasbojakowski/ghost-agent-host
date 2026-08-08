@@ -21,14 +21,14 @@ fn validation_plan() -> MixPlan {
     // be applied through the CLAP host.
     //
     // Pro-Q 4 currently exposes its frequency parameter plain-value domain as roughly
-    // 3.322..14.873 even though the semantic field is named `frequency_hz`. Until the semantic
-    // mapper converts display Hz into the plugin's plain domain, keep these fixture frequencies in
-    // the overlap between the workflow's accepted semantic range (>= 10) and Pro-Q's current plain
-    // range. The resulting child bands are intentionally just a visible parameter-editing test.
+    // 3.322..14.873 and Q as 0.0..1.0, even though Ghost's fields are semantic Hz/Q values. Until
+    // the semantic mapper converts display-domain values into each plugin's CLAP plain domain, keep
+    // this fixture entirely inside the observed Pro-Q ranges. The resulting bands are intentionally
+    // just a visible parameter-editing test, not musically meaningful settings.
     let bands = [
-        ("mock-band-1", 10.0, -3.0, 0.75),
-        ("mock-band-2", 12.0, 2.5, 1.10),
-        ("mock-band-3", 14.0, -1.5, 2.00),
+        ("mock-band-1", 10.0, -3.0, 0.25),
+        ("mock-band-2", 12.0, 2.5, 0.55),
+        ("mock-band-3", 14.0, -1.5, 0.85),
     ];
 
     let operations = bands
@@ -86,6 +86,7 @@ mod tests {
             assert!(settings.dynamic.is_none());
             assert_eq!(settings.channel_mode, "stereo");
             assert_eq!(settings.shape, EqShape::Bell);
+            assert!((0.0..=1.0).contains(&settings.q));
         }
     }
 }
