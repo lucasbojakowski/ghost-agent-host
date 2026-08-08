@@ -12,7 +12,7 @@ $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $rustTarget = "x86_64-pc-windows-msvc"
 $pluginPackage = "ghost-clap-plugin"
 $pluginLibrary = "ghost_clap_plugin.dll"
-$pluginFileName = "Ghost Agent Host.clap"
+$pluginFileName = "Ghost Agent.clap"
 
 function Resolve-Cargo {
     $cargoCommand = Get-Command cargo -ErrorAction SilentlyContinue
