@@ -50,7 +50,6 @@ pub(crate) struct AnalysisResult {
     pub bundle: AnalysisBundle,
     pub source_label: String,
     pub tap_label: String,
-    pub spectrum: Vec<f32>,
 }
 
 pub(crate) fn capture_file(path: String) -> CaptureJobResult {
@@ -83,12 +82,10 @@ pub(crate) fn analyze(
         };
         let bundle =
             analyze_audio(&material.label, audio, &config).map_err(|error| error.to_string())?;
-        let spectrum = build_spectrum(&bundle);
         Ok(AnalysisResult {
             bundle,
             source_label: material.label,
             tap_label,
-            spectrum,
         })
     })();
     AnalysisJobResult::Complete(result)
@@ -188,19 +185,5 @@ fn capability_summaries(graph: &EditableGraph) -> Vec<PluginCapabilitySummary> {
                 .as_ref()
                 .map_or_else(Vec::new, |item| item.public_parameters.clone()),
         })
-        .collect()
-}
-
-fn build_spectrum(analysis: &AnalysisBundle) -> Vec<f32> {
-    let frames = &analysis.signal.spectrum.frame_centroid_hz;
-    if frames.is_empty() {
-        return Vec::new();
-    }
-    let stride = (frames.len() / 128).max(1);
-    frames
-        .iter()
-        .step_by(stride)
-        .take(128)
-        .map(|value| (*value / 20_000.0).clamp(0.0, 1.0))
         .collect()
 }
