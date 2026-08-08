@@ -141,11 +141,20 @@ impl RealtimeParameterControl {
         if patch.parameter_changes.len() > MAXIMUM_PATCH_CHANGES {
             return Err(ParameterQueueError::TooLarge);
         }
+
+        // Some child plugins expose a fixed bank of EQ parameter slots whose `Used`/`Enabled`
+        // control materializes the actual band. The semantic compiler may naturally emit
+        // frequency/gain/Q before that activation control, but those values can be ignored while
+        // the slot is inactive. Preserve the compiler's relative ordering while moving activation
+        // changes to the front so a child sees "create/enable band" before its band values.
+        let mut changes = patch.parameter_changes.clone();
+        changes.sort_by_key(|change| u8::from(change.semantic_field != "enabled"));
+
         self.transactions
             .push(ParameterTransaction {
                 transaction_id: patch.transaction_id,
                 expected_graph_revision: patch.expected_graph_revision,
-                changes: patch.parameter_changes.clone(),
+                changes,
             })
             .map_err(|_| ParameterQueueError::Busy)
     }
@@ -199,6 +208,45 @@ mod tests {
         assert_eq!(transaction.transaction_id, 9);
         assert_eq!(transaction.expected_graph_revision, 4);
         assert_eq!(transaction.changes[0].expected_graph_revision, 4);
+    }
+
+    #[test]
+    fn activation_changes_are_queued_before_band_values() {
+        let control = RealtimeParameterControl::new();
+        let mut frequency = change();
+        frequency.semantic_field = "frequency_hz".into();
+        frequency.parameter_id = "10".into();
+        frequency.plain_value = 12.0;
+
+        let mut enabled = change();
+        enabled.semantic_field = "enabled".into();
+        enabled.parameter_id = "11".into();
+        enabled.minimum = 0.0;
+        enabled.maximum = 1.0;
+        enabled.plain_value = 1.0;
+
+        let mut q = change();
+        q.semantic_field = "q".into();
+        q.parameter_id = "12".into();
+        q.minimum = 0.0;
+        q.maximum = 1.0;
+        q.plain_value = 0.5;
+
+        let patch = CompiledParameterPatch {
+            transaction_id: 10,
+            expected_graph_revision: 4,
+            parameter_changes: vec![frequency, enabled, q],
+            bypass_changes: Vec::new(),
+            mapping_issues: Vec::new(),
+        };
+        control.enqueue_patch(&patch).unwrap();
+        let transaction = control.pop_transaction().unwrap();
+        let semantics: Vec<_> = transaction
+            .changes
+            .iter()
+            .map(|change| change.semantic_field.as_str())
+            .collect();
+        assert_eq!(semantics, vec!["enabled", "frequency_hz", "q"]);
     }
 
     #[test]
