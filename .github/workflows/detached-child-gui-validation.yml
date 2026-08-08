@@ -1,0 +1,36 @@
+name: Detached Child GUI Validation
+on:
+  push:
+    branches: [fix/detached-child-gui-hosting]
+
+jobs:
+  validate:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Format working tree
+        run: cargo fmt --all
+      - name: Check workspace
+        run: cargo check --workspace --all-features
+      - name: Clippy workspace
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+      - name: Test focused host crates
+        run: cargo test -p ghost-core -p ghost-host --all-features
+      - name: Upload formatted GUI sources
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: detached-child-gui-formatted-sources
+          path: |
+            crates/ghost-host/src/native.rs
+            crates/ghost-clap-plugin/src/child_window.rs
+          if-no-files-found: error
+          retention-days: 3
