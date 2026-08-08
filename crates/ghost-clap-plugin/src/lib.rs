@@ -119,7 +119,19 @@ impl ghost_ui::HostControl for ClapHostControl {
     ) -> Result<(), String> {
         self.parameter_control
             .enqueue_patch(patch)
-            .map_err(|error| format!("{error:?}"))
+            .map_err(|error| format!("{error:?}"))?;
+
+        // Parameter patches are host-driven editor changes, so request the outer CLAP params
+        // flush explicitly. `request_process()` alone is not sufficient while a DAW is stopped:
+        // some hosts may leave the transaction queued indefinitely until playback resumes.
+        #[cfg(target_os = "windows")]
+        if let Some(params) = self.host.get_extension::<HostParams>() {
+            params.request_flush(&self.host);
+            return Ok(());
+        }
+
+        self.host.request_process();
+        Ok(())
     }
 
     fn drain_parameter_acknowledgements(&self, output: &mut Vec<ghost_host::ParameterAck>) {
