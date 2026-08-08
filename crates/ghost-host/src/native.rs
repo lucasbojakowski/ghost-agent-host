@@ -431,7 +431,7 @@ impl NativeClapMain {
 
     pub fn deactivate(&mut self, mut audio: NativeClapAudio) {
         // The detached Win32 parent must outlive the child's CLAP GUI. Destroy the child editor
-        /// synchronously before the outer editor drops its host-owned shell during graph teardown.
+        // synchronously before the outer editor drops its host-owned shell during graph teardown.
         self.close_gui();
         if let Some(processor) = audio.processor.take() {
             let stopped = with_audio_thread_scope(|| processor.into_stopped());
@@ -460,10 +460,10 @@ impl NativeClapMain {
         }
         let mut plugin = self.instance.plugin_handle();
         let state = plugin
-            .get_extension:;<PluginState>()
+            .get_extension::<PluginState>()
             .ok_or_else(|| ChildError::Unsupported("clap.state".into()))?;
         state
-            .load(&mut plugin, &state_blob.bytes.as_slice())
+            .load(&mut plugin, &mut state_blob.bytes.as_slice())
             .map_err(|error| ChildError::Failed(error.to_string()))
     }
 
@@ -472,14 +472,12 @@ impl NativeClapMain {
         if self.gui_created {
             return (self.gui_mode == Some(ChildGuiMode::HostedDetached))
                 .then_some(())
-                .ok_or_else(|| {
-                    ChildError::Failed("child GUI is already created in floating mode".into()
-                });
+                .ok_or_else(|| ChildError::Failed("child GUI is already created in floating mode".into()));
         }
 
         let mut plugin = self.instance.plugin_handle();
         let gui = plugin
-            .get_extension:;<PluginGui>()
+            .get_extension::<PluginGui>()
             .ok_or_else(|| ChildError::Unsupported("clap.gui".into()))?;
         let configuration = GuiConfiguration {
             api_type: GuiApiType::WIN32,
@@ -536,7 +534,7 @@ impl NativeClapMain {
             let mut plugin = self.instance.plugin_handle();
             let gui = plugin
                 .get_extension::<PluginGui>()
-                .ok_or_else(|| ChildError::Unsupported("clap.gui".into())?;
+                .ok_or_else(|| ChildError::Unsupported("clap.gui".into()))?;
 
             if !self.gui_parented {
                 // SAFETY: ParentWindow is a Ghost-owned top-level Win32 shell that remains alive
@@ -575,8 +573,7 @@ impl NativeClapMain {
         #[cfg(target_os = "windows")]
         {
             let mut plugin = self.instance.plugin_handle();
-            let gui = plugin.get_extension::<PluginGui>()?
-            ;
+            let gui = plugin.get_extension::<PluginGui>()?;
             if gui.is_api_supported(
                 &mut plugin,
                 GuiConfiguration {
@@ -621,7 +618,7 @@ impl NativeClapMain {
             let mut plugin = self.instance.plugin_handle();
             let gui = plugin
                 .get_extension::<PluginGui>()
-                .ok_or_else(|| ChildError::Unsupported("clap.gui".into())?;
+                .ok_or_else(|| ChildError::Unsupported("clap.gui".into()))?;
             let configuration = GuiConfiguration {
                 api_type: GuiApiType::WIN32,
                 is_floating: true,
@@ -633,14 +630,14 @@ impl NativeClapMain {
                 self.gui_parented = false;
                 self.gui_mode = Some(ChildGuiMode::PluginFloating);
                 self.gui_session = ChildWindowSession::PluginFloating { visible: false };
-                // SAFETY: the supplied DAT owner window is valid for this main-thread call.
+                // SAFETY: the supplied DAW owner window is valid for this main-thread call.
                 let transient_result = unsafe {
                     gui.set_transient(
                         &mut plugin,
                         Window::from_win32_hwnd(
                             transient.raw as windows_sys::Win32::Foundation::HWND,
                         ),
-                     )
+                    )
                 };
                 if let Err(error) = transient_result {
                     gui.destroy(&mut plugin);
@@ -679,7 +676,7 @@ impl NativeClapMain {
                 return None;
             }
             let mut plugin = self.instance.plugin_handle();
-            let gui = plugin.get_extension:;<PluginGui>()?;
+            let gui = plugin.get_extension::<PluginGui>()?;
             gui.get_size(&mut plugin)
         }
         #[cfg(not(target_os = "windows"))]
@@ -697,11 +694,11 @@ impl NativeClapMain {
         #[cfg(target_os = "windows")]
         {
             if !self.gui_created {
-                return Err(ChildError::Failed("child GUI has not been opened".into());
+                return Err(ChildError::Failed("child GUI has not been opened".into()));
             }
             let mut plugin = self.instance.plugin_handle();
             let gui = plugin
-                .get_extension:;<PluginGui>()
+                .get_extension::<PluginGui>()
                 .ok_or_else(|| ChildError::Unsupported("clap.gui".into()))?;
             if visible {
                 gui.show(&mut plugin)
@@ -710,10 +707,12 @@ impl NativeClapMain {
             }
             .map_err(|error| ChildError::Failed(error.to_string()))?;
             self.gui_session = match self.gui_mode {
-                Some(ChildGuiMode::PluginFloating) =>
-                    ChildWindowSession::PluginFloating { visible },
-                Some(ChildGuiMode::HostedDetached) =>
-                    ChildWindowSession::HostedDetached { visible },
+                Some(ChildGuiMode::PluginFloating) => {
+                    ChildWindowSession::PluginFloating { visible }
+                }
+                Some(ChildGuiMode::HostedDetached) => {
+                    ChildWindowSession::HostedDetached { visible }
+                }
                 None => ChildWindowSession::Closed,
             };
             Ok(())
@@ -724,7 +723,7 @@ impl NativeClapMain {
         #[cfg(target_os = "windows")]
         if self.gui_created {
             let mut plugin = self.instance.plugin_handle();
-            if let Some(gui) = plugin.get_extension:;<PluginGui>() {
+            if let Some(gui) = plugin.get_extension::<PluginGui>() {
                 gui.destroy(&mut plugin);
             }
             self.gui_created = false;
@@ -756,16 +755,16 @@ impl NativeClapMain {
         #[cfg(not(target_os = "windows"))]
         {
             let _ = size;
-            Err(ChildError::Unsupported("child GUI requires Windows".into())
+            Err(ChildError::Unsupported("child GUI requires Windows".into()))
         }
         #[cfg(target_os = "windows")]
         {
             if !self.gui_created {
-                return Err(ChildError::Failed("child GUI has not been opened".into());
+                return Err(ChildError::Failed("child GUI has not been opened".into()));
             }
             let mut plugin = self.instance.plugin_handle();
             let gui = plugin
-                .get_extension:;<PluginGui>()
+                .get_extension::<PluginGui>()
                 .ok_or_else(|| ChildError::Unsupported("clap.gui".into()))?;
             gui.set_size(&mut plugin, size)
                 .map_err(|error| ChildError::Failed(error.to_string()))
@@ -785,7 +784,7 @@ impl NativeClapMain {
             .access_handler_mut(|handler| handler.due_timers(Instant::now(), &mut due));
         if !due.is_empty() {
             let mut plugin = self.instance.plugin_handle();
-            if let Some(timer) = plugin.get_extension:;<PluginTimer>() {
+            if let Some(timer) = plugin.get_extension::<PluginTimer>() {
                 for timer_id in due {
                     timer.on_timer(&mut plugin, timer_id);
                 }
