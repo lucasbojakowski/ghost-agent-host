@@ -59,6 +59,13 @@ codegen-units = 1
 panic = "abort"
 strip = "symbols"
 
+# Optimized Windows/DAW diagnostic profile. Keeps native symbols/PDBs so vendor-plugin
+# access violations can be symbolized without changing the release panic/lifetime model.
+[profile.release-debug]
+inherits = "release"
+debug = 2
+strip = "none"
+
 [profile.dev]
 opt-level = 1
 
