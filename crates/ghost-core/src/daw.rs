@@ -24,6 +24,12 @@ const HAS_TEMPO_INCREMENT: u32 = 1 << 9;
 const HAS_LOOP_BEATS: u32 = 1 << 10;
 const HAS_LOOP_SECONDS: u32 = 1 << 11;
 
+const MAX_CAPTURE_PRE_ROLL_FRAMES: usize = 38_400;
+const DEFAULT_TRIGGER_DBFS: f32 = -50.0;
+const DEFAULT_TRIGGER_PERSISTENCE_BLOCKS: u32 = 2;
+const DEFAULT_PRE_ROLL_MS: u32 = 75;
+const PEAK_GUARD_ABOVE_RMS_DB: f32 = 8.0;
+
 #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq)]
 pub struct DawTransportSnapshot {
     pub steady_sample_time: Option<u64>,
@@ -286,6 +292,23 @@ pub enum RealtimeCaptureState {
     Complete,
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
+pub struct CaptureTriggerConfig {
+    pub threshold_dbfs: f32,
+    pub persistence_blocks: u32,
+    pub pre_roll_ms: u32,
+}
+
+impl Default for CaptureTriggerConfig {
+    fn default() -> Self {
+        Self {
+            threshold_dbfs: DEFAULT_TRIGGER_DBFS,
+            persistence_blocks: DEFAULT_TRIGGER_PERSISTENCE_BLOCKS,
+            pre_roll_ms: DEFAULT_PRE_ROLL_MS,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct DawCaptureSnapshot {
     pub input: AudioBuffer,
@@ -295,7 +318,8 @@ pub struct DawCaptureSnapshot {
 }
 
 /// Fixed-capacity stereo recorder shared by one UI/control producer and one audio-thread producer.
-/// Samples use atomics so cancellation/re-arming can never race with snapshot reads.
+/// Samples use atomics so cancellation/re-arming can never race with snapshot reads. While armed,
+/// a bounded ring retains pre-roll and a realtime-safe RMS/peak detector waits for actual signal.
 pub struct RealtimeCaptureBuffer {
     capacity_frames: usize,
     state: AtomicU8,
@@ -304,6 +328,18 @@ pub struct RealtimeCaptureBuffer {
     sample_rate: AtomicU32,
     tap_key: AtomicU64,
     captured_tap_key: AtomicU64,
+    trigger_threshold_dbfs: AtomicU32,
+    trigger_persistence_blocks: AtomicU32,
+    trigger_blocks_seen: AtomicU32,
+    pre_roll_ms: AtomicU32,
+    pre_roll_write_index: AtomicUsize,
+    pre_roll_filled: AtomicUsize,
+    captured_pre_roll_frames: AtomicUsize,
+    captured_pre_roll_end: AtomicUsize,
+    pre_input_left: Vec<AtomicU32>,
+    pre_input_right: Vec<AtomicU32>,
+    pre_output_left: Vec<AtomicU32>,
+    pre_output_right: Vec<AtomicU32>,
     input_left: Vec<AtomicU32>,
     input_right: Vec<AtomicU32>,
     output_left: Vec<AtomicU32>,
@@ -313,6 +349,12 @@ pub struct RealtimeCaptureBuffer {
 impl RealtimeCaptureBuffer {
     pub fn new(capacity_frames: usize) -> Self {
         let channel = || (0..capacity_frames).map(|_| AtomicU32::new(0)).collect();
+        let pre_roll_channel = || {
+            (0..MAX_CAPTURE_PRE_ROLL_FRAMES)
+                .map(|_| AtomicU32::new(0))
+                .collect()
+        };
+        let trigger = CaptureTriggerConfig::default();
         Self {
             capacity_frames,
             state: AtomicU8::new(IDLE),
@@ -321,6 +363,18 @@ impl RealtimeCaptureBuffer {
             sample_rate: AtomicU32::new(0),
             tap_key: AtomicU64::new(capture_tap_key("output")),
             captured_tap_key: AtomicU64::new(capture_tap_key("output")),
+            trigger_threshold_dbfs: AtomicU32::new(trigger.threshold_dbfs.to_bits()),
+            trigger_persistence_blocks: AtomicU32::new(trigger.persistence_blocks),
+            trigger_blocks_seen: AtomicU32::new(0),
+            pre_roll_ms: AtomicU32::new(trigger.pre_roll_ms),
+            pre_roll_write_index: AtomicUsize::new(0),
+            pre_roll_filled: AtomicUsize::new(0),
+            captured_pre_roll_frames: AtomicUsize::new(0),
+            captured_pre_roll_end: AtomicUsize::new(0),
+            pre_input_left: pre_roll_channel(),
+            pre_input_right: pre_roll_channel(),
+            pre_output_left: pre_roll_channel(),
+            pre_output_right: pre_roll_channel(),
             input_left: channel(),
             input_right: channel(),
             output_left: channel(),
@@ -348,6 +402,32 @@ impl RealtimeCaptureBuffer {
         )
     }
 
+    pub fn trigger_config(&self) -> CaptureTriggerConfig {
+        CaptureTriggerConfig {
+            threshold_dbfs: f32::from_bits(self.trigger_threshold_dbfs.load(Ordering::Acquire)),
+            persistence_blocks: self.trigger_persistence_blocks.load(Ordering::Acquire),
+            pre_roll_ms: self.pre_roll_ms.load(Ordering::Acquire),
+        }
+    }
+
+    pub fn configure_trigger(&self, config: CaptureTriggerConfig) -> bool {
+        if !config.threshold_dbfs.is_finite()
+            || config.threshold_dbfs > 0.0
+            || config.threshold_dbfs < -120.0
+            || config.persistence_blocks == 0
+            || config.pre_roll_ms > 500
+            || matches!(self.state(), RealtimeCaptureState::Recording)
+        {
+            return false;
+        }
+        self.trigger_threshold_dbfs
+            .store(config.threshold_dbfs.to_bits(), Ordering::Release);
+        self.trigger_persistence_blocks
+            .store(config.persistence_blocks, Ordering::Release);
+        self.pre_roll_ms.store(config.pre_roll_ms, Ordering::Release);
+        true
+    }
+
     pub fn arm(&self, frames: usize, sample_rate: u32) -> bool {
         self.arm_tap(frames, sample_rate, "output")
     }
@@ -364,6 +444,11 @@ impl RealtimeCaptureBuffer {
             .store(capture_tap_key(tap_id), Ordering::Release);
         self.target_frames.store(frames, Ordering::Release);
         self.written_frames.store(0, Ordering::Release);
+        self.trigger_blocks_seen.store(0, Ordering::Release);
+        self.pre_roll_write_index.store(0, Ordering::Release);
+        self.pre_roll_filled.store(0, Ordering::Release);
+        self.captured_pre_roll_frames.store(0, Ordering::Release);
+        self.captured_pre_roll_end.store(0, Ordering::Release);
         self.state.store(ARMED, Ordering::Release);
         true
     }
@@ -375,6 +460,8 @@ impl RealtimeCaptureBuffer {
     pub fn cancel(&self) {
         self.state.store(IDLE, Ordering::Release);
         self.written_frames.store(0, Ordering::Release);
+        self.trigger_blocks_seen.store(0, Ordering::Release);
+        self.pre_roll_filled.store(0, Ordering::Release);
     }
 
     /// Copies at most the armed remainder. It performs no allocation, locking, or blocking.
@@ -402,39 +489,140 @@ impl RealtimeCaptureBuffer {
         output_right: &[f32],
         actual_tap_key: u64,
     ) {
-        let state = self.state.load(Ordering::Acquire);
-        if state == ARMED {
-            let _ =
-                self.state
-                    .compare_exchange(ARMED, RECORDING, Ordering::AcqRel, Ordering::Acquire);
-        } else if state != RECORDING {
+        let frames = input_left
+            .len()
+            .min(input_right.len())
+            .min(output_left.len())
+            .min(output_right.len());
+        if frames == 0 {
             return;
         }
-        if self.state.load(Ordering::Acquire) != RECORDING {
-            return;
+
+        match self.state.load(Ordering::Acquire) {
+            ARMED => {
+                self.push_pre_roll(
+                    input_left,
+                    input_right,
+                    output_left,
+                    output_right,
+                    frames,
+                );
+                if !self.signal_triggered(output_left, output_right, frames) {
+                    return;
+                }
+                self.captured_tap_key
+                    .store(actual_tap_key, Ordering::Release);
+                let target = self.target_frames.load(Ordering::Acquire);
+                let pre_roll = self
+                    .pre_roll_filled
+                    .load(Ordering::Acquire)
+                    .min(self.configured_pre_roll_frames())
+                    .min(target);
+                self.captured_pre_roll_frames
+                    .store(pre_roll, Ordering::Release);
+                self.captured_pre_roll_end.store(
+                    self.pre_roll_write_index.load(Ordering::Acquire),
+                    Ordering::Release,
+                );
+                self.written_frames.store(pre_roll, Ordering::Release);
+                if pre_roll >= target {
+                    self.state.store(COMPLETE, Ordering::Release);
+                } else {
+                    self.state.store(RECORDING, Ordering::Release);
+                }
+                return;
+            }
+            RECORDING => {}
+            _ => return,
         }
+
         self.captured_tap_key
             .store(actual_tap_key, Ordering::Release);
         let written = self.written_frames.load(Ordering::Relaxed);
         let target = self.target_frames.load(Ordering::Acquire);
-        let frames = target
+        let pre_roll = self.captured_pre_roll_frames.load(Ordering::Acquire);
+        let copy_frames = target
             .saturating_sub(written)
-            .min(input_left.len())
-            .min(input_right.len())
-            .min(output_left.len())
-            .min(output_right.len());
-        for offset in 0..frames {
-            let index = written + offset;
+            .min(frames)
+            .min(self.capacity_frames.saturating_sub(written.saturating_sub(pre_roll)));
+        let post_start = written.saturating_sub(pre_roll);
+        for offset in 0..copy_frames {
+            let index = post_start + offset;
             self.input_left[index].store(input_left[offset].to_bits(), Ordering::Relaxed);
             self.input_right[index].store(input_right[offset].to_bits(), Ordering::Relaxed);
             self.output_left[index].store(output_left[offset].to_bits(), Ordering::Relaxed);
             self.output_right[index].store(output_right[offset].to_bits(), Ordering::Relaxed);
         }
-        let total = written + frames;
+        let total = written + copy_frames;
         self.written_frames.store(total, Ordering::Release);
         if total >= target {
             self.state.store(COMPLETE, Ordering::Release);
         }
+    }
+
+    fn configured_pre_roll_frames(&self) -> usize {
+        let sample_rate = self.sample_rate.load(Ordering::Acquire) as usize;
+        let milliseconds = self.pre_roll_ms.load(Ordering::Acquire) as usize;
+        sample_rate
+            .saturating_mul(milliseconds)
+            .saturating_div(1_000)
+            .min(MAX_CAPTURE_PRE_ROLL_FRAMES)
+    }
+
+    fn push_pre_roll(
+        &self,
+        input_left: &[f32],
+        input_right: &[f32],
+        output_left: &[f32],
+        output_right: &[f32],
+        frames: usize,
+    ) {
+        let configured = self.configured_pre_roll_frames();
+        if configured == 0 {
+            return;
+        }
+        let mut write = self.pre_roll_write_index.load(Ordering::Relaxed) % configured;
+        for offset in 0..frames {
+            self.pre_input_left[write].store(input_left[offset].to_bits(), Ordering::Relaxed);
+            self.pre_input_right[write].store(input_right[offset].to_bits(), Ordering::Relaxed);
+            self.pre_output_left[write].store(output_left[offset].to_bits(), Ordering::Relaxed);
+            self.pre_output_right[write].store(output_right[offset].to_bits(), Ordering::Relaxed);
+            write += 1;
+            if write == configured {
+                write = 0;
+            }
+        }
+        let filled = self
+            .pre_roll_filled
+            .load(Ordering::Relaxed)
+            .saturating_add(frames)
+            .min(configured);
+        self.pre_roll_filled.store(filled, Ordering::Release);
+        self.pre_roll_write_index.store(write, Ordering::Release);
+    }
+
+    fn signal_triggered(&self, left: &[f32], right: &[f32], frames: usize) -> bool {
+        let mut sum_squares = 0.0_f64;
+        let mut peak = 0.0_f32;
+        for index in 0..frames {
+            let left_sample = left[index];
+            let right_sample = right[index];
+            sum_squares += f64::from(left_sample) * f64::from(left_sample)
+                + f64::from(right_sample) * f64::from(right_sample);
+            peak = peak.max(left_sample.abs()).max(right_sample.abs());
+        }
+        let rms = (sum_squares / (frames as f64 * 2.0)).sqrt() as f32;
+        let threshold_db = f32::from_bits(self.trigger_threshold_dbfs.load(Ordering::Acquire));
+        let threshold = 10.0_f32.powf(threshold_db / 20.0);
+        let peak_guard = 10.0_f32.powf((threshold_db + PEAK_GUARD_ABOVE_RMS_DB) / 20.0);
+        let candidate = rms >= threshold || peak >= peak_guard;
+        let seen = if candidate {
+            self.trigger_blocks_seen.fetch_add(1, Ordering::AcqRel) + 1
+        } else {
+            self.trigger_blocks_seen.store(0, Ordering::Release);
+            0
+        };
+        seen >= self.trigger_persistence_blocks.load(Ordering::Acquire)
     }
 
     pub fn snapshot(&self, transport: DawTransportSnapshot) -> Option<DawCaptureSnapshot> {
@@ -443,20 +631,44 @@ impl RealtimeCaptureBuffer {
         }
         let frames = self.written_frames.load(Ordering::Acquire);
         let sample_rate = self.sample_rate.load(Ordering::Acquire);
-        let read = |source: &[AtomicU32]| {
-            source[..frames]
-                .iter()
-                .map(|sample| f32::from_bits(sample.load(Ordering::Relaxed)))
-                .collect()
+        let pre_roll = self
+            .captured_pre_roll_frames
+            .load(Ordering::Acquire)
+            .min(frames);
+        let pre_end = self.captured_pre_roll_end.load(Ordering::Acquire);
+        let configured = self.configured_pre_roll_frames().max(1);
+        let post_frames = frames.saturating_sub(pre_roll);
+
+        let read = |pre_source: &[AtomicU32], source: &[AtomicU32]| {
+            let mut samples = Vec::with_capacity(frames);
+            if pre_roll > 0 {
+                let start = (pre_end + configured - (pre_roll % configured)) % configured;
+                for offset in 0..pre_roll {
+                    let index = (start + offset) % configured;
+                    samples.push(f32::from_bits(pre_source[index].load(Ordering::Relaxed)));
+                }
+            }
+            samples.extend(
+                source[..post_frames]
+                    .iter()
+                    .map(|sample| f32::from_bits(sample.load(Ordering::Relaxed))),
+            );
+            samples
         };
         Some(DawCaptureSnapshot {
             input: AudioBuffer {
                 sample_rate,
-                channels: vec![read(&self.input_left), read(&self.input_right)],
+                channels: vec![
+                    read(&self.pre_input_left, &self.input_left),
+                    read(&self.pre_input_right, &self.input_right),
+                ],
             },
             output: AudioBuffer {
                 sample_rate,
-                channels: vec![read(&self.output_left), read(&self.output_right)],
+                channels: vec![
+                    read(&self.pre_output_left, &self.output_left),
+                    read(&self.pre_output_right, &self.output_right),
+                ],
             },
             transport,
             tap_key: self.captured_tap_key.load(Ordering::Acquire),
@@ -514,11 +726,19 @@ mod tests {
     }
 
     #[test]
-    fn records_bounded_input_and_output_without_start_call() {
+    fn capture_waits_for_signal_and_includes_preroll() {
         let capture = RealtimeCaptureBuffer::new(8);
+        assert!(capture.configure_trigger(CaptureTriggerConfig {
+            threshold_dbfs: -40.0,
+            persistence_blocks: 1,
+            pre_roll_ms: 100,
+        }));
         assert!(capture.arm(3, 48_000));
+        capture.push_stereo(&[0.0, 0.0], &[0.0, 0.0], &[0.0, 0.0], &[0.0, 0.0]);
+        assert_eq!(capture.state(), RealtimeCaptureState::Armed);
         capture.push_stereo(&[0.1, 0.2], &[0.3, 0.4], &[0.5, 0.6], &[0.7, 0.8]);
-        capture.push_stereo(&[0.9, 1.0], &[0.8, 0.7], &[0.6, 0.5], &[0.4, 0.3]);
+        assert_eq!(capture.state(), RealtimeCaptureState::Recording);
+        capture.push_stereo(&[0.9], &[0.8], &[0.6], &[0.4]);
         assert_eq!(capture.state(), RealtimeCaptureState::Complete);
         let snapshot = capture.snapshot(DawTransportSnapshot::default()).unwrap();
         assert_eq!(snapshot.input.channels[0], vec![0.1, 0.2, 0.9]);
