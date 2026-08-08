@@ -6,17 +6,15 @@ use std::io;
 use clack_extensions::gui::GuiSize;
 use windows_sys::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
 use windows_sys::Win32::System::Threading::GetCurrentThreadId;
-use windows_sys::Win32::UI::Input::KeyboardAndMouse::{
-    GetKeyState, VK_CONTROL, VK_MENU, VK_SHIFT,
-};
+use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetKeyState, VK_CONTROL, VK_MENU, VK_SHIFT};
 use windows_sys::Win32::UI::WindowsAndMessaging::{
     AdjustWindowRectEx, CallNextHookEx, CreateWindowExW, DefWindowProcW, DestroyWindow,
     GetActiveWindow, GetAncestor, GetForegroundWindow, IsChild, IsIconic, IsWindow, PostMessageW,
-    SetWindowLongPtrW, SetWindowPos, SetWindowsHookExW, ShowWindow, UnhookWindowsHookEx, GA_ROOT,
-    GWLP_WNDPROC, HHOOK, MSG, PM_REMOVE, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOZORDER, SW_HIDE,
-    SW_RESTORE, SW_SHOW, WH_GETMESSAGE, WM_CLOSE, WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN,
-    WM_SYSKEYUP, WS_CAPTION, WS_CLIPCHILDREN, WS_EX_TOOLWINDOW, WS_MINIMIZEBOX, WS_OVERLAPPED,
-    WS_SYSMENU, CW_USEDEFAULT,
+    SetWindowLongPtrW, SetWindowPos, SetWindowsHookExW, ShowWindow, UnhookWindowsHookEx,
+    CW_USEDEFAULT, GA_ROOT, GWLP_WNDPROC, HHOOK, MSG, PM_REMOVE, SWP_NOACTIVATE, SWP_NOMOVE,
+    SWP_NOZORDER, SW_HIDE, SW_RESTORE, SW_SHOW, WH_GETMESSAGE, WM_CLOSE, WM_KEYDOWN, WM_KEYUP,
+    WM_SYSKEYDOWN, WM_SYSKEYUP, WS_CAPTION, WS_CLIPCHILDREN, WS_EX_TOOLWINDOW, WS_MINIMIZEBOX,
+    WS_OVERLAPPED, WS_SYSMENU,
 };
 
 const CHILD_WINDOW_STYLE: u32 =
@@ -199,7 +197,11 @@ fn daw_owner_window() -> HWND {
             return std::ptr::null_mut();
         }
         let root = GetAncestor(candidate, GA_ROOT);
-        if root.is_null() { candidate } else { root }
+        if root.is_null() {
+            candidate
+        } else {
+            root
+        }
     }
 }
 
@@ -292,9 +294,7 @@ fn should_bridge_shortcut(message: &MSG) -> bool {
     }
     // Ctrl/Alt chords are overwhelmingly host commands in DAWs. Mirror them to the owner while
     // still dispatching the original to the child. Plain alphanumeric typing stays child-only.
-    unsafe {
-        key_is_down(VK_CONTROL as i32) || key_is_down(VK_MENU as i32)
-    }
+    unsafe { key_is_down(VK_CONTROL as i32) || key_is_down(VK_MENU as i32) }
 }
 
 unsafe fn key_is_down(key: i32) -> bool {

@@ -265,7 +265,14 @@ fn compile_eq_band(
     let q = Field::required("q", &["q", "quality", "band q"], settings.q, None);
     let enabled = Field::optional(
         "enabled",
-        &["enabled", "enable", "used", "active", "band enabled", "band used"],
+        &[
+            "enabled",
+            "enable",
+            "used",
+            "active",
+            "band enabled",
+            "band used",
+        ],
         if settings.enabled { 1.0 } else { 0.0 },
         None,
     );
@@ -730,7 +737,9 @@ mod tests {
     use std::path::PathBuf;
 
     use ghost_host::{EditableGraph, GraphNodeSpec};
-    use ghost_mix::{CompressorOperation, DynamicEqSettings, EqBandOperation, EqShape, MixOperation};
+    use ghost_mix::{
+        CompressorOperation, DynamicEqSettings, EqBandOperation, EqShape, MixOperation,
+    };
 
     use super::*;
 
@@ -890,7 +899,11 @@ mod tests {
             cautions: Vec::new(),
         };
         let preview = compile_preview(plan, &state, &BTreeMap::new());
-        assert!(preview.patch.can_apply(), "{:?}", preview.patch.mapping_issues);
+        assert!(
+            preview.patch.can_apply(),
+            "{:?}",
+            preview.patch.mapping_issues
+        );
         let ids: Vec<_> = preview
             .patch
             .parameter_changes
@@ -918,13 +931,7 @@ mod tests {
                         parameter("101", "Band 1 Frequency", "Hz", 20.0, 20_000.0),
                         parameter("102", "Band 1 Gain", "dB", -24.0, 24.0),
                         parameter("103", "Band 1 Q", "", 0.1, 20.0),
-                        stepped_parameter(
-                            "104",
-                            "Band 1 Used",
-                            0.0,
-                            1.0,
-                            &[('O', 0.0)],
-                        ),
+                        stepped_parameter("104", "Band 1 Used", 0.0, 1.0, &[('O', 0.0)]),
                         labelled_shape_parameter("105", "Band 1 Shape"),
                     ],
                     state: None,
@@ -943,12 +950,20 @@ mod tests {
             cautions: Vec::new(),
         };
         let preview = compile_preview(plan, &state, &BTreeMap::new());
-        assert!(preview.patch.can_apply(), "{:?}", preview.patch.mapping_issues);
+        assert!(
+            preview.patch.can_apply(),
+            "{:?}",
+            preview.patch.mapping_issues
+        );
         assert!(preview.patch.parameter_changes.iter().any(|change| {
-            change.parameter_id == "104" && change.semantic_field == "enabled" && change.plain_value == 1.0
+            change.parameter_id == "104"
+                && change.semantic_field == "enabled"
+                && change.plain_value == 1.0
         }));
         assert!(preview.patch.parameter_changes.iter().any(|change| {
-            change.parameter_id == "105" && change.semantic_field == "shape" && change.plain_value == 1.0
+            change.parameter_id == "105"
+                && change.semantic_field == "shape"
+                && change.plain_value == 1.0
         }));
     }
 
