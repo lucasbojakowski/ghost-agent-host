@@ -18,17 +18,13 @@ impl MixingAgent for MockMixingAgent {
 fn validation_plan() -> MixPlan {
     // This backend is intentionally not an analysis simulation. It is a deterministic child-host
     // fixture used to prove that a semantic proposal can compile into public child parameters and
-    // be applied through the CLAP host.
-    //
-    // Pro-Q 4 currently exposes its frequency parameter plain-value domain as roughly
-    // 3.322..14.873 and Q as 0.0..1.0, even though Ghost's fields are semantic Hz/Q values. Until
-    // the semantic mapper converts display-domain values into each plugin's CLAP plain domain, keep
-    // this fixture entirely inside the observed Pro-Q ranges. The resulting bands are intentionally
-    // just a visible parameter-editing test, not musically meaningful settings.
+    // be applied through the CLAP host. Values are deliberately expressed in the same display
+    // domain a mixer sees: Hz, dB and Q. The native child adapter is responsible for translating
+    // those semantic values into a plugin's CLAP wire-value domain.
     let bands = [
-        ("mock-band-1", 10.0, -3.0, 0.25),
-        ("mock-band-2", 12.0, 2.5, 0.55),
-        ("mock-band-3", 14.0, -1.5, 0.85),
+        ("mock-band-1", 250.0, -3.0, 0.70),
+        ("mock-band-2", 2_500.0, 2.5, 1.20),
+        ("mock-band-3", 8_000.0, -1.5, 2.00),
     ];
 
     let operations = bands
@@ -78,7 +74,10 @@ mod tests {
         validate_mix_plan(&plan).unwrap();
         assert_eq!(plan.operations.len(), 3);
 
-        for operation in plan.operations {
+        let expected = [(250.0, 0.70), (2_500.0, 1.20), (8_000.0, 2.00)];
+        for (operation, (expected_frequency, expected_q)) in
+            plan.operations.into_iter().zip(expected)
+        {
             let MixOperation::EqBand { settings } = operation else {
                 panic!("mock validation fixture must contain EQ operations only");
             };
@@ -86,7 +85,8 @@ mod tests {
             assert!(settings.dynamic.is_none());
             assert_eq!(settings.channel_mode, "stereo");
             assert_eq!(settings.shape, EqShape::Bell);
-            assert!((0.0..=1.0).contains(&settings.q));
+            assert_eq!(settings.frequency_hz, expected_frequency);
+            assert_eq!(settings.q, expected_q);
         }
     }
 }
