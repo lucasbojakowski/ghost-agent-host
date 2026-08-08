@@ -10,5 +10,7 @@ rust-version.workspace = true
 egui.workspace = true
 ghost-codex = { path = "../ghost-codex" }
 ghost-core = { path = "../ghost-core" }
-ghost-host = { path = "../ghost-host" }
+ghost-mix = { path = "../ghost-mix" }
+ghost-host = { path = "../ghost-host", features = ["clack-runtime"] }
+serde.workspace = true
 serde_json.workspace = true

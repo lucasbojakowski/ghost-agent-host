@@ -1,16 +1,22 @@
 use std::fs;
+use std::io::{BufRead, BufReader, Write};
+use std::net::TcpStream;
 use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
+use ghost_application::{analyze_path, NoProgress};
 use ghost_codex::{CodexAppServerAgent, MixingAgent, MockMixingAgent};
-use ghost_core::prompt::PluginCapabilitySummary;
 use ghost_core::{
-    analyze_audio, build_prompt_bundle, read_wav, validate_mix_plan, write_wav_f32,
-    AnalysisConfig, MixPlan, UserIntent,
+    analyze_audio, read_audio, write_wav_f32, AnalysisConfig, RequestEnvelope, UserIntent,
+    PROTOCOL_VERSION,
 };
 use ghost_db::GhostDatabase;
-use ghost_host::{HostedChain, MockFabFilterChain};
+use ghost_host::{
+    default_clap_directories, discover_clap_files, AudioBlock, HostedChain, MockFabFilterChain,
+    NativeClapSession, ProcessConfig,
+};
+use ghost_mix::{build_prompt_bundle, validate_mix_plan, MixPlan, PluginCapabilitySummary};
 use schemars::schema_for;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -67,6 +73,40 @@ enum Command {
         database: PathBuf,
         #[arg(long, default_value = ".ghost/artifacts")]
         artifact_root: PathBuf,
+    },
+    Plugins {
+        /// Search root. Uses Windows CLAP defaults and CLAP_PATH when omitted.
+        #[arg(long = "path")]
+        paths: Vec<PathBuf>,
+    },
+    /// Instantiate and process a native child without an agent or DAW.
+    NativeSmoke {
+        #[arg(long)]
+        path: PathBuf,
+        #[arg(long)]
+        plugin_id: String,
+        #[arg(long)]
+        parameter_id: Option<String>,
+        #[arg(long)]
+        parameter_value: Option<f64>,
+    },
+    ClapGuiSmoke {
+        #[arg(long)]
+        path: PathBuf,
+        #[arg(long)]
+        plugin_id: String,
+    },
+    ClapAudioSmoke {
+        #[arg(long)]
+        path: PathBuf,
+        #[arg(long)]
+        plugin_id: String,
+        #[arg(long)]
+        state_json: Option<String>,
+    },
+    DaemonHealth {
+        #[arg(long, default_value = "127.0.0.1:47644")]
+        address: String,
     },
 }
 
@@ -132,10 +172,9 @@ fn main() -> Result<()> {
             analysis_config,
             output,
         } => {
-            let audio = read_wav(&input)
-                .with_context(|| format!("failed to read {}", input.display()))?;
             let config = resolve_analysis_config(profile, analysis_config.as_deref())?;
-            let analysis = analyze_audio(input.display().to_string(), &audio, &config)?;
+            let analysis = analyze_path(&input, &config, &NoProgress)
+                .with_context(|| format!("failed to analyze {}", input.display()))?;
             let encoded = serde_json::to_string_pretty(&analysis)?;
             if let Some(output) = output {
                 ensure_parent(&output)?;
@@ -179,10 +218,115 @@ fn main() -> Result<()> {
             let database = GhostDatabase::open(database, artifact_root)?;
             println!("{}", serde_json::to_string_pretty(&database.counts()?)?);
         }
+        Command::Plugins { paths } => {
+            let roots = if paths.is_empty() {
+                default_clap_directories()
+            } else {
+                paths
+            };
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&serde_json::json!({
+                    "roots": roots,
+                    "plugins": discover_clap_files(&roots),
+                }))?
+            );
+        }
+        Command::NativeSmoke {
+            path,
+            plugin_id,
+            parameter_id,
+            parameter_value,
+        } => native_smoke(&path, &plugin_id, parameter_id.as_deref(), parameter_value)?,
+        Command::ClapGuiSmoke { path, plugin_id } => {
+            let size = ghost_host::clack_runtime::smoke_test_clap_gui_id(path, &plugin_id)
+                .map_err(|error| anyhow::anyhow!(error.to_string()))?;
+            println!("embedded GUI {}×{} passed", size.0, size.1);
+        }
+        Command::ClapAudioSmoke {
+            path,
+            plugin_id,
+            state_json,
+        } => {
+            let state = state_json.as_deref().map(str::as_bytes);
+            let result = ghost_host::clack_runtime::smoke_test_clap_audio(path, &plugin_id, state)
+                .map_err(|error| anyhow::anyhow!(error.to_string()))?;
+            println!("{}", serde_json::to_string(&result)?);
+        }
+        Command::DaemonHealth { address } => daemon_health(&address)?,
     }
     Ok(())
 }
 
+fn native_smoke(
+    path: &Path,
+    plugin_id: &str,
+    parameter_id: Option<&str>,
+    parameter_value: Option<f64>,
+) -> Result<()> {
+    let config = ProcessConfig {
+        sample_rate: 48_000,
+        maximum_frames: 64,
+        channels: 2,
+    };
+    let mut session = NativeClapSession::open(path, plugin_id, config)
+        .map_err(|error| anyhow::anyhow!(error.to_string()))?;
+    if let (Some(id), Some(value)) = (parameter_id, parameter_value) {
+        session
+            .set_parameter_plain(id, value)
+            .map_err(|error| anyhow::anyhow!(error.to_string()))?;
+        session
+            .flush_parameter_events()
+            .map_err(|error| anyhow::anyhow!(error.to_string()))?;
+    }
+    let mut left = [0.25_f32; 64];
+    let mut right = [-0.25_f32; 64];
+    let mut channels: [&mut [f32]; 2] = [&mut left, &mut right];
+    session
+        .process(&mut AudioBlock {
+            channels: &mut channels,
+            frames: 64,
+        })
+        .map_err(|error| anyhow::anyhow!(error.to_string()))?;
+    let saved = session
+        .save_state()
+        .map_err(|error| anyhow::anyhow!(error.to_string()))?;
+    session
+        .load_state(&saved)
+        .map_err(|error| anyhow::anyhow!(error.to_string()))?;
+    println!(
+        "{}",
+        serde_json::json!({
+            "plugin": session.descriptor().name,
+            "parameters": session.descriptor().parameters.len(),
+            "state_bytes": saved.bytes.len(),
+            "first_output": [left[0], right[0]],
+        })
+    );
+    Ok(())
+}
+
+fn daemon_health(address: &str) -> Result<()> {
+    let mut stream = TcpStream::connect(address)
+        .with_context(|| format!("failed to connect to daemon at {address}"))?;
+    let request = RequestEnvelope {
+        protocol: PROTOCOL_VERSION.into(),
+        request_id: Uuid::new_v4(),
+        operation: "health".into(),
+        payload: serde_json::Value::Null,
+    };
+    serde_json::to_writer(&mut stream, &request)?;
+    stream.write_all(b"\n")?;
+    stream.flush()?;
+    let mut response = String::new();
+    BufReader::new(stream).read_line(&mut response)?;
+    let value: serde_json::Value = serde_json::from_str(&response)?;
+    if value["request_id"] != serde_json::json!(request.request_id) {
+        anyhow::bail!("daemon returned a mismatched request id");
+    }
+    println!("{}", serde_json::to_string_pretty(&value)?);
+    Ok(())
+}
 
 fn resolve_analysis_config(profile: ProfileArg, path: Option<&Path>) -> Result<AnalysisConfig> {
     let mut config = if let Some(path) = path {
@@ -215,7 +359,7 @@ fn run_demo(
 ) -> Result<()> {
     fs::create_dir_all(output_dir)?;
     let database = GhostDatabase::open(database_path, artifact_root)?;
-    let audio = read_wav(fixture)?;
+    let audio = read_audio(fixture)?;
     let source_analysis = analyze_audio(fixture.display().to_string(), &audio, &config)?;
     let analysis_run_id = database.store_analysis(&source_analysis)?;
     let system_prompt = fs::read_to_string("prompts/system.md")
@@ -233,6 +377,7 @@ fn run_demo(
                 "channel placement".into(),
             ],
             safety_notes: vec!["Never invent raw parameter IDs.".into()],
+            public_parameters: Vec::new(),
         },
         PluginCapabilitySummary {
             plugin: "FabFilter Pro-C 3".into(),
@@ -243,9 +388,15 @@ fn run_demo(
                 "range/mix/output".into(),
             ],
             safety_notes: vec!["Style names require runtime manifest validation.".into()],
+            public_parameters: Vec::new(),
         },
     ];
-    let prompt_bundle = build_prompt_bundle(system_prompt, intent.clone(), &source_analysis, &capabilities)?;
+    let prompt_bundle = build_prompt_bundle(
+        system_prompt,
+        intent.clone(),
+        &source_analysis,
+        &capabilities,
+    )?;
     let request_id = database.store_mix_request(analysis_run_id, &intent, &prompt_bundle)?;
 
     let mut agent: Box<dyn MixingAgent> = match agent_kind {
@@ -257,7 +408,12 @@ fn run_demo(
     let plan_text = serde_json::to_string_pretty(&plan)?;
     database.complete_agent_run(agent_run_id, &plan_text)?;
     validate_mix_plan(&plan)?;
-    database.store_mix_plan(agent_run_id, &plan, "valid", serde_json::json!({"ok": true}))?;
+    database.store_mix_plan(
+        agent_run_id,
+        &plan,
+        "valid",
+        serde_json::json!({"ok": true}),
+    )?;
 
     let mut host = MockFabFilterChain::default();
     let processed = host.render(&audio, &plan)?;
@@ -291,7 +447,10 @@ fn run_demo(
         serde_json::to_vec_pretty(&evaluation)?,
     )?;
     write_wav_f32(output_dir.join("processed.wav"), &processed)?;
-    println!("{}", serde_json::to_string_pretty(&evaluation.metric_deltas)?);
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&evaluation.metric_deltas)?
+    );
     Ok(())
 }
 

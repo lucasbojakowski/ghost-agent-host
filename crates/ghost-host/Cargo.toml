@@ -11,9 +11,11 @@ default = []
 clack-runtime = ["dep:clack-host", "dep:clack-extensions"]
 
 [dependencies]
+crossbeam-queue.workspace = true
 clack-host = { workspace = true, optional = true }
-clack-extensions = { workspace = true, optional = true, features = ["clack-host", "gui"] }
+clack-extensions = { workspace = true, optional = true, features = ["audio-ports", "clack-host", "gui", "latency", "log", "params", "state", "thread-check", "timer"] }
 ghost-core = { path = "../ghost-core" }
+ghost-mix = { path = "../ghost-mix" }
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true

@@ -1,7 +1,8 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use ghost_core::{AnalysisBundle, MixPlan, PromptBundle, UserIntent};
+use ghost_core::{AnalysisBundle, UserIntent};
+use ghost_mix::{MixPlan, PromptBundle};
 use rusqlite::{params, Connection, OptionalExtension};
 use serde::Serialize;
 use thiserror::Error;
@@ -25,7 +26,10 @@ pub struct GhostDatabase {
 }
 
 impl GhostDatabase {
-    pub fn open(path: impl AsRef<Path>, artifact_root: impl AsRef<Path>) -> Result<Self, DatabaseError> {
+    pub fn open(
+        path: impl AsRef<Path>,
+        artifact_root: impl AsRef<Path>,
+    ) -> Result<Self, DatabaseError> {
         if let Some(parent) = path.as_ref().parent() {
             fs::create_dir_all(parent)?;
         }
@@ -158,11 +162,7 @@ impl GhostDatabase {
         Ok(id)
     }
 
-    pub fn complete_agent_run(
-        &self,
-        run_id: Uuid,
-        output: &str,
-    ) -> Result<(), DatabaseError> {
+    pub fn complete_agent_run(&self, run_id: Uuid, output: &str) -> Result<(), DatabaseError> {
         self.connection.execute(
             "UPDATE agent_runs SET status='complete', output_text=?2, completed_at=CURRENT_TIMESTAMP WHERE id=?1",
             params![run_id.to_string(), output],
@@ -203,7 +203,9 @@ impl GhostDatabase {
         let shard = &hash[..2];
         let directory = self.artifact_root.join(kind).join(shard);
         fs::create_dir_all(&directory)?;
-        let relative = PathBuf::from(kind).join(shard).join(format!("{hash}.{extension}"));
+        let relative = PathBuf::from(kind)
+            .join(shard)
+            .join(format!("{hash}.{extension}"));
         let target = self.artifact_root.join(&relative);
         if !target.exists() {
             let temporary = target.with_extension(format!("{extension}.tmp"));

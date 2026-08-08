@@ -24,10 +24,7 @@ fn fixture_low_mid_excess_is_detected() {
     let config = AnalysisConfig::high();
     let clean = analyze_audio("clean", &clean_audio, &config).unwrap();
     let muddy = analyze_audio("muddy", &muddy_audio, &config).unwrap();
-    assert!(
-        muddy.signal.spectrum.bands.low_mid_db
-            > clean.signal.spectrum.bands.low_mid_db + 1.0
-    );
+    assert!(muddy.signal.spectrum.bands.low_mid_db > clean.signal.spectrum.bands.low_mid_db + 1.0);
 }
 
 #[test]
@@ -50,8 +47,5 @@ fn fixture_crushing_reduces_crest() {
     let config = AnalysisConfig::high();
     let clean = analyze_audio("clean", &clean_audio, &config).unwrap();
     let crushed = analyze_audio("crushed", &crushed_audio, &config).unwrap();
-    assert!(
-        crushed.signal.loudness.crest_factor_db
-            < clean.signal.loudness.crest_factor_db
-    );
+    assert!(crushed.signal.loudness.crest_factor_db < clean.signal.loudness.crest_factor_db);
 }

@@ -10,9 +10,11 @@ rust-version.workspace = true
 anyhow.workspace = true
 clap.workspace = true
 ghost-codex = { path = "../../crates/ghost-codex" }
+ghost-application = { path = "../../crates/ghost-application" }
 ghost-core = { path = "../../crates/ghost-core" }
+ghost-mix = { path = "../../crates/ghost-mix" }
 ghost-db = { path = "../../crates/ghost-db" }
-ghost-host = { path = "../../crates/ghost-host" }
+ghost-host = { path = "../../crates/ghost-host", features = ["clack-runtime"] }
 schemars.workspace = true
 serde.workspace = true
 serde_json.workspace = true

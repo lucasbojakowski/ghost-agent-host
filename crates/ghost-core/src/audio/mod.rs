@@ -1,6 +1,12 @@
+//! Format-neutral in-memory audio and file adapters.
+
 use std::path::Path;
 
 use thiserror::Error;
+
+mod decoder;
+
+pub use decoder::read_audio;
 
 #[derive(Debug, Error)]
 pub enum AudioError {
@@ -12,6 +18,8 @@ pub enum AudioError {
     NoChannels,
     #[error("channel lengths differ")]
     ChannelLengthMismatch,
+    #[error("media decode error: {0}")]
+    Decode(String),
 }
 
 #[derive(Debug, Clone)]

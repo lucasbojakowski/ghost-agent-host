@@ -1,15 +1,20 @@
 use std::collections::VecDeque;
-use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
-use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
+use std::process::Command;
 
-use ghost_core::{
-    CompressorOperation, DynamicEqSettings, EqBandOperation, EqShape, ExpectedChange, MixOperation,
-    MixPlan, PromptBundle,
-};
-use schemars::schema_for;
+use ghost_mix::{MixPlan, PromptBundle};
 use serde_json::{json, Value};
 use thiserror::Error;
+
+mod mock;
+mod runtime;
+mod tools;
+mod transport;
+
+pub use mock::MockMixingAgent;
+pub use runtime::*;
+pub use tools::*;
+pub use transport::*;
 
 #[derive(Debug, Error)]
 pub enum AgentError {
@@ -26,181 +31,49 @@ pub trait MixingAgent: Send {
     fn propose(&mut self, bundle: &PromptBundle) -> Result<MixPlan, AgentError>;
 }
 
-#[derive(Default)]
-pub struct MockMixingAgent;
-
-impl MixingAgent for MockMixingAgent {
-    fn backend_name(&self) -> &'static str {
-        "mock"
-    }
-
-    fn propose(&mut self, bundle: &PromptBundle) -> Result<MixPlan, AgentError> {
-        let analysis: ghost_core::AnalysisBundle =
-            serde_json::from_str(&bundle.analysis_text_json)?;
-        let signal = &analysis.signal;
-        let mut operations = Vec::new();
-        let mut expected_changes = Vec::new();
-        let bands = &signal.spectrum.bands;
-
-        if bands.low_mid_db > bands.mid_db + 4.0 {
-            operations.push(MixOperation::EqBand {
-                settings: EqBandOperation {
-                    band_id: "agent-low-mid-control".into(),
-                    enabled: true,
-                    shape: EqShape::Bell,
-                    frequency_hz: 260.0,
-                    gain_db: -2.0,
-                    q: 1.05,
-                    slope_db_oct: None,
-                    channel_mode: "stereo".into(),
-                    dynamic: Some(DynamicEqSettings {
-                        enabled: true,
-                        range_db: -1.5,
-                        threshold_db: None,
-                    }),
-                    rationale:
-                        "Reduce persistent low-mid concentration without removing bass weight."
-                            .into(),
-                    evidence: vec![format!(
-                        "low_mid_db={:.2}; mid_db={:.2}",
-                        bands.low_mid_db, bands.mid_db
-                    )],
-                },
-            });
-            expected_changes.push(ExpectedChange {
-                metric: "spectrum.bands.low_mid_db".into(),
-                direction: "decrease".into(),
-                maximum_delta: Some(4.0),
-                unit: Some("dB".into()),
-            });
-        }
-
-        if signal.loudness.crest_factor_db > 12.0 && signal.dynamics.transient_density_hz > 1.0 {
-            operations.push(MixOperation::Compressor {
-                settings: CompressorOperation {
-                    enabled: true,
-                    style: "clean".into(),
-                    threshold_db: -18.0,
-                    ratio: 2.0,
-                    knee_db: 6.0,
-                    attack_ms: 25.0,
-                    release_ms: 140.0,
-                    range_db: 3.0,
-                    mix_percent: 70.0,
-                    output_gain_db: 0.0,
-                    rationale:
-                        "Control event-to-event level variation while preserving initial attack."
-                            .into(),
-                    evidence: vec![format!(
-                        "crest_factor_db={:.2}; transient_density_hz={:.2}",
-                        signal.loudness.crest_factor_db, signal.dynamics.transient_density_hz
-                    )],
-                },
-            });
-            expected_changes.push(ExpectedChange {
-                metric: "loudness.crest_factor_db".into(),
-                direction: "decrease".into(),
-                maximum_delta: Some(3.0),
-                unit: Some("dB".into()),
-            });
-        }
-
-        if let Some(resonance) = signal.spectrum.resonances.first() {
-            if resonance.prominence_db > 7.0 {
-                operations.push(MixOperation::EqBand {
-                    settings: EqBandOperation {
-                        band_id: "agent-resonance-control".into(),
-                        enabled: true,
-                        shape: EqShape::Bell,
-                        frequency_hz: resonance.frequency_hz,
-                        gain_db: -resonance.prominence_db.min(4.5) * 0.55,
-                        q: (1.0 / resonance.bandwidth_octaves.max(0.08)).clamp(1.0, 12.0),
-                        slope_db_oct: None,
-                        channel_mode: "stereo".into(),
-                        dynamic: Some(DynamicEqSettings {
-                            enabled: true,
-                            range_db: -2.0,
-                            threshold_db: None,
-                        }),
-                        rationale:
-                            "Control the most prominent persistent narrow-band concentration."
-                                .into(),
-                        evidence: vec![format!(
-                            "resonance_hz={:.1}; prominence_db={:.2}",
-                            resonance.frequency_hz, resonance.prominence_db
-                        )],
-                    },
-                });
-            }
-        }
-
-        Ok(MixPlan {
-            schema_version: "ghost.mix-plan/1".into(),
-            summary: if operations.is_empty() {
-                "No conservative EQ or compression intervention was justified by the current text evidence."
-                    .into()
-            } else {
-                "Conservative plugin-in-the-loop proposal derived from measured spectral and dynamic evidence."
-                    .into()
-            },
-            confidence: if operations.is_empty() { 0.55 } else { 0.78 },
-            assumptions: vec![
-                "The captured region is representative of the requested source.".into(),
-                "The mock backend approximates, but does not duplicate, FabFilter processing."
-                    .into(),
-            ],
-            operations,
-            expected_changes,
-            cautions: vec!["Verify the result in context and with level-matched A/B.".into()],
-        })
-    }
-}
-
 pub struct CodexAppServerAgent {
-    child: Child,
-    stdin: ChildStdin,
-    stdout: BufReader<ChildStdout>,
+    transport: Box<dyn RpcTransport>,
     next_id: u64,
     thread_id: Option<String>,
     model: String,
     pending_messages: VecDeque<Value>,
+    tools: ToolRegistry,
 }
 
 impl CodexAppServerAgent {
     pub fn spawn(binary: &str, model: impl Into<String>) -> Result<Self, AgentError> {
+        Self::spawn_with_tools(binary, model, ToolRegistry::default())
+    }
+
+    pub fn spawn_with_tools(
+        binary: &str,
+        model: impl Into<String>,
+        tools: ToolRegistry,
+    ) -> Result<Self, AgentError> {
         let binary = resolve_codex_binary(binary)?;
-        let mut child = Command::new(binary)
-            .args(["app-server", "--listen", "stdio://"])
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::inherit())
-            .spawn()?;
-        let stdin = child
-            .stdin
-            .take()
-            .ok_or_else(|| AgentError::Protocol("Codex stdin unavailable".into()))?;
-        let stdout = child
-            .stdout
-            .take()
-            .ok_or_else(|| AgentError::Protocol("Codex stdout unavailable".into()))?;
+        let transport = StdioTransport::spawn(&binary)?;
+        Self::from_transport(Box::new(transport), model, tools)
+    }
+
+    pub fn from_transport(
+        transport: Box<dyn RpcTransport>,
+        model: impl Into<String>,
+        tools: ToolRegistry,
+    ) -> Result<Self, AgentError> {
         let mut agent = Self {
-            child,
-            stdin,
-            stdout: BufReader::new(stdout),
+            transport,
             next_id: 1,
             thread_id: None,
             model: model.into(),
             pending_messages: VecDeque::new(),
+            tools,
         };
         agent.initialize()?;
         Ok(agent)
     }
 
     fn send(&mut self, value: Value) -> Result<(), AgentError> {
-        serde_json::to_writer(&mut self.stdin, &value)?;
-        self.stdin.write_all(b"\n")?;
-        self.stdin.flush()?;
-        Ok(())
+        self.transport.send(&value)
     }
 
     fn request(&mut self, method: &str, params: Value) -> Result<Value, AgentError> {
@@ -222,12 +95,7 @@ impl CodexAppServerAgent {
     }
 
     fn read_wire_message(&mut self) -> Result<Value, AgentError> {
-        let mut line = String::new();
-        let read = self.stdout.read_line(&mut line)?;
-        if read == 0 {
-            return Err(AgentError::Protocol("Codex closed stdout".into()));
-        }
-        Ok(serde_json::from_str(&line)?)
+        self.transport.receive()
     }
 
     fn read_message(&mut self) -> Result<Value, AgentError> {
@@ -247,12 +115,17 @@ impl CodexAppServerAgent {
                     "version": env!("CARGO_PKG_VERSION")
                 },
                 "capabilities": {
-                    "optOutNotificationMethods": ["item/agentMessage/delta"]
+                    "optOutNotificationMethods": ["item/agentMessage/delta"],
+                    "experimentalApi": !self.tools.is_empty()
                 }
             }),
         )?;
         self.send(json!({ "method": "initialized", "params": {} }))?;
-        let result = self.request("thread/start", json!({ "model": self.model.clone() }))?;
+        let mut params = json!({ "model": self.model.clone() });
+        if !self.tools.is_empty() {
+            params["dynamicTools"] = serde_json::to_value(self.tools.definitions())?;
+        }
+        let result = self.request("thread/start", params)?;
         self.thread_id = result
             .pointer("/thread/id")
             .and_then(Value::as_str)
@@ -265,21 +138,41 @@ impl CodexAppServerAgent {
         Ok(())
     }
 
-    fn prompt_text(bundle: &PromptBundle) -> Result<String, AgentError> {
-        Ok(format!(
-            "{}\n\nUSER INTENT:\n{}\n\nANALYSIS JSON:\n{}\n\nPLUGIN CAPABILITIES:\n{}\n\nOUTPUT CONTRACT:\n{}",
-            bundle.system_prompt,
-            serde_json::to_string_pretty(&bundle.user_intent)?,
-            bundle.analysis_text_json,
-            bundle.capability_text_json,
-            bundle.output_contract
-        ))
-    }
-
-    fn output_schema() -> Result<Value, AgentError> {
-        let mut schema = serde_json::to_value(schema_for!(MixPlan))?;
-        normalize_output_schema(&mut schema);
-        Ok(schema)
+    fn handle_tool_request(&mut self, message: &Value) -> Result<bool, AgentError> {
+        if message.get("method").and_then(Value::as_str) != Some("item/tool/call") {
+            return Ok(false);
+        }
+        let Some(id) = message.get("id").cloned() else {
+            return Err(AgentError::Protocol(
+                "dynamic tool request omitted id".into(),
+            ));
+        };
+        let tool = message
+            .pointer("/params/tool")
+            .and_then(Value::as_str)
+            .ok_or_else(|| AgentError::Protocol("dynamic tool request omitted tool".into()))?;
+        let arguments = message
+            .pointer("/params/arguments")
+            .cloned()
+            .unwrap_or(Value::Null);
+        let response = match self.tools.call(tool, arguments) {
+            Ok(value) => json!({
+                "id": id,
+                "result": {
+                    "contentItems": [{ "type": "inputText", "text": value.to_string() }],
+                    "success": true
+                }
+            }),
+            Err(error) => json!({
+                "id": id,
+                "result": {
+                    "contentItems": [{ "type": "inputText", "text": error.to_string() }],
+                    "success": false
+                }
+            }),
+        };
+        self.send(response)?;
+        Ok(true)
     }
 }
 
@@ -335,7 +228,7 @@ fn preferred_windows_candidate(candidates: &[PathBuf]) -> Option<PathBuf> {
         .cloned()
 }
 
-fn normalize_output_schema(value: &mut Value) {
+pub(crate) fn normalize_output_schema(value: &mut Value) {
     match value {
         Value::Object(object) => {
             object.remove("$schema");
@@ -367,24 +260,45 @@ impl MixingAgent for CodexAppServerAgent {
     }
 
     fn propose(&mut self, bundle: &PromptBundle) -> Result<MixPlan, AgentError> {
+        let output = self.run_turn(&bundle.compiled, &TurnOptions::default(), &mut |_| {})?;
+        Ok(serde_json::from_str(&output.text)?)
+    }
+}
+
+impl AgentRuntime for CodexAppServerAgent {
+    fn backend_name(&self) -> &'static str {
+        "codex-app-server"
+    }
+
+    fn thread_id(&self) -> Option<&str> {
+        self.thread_id.as_deref()
+    }
+
+    fn run_turn(
+        &mut self,
+        context: &ghost_context::CompiledContext,
+        options: &TurnOptions,
+        events: &mut dyn FnMut(AgentEvent),
+    ) -> Result<AgentOutput, AgentError> {
         let thread_id = self
             .thread_id
             .clone()
             .ok_or_else(|| AgentError::Protocol("Codex thread is not initialized".into()))?;
-        let schema = Self::output_schema()?;
-        let result = self.request(
-            "turn/start",
-            json!({
-                "threadId": thread_id,
-                "input": [{ "type": "text", "text": Self::prompt_text(bundle)? }],
-                "model": self.model.clone(),
-                "effort": "high",
-                "summary": "concise",
-                "approvalPolicy": "never",
-                "sandboxPolicy": { "type": "readOnly", "access": { "type": "fullAccess" } },
-                "outputSchema": schema
-            }),
-        )?;
+        let mut params = json!({
+            "threadId": thread_id,
+            "input": [{ "type": "text", "text": context.text() }],
+            "model": self.model.clone(),
+            "effort": options.effort,
+            "summary": options.summary,
+            "approvalPolicy": options.approval_policy,
+            "sandboxPolicy": options.sandbox_policy
+        });
+        if let ghost_context::OutputContract::Json { schema, .. } = &context.output {
+            let mut schema = schema.clone();
+            normalize_output_schema(&mut schema);
+            params["outputSchema"] = schema;
+        }
+        let result = self.request("turn/start", params)?;
         let turn_id = result
             .pointer("/turn/id")
             .and_then(Value::as_str)
@@ -395,6 +309,10 @@ impl MixingAgent for CodexAppServerAgent {
         let mut turn_error = None;
         loop {
             let message = self.read_message()?;
+            if self.handle_tool_request(&message)? {
+                continue;
+            }
+            events(AgentEvent::from_wire(&message));
             if message.get("method").and_then(Value::as_str) == Some("error") {
                 turn_error = message.pointer("/params/error").cloned();
             }
@@ -431,71 +349,19 @@ impl MixingAgent for CodexAppServerAgent {
         let text = final_text.ok_or_else(|| {
             AgentError::Protocol("Codex completed without a final agentMessage".into())
         })?;
-        Ok(serde_json::from_str(&text)?)
+        let structured = match context.output {
+            ghost_context::OutputContract::Text => None,
+            ghost_context::OutputContract::Json { .. } => Some(serde_json::from_str(&text)?),
+        };
+        Ok(AgentOutput { text, structured })
     }
 }
 
 impl Drop for CodexAppServerAgent {
     fn drop(&mut self) {
-        let _ = self.child.kill();
-        let _ = self.child.wait();
+        self.transport.shutdown();
     }
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn codex_output_schema_is_strict() {
-        let schema = CodexAppServerAgent::output_schema().unwrap();
-        assert_strict_objects(&schema);
-        assert!(!contains_key(&schema, "$schema"));
-        assert!(!contains_key(&schema, "format"));
-        assert!(!contains_key(&schema, "oneOf"));
-    }
-
-    #[cfg(target_os = "windows")]
-    #[test]
-    fn native_windows_binary_is_preferred_over_command_shims() {
-        let candidates = vec![
-            PathBuf::from(r"C:\tools\codex.cmd"),
-            PathBuf::from(r"C:\apps\codex.exe"),
-        ];
-        assert_eq!(
-            preferred_windows_candidate(&candidates),
-            Some(PathBuf::from(r"C:\apps\codex.exe"))
-        );
-    }
-
-    fn assert_strict_objects(value: &Value) {
-        match value {
-            Value::Object(object) => {
-                if let Some(properties) = object.get("properties").and_then(Value::as_object) {
-                    assert_eq!(
-                        object.get("additionalProperties"),
-                        Some(&Value::Bool(false))
-                    );
-                    let required = object
-                        .get("required")
-                        .and_then(Value::as_array)
-                        .expect("objects with properties must list required fields");
-                    assert_eq!(required.len(), properties.len());
-                }
-                object.values().for_each(assert_strict_objects);
-            }
-            Value::Array(items) => items.iter().for_each(assert_strict_objects),
-            _ => {}
-        }
-    }
-
-    fn contains_key(value: &Value, key: &str) -> bool {
-        match value {
-            Value::Object(object) => {
-                object.contains_key(key) || object.values().any(|child| contains_key(child, key))
-            }
-            Value::Array(items) => items.iter().any(|child| contains_key(child, key)),
-            _ => false,
-        }
-    }
-}
+mod tests;

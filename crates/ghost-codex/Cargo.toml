@@ -8,6 +8,8 @@ rust-version.workspace = true
 
 [dependencies]
 ghost-core = { path = "../ghost-core" }
+ghost-context = { path = "../ghost-context" }
+ghost-mix = { path = "../ghost-mix" }
 schemars.workspace = true
 serde.workspace = true
 serde_json.workspace = true

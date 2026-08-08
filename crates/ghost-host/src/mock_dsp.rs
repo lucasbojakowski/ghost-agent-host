@@ -1,5 +1,5 @@
-use crate::audio::AudioBuffer;
-use crate::model::{CompressorOperation, EqBandOperation, EqShape, MixOperation, MixPlan};
+use ghost_core::audio::AudioBuffer;
+use ghost_mix::{CompressorOperation, EqBandOperation, EqShape, MixOperation, MixPlan};
 
 #[derive(Debug, Clone)]
 struct Biquad {
@@ -44,12 +44,14 @@ pub fn render_mock_chain(source: &AudioBuffer, plan: &MixPlan) -> AudioBuffer {
     for operation in &plan.operations {
         match operation {
             MixOperation::EqBand { settings } if settings.enabled => {
-                apply_eq(&mut output, settings);
+                apply_eq(&mut output, settings)
             }
             MixOperation::Compressor { settings } if settings.enabled => {
                 apply_compressor(&mut output, settings);
             }
-            MixOperation::Bypass { .. } | MixOperation::EqBand { .. } | MixOperation::Compressor { .. } => {}
+            MixOperation::Bypass { .. }
+            | MixOperation::EqBand { .. }
+            | MixOperation::Compressor { .. } => {}
         }
     }
     output

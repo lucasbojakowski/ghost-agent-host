@@ -21,6 +21,7 @@ codex_binary = "codex"
 model = "gpt-5.6-terra"
 timeout_seconds = 120
 system_prompt_path = "prompts/system.md"
+output_mode = "structured"
 
 [storage]
 database_path = ".ghost/ghost.db"
@@ -30,5 +31,15 @@ compress_json = true
 
 [host]
 backend = "mock"
-pro_q_plugin_id = "com.fabfilter.Pro-Q.4"
-pro_c_plugin_id = "com.fabfilter.Pro-C.3"
+parameter_smoothing_ms = 25.0
+search_default_clap_directories = true
+
+[[host.roles]]
+role = "equalizer"
+capability = "audio.mix/equalizer.band"
+preferred_plugin_id = ""
+
+[[host.roles]]
+role = "compressor"
+capability = "audio.mix/compressor.settings"
+preferred_plugin_id = ""

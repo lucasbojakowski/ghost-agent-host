@@ -1,6 +1,10 @@
 [workspace]
 members = [
   "crates/ghost-core",
+  "crates/ghost-context",
+  "crates/ghost-application",
+  "crates/ghost-mix",
+  "crates/ghost-fakes",
   "crates/ghost-db",
   "crates/ghost-codex",
   "crates/ghost-host",
@@ -24,19 +28,23 @@ rust-version = "1.92"
 anyhow = "1"
 blake3 = "1"
 clap = { version = "4", features = ["derive"] }
+crossbeam-queue = "0.3"
 clack-plugin = "0.1.1"
 clack-host = "0.1.1"
 clack-extensions = "0.1.1"
+clack-common = "0.1.1"
 ebur128 = "0.1"
 eframe = { version = "0.35", default-features = false, features = ["default_fonts", "glow", "x11", "wayland"] }
 egui = "0.35"
 egui-baseview = "0.6"
 hound = "3"
+indexmap = { version = "2", features = ["serde"] }
 realfft = "3"
 rusqlite = { version = "0.40.1", features = ["bundled", "serde_json"] }
-schemars = { version = "1", features = ["derive", "uuid1"] }
+schemars = { version = "1", features = ["derive", "uuid1", "indexmap2"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+symphonia = { version = "0.5", features = ["all-codecs", "all-formats"] }
 thiserror = "2"
 toml = "0.9"
 tracing = "0.1"

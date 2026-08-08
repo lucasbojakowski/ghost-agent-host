@@ -1,10 +1,34 @@
 use std::path::PathBuf;
 
 use ghost_core::audio::AudioBuffer;
-use ghost_core::mock_dsp::render_mock_chain;
-use ghost_core::MixPlan;
+use ghost_mix::MixPlan;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+
+mod child;
+mod discovery;
+mod graph;
+mod mapping;
+mod mock_dsp;
+#[cfg(feature = "clack-runtime")]
+mod native;
+#[cfg(feature = "clack-runtime")]
+mod native_host;
+mod parameter_control;
+mod smoothing;
+mod topology;
+
+pub use child::*;
+pub use discovery::*;
+pub use graph::*;
+pub use mapping::*;
+#[cfg(feature = "clack-runtime")]
+pub use native::*;
+#[cfg(feature = "clack-runtime")]
+pub use native_host::{NestedHostBridge, NestedHostEvent, NoopNestedHostBridge};
+pub use parameter_control::*;
+pub use smoothing::*;
+pub use topology::*;
 
 #[derive(Debug, Error)]
 pub enum HostError {
@@ -25,6 +49,8 @@ pub struct PluginDescriptorRecord {
     pub vendor: Option<String>,
     pub version: Option<String>,
     pub path: PathBuf,
+    #[serde(default)]
+    pub public_parameters: Vec<ghost_core::ParameterDescriptor>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -54,7 +80,7 @@ impl HostedChain for MockFabFilterChain {
 
     fn render(&mut self, source: &AudioBuffer, plan: &MixPlan) -> Result<AudioBuffer, HostError> {
         self.current_plan = Some(plan.clone());
-        Ok(render_mock_chain(source, plan))
+        Ok(mock_dsp::render_mock_chain(source, plan))
     }
 
     fn save_state(&self) -> Result<ChainState, HostError> {
@@ -86,6 +112,7 @@ pub mod clack_runtime {
 
     use super::*;
     use clack_extensions::gui::{GuiApiType, GuiConfiguration, PluginGui, Window};
+    use clack_extensions::state::PluginState;
     use clack_host::prelude::{HostHandlers, HostInfo, PluginEntry, PluginInstance};
 
     #[cfg(target_os = "windows")]
@@ -137,14 +164,13 @@ pub mod clack_runtime {
         }
 
         fn plugin_child(&self) -> Option<HWND> {
-            let title: Vec<u16> = "Ghost Agent Host\0".encode_utf16().collect();
-            // SAFETY: self is a live window and title is terminated UTF-16.
+            // SAFETY: self is a live window; null class/title match the first direct child.
             let child = unsafe {
                 FindWindowExW(
                     self.0,
                     std::ptr::null_mut(),
                     std::ptr::null(),
-                    title.as_ptr(),
+                    std::ptr::null(),
                 )
             };
             (!child.is_null()).then_some(child)
@@ -220,12 +246,119 @@ pub mod clack_runtime {
                 vendor,
                 version,
                 path: path.to_path_buf(),
+                public_parameters: Vec::new(),
             });
         }
         Ok(records)
     }
 
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub struct ClapAudioSmokeResult {
+        pub first_output: [f32; 2],
+        pub state_bytes: usize,
+    }
+
+    /// Deterministic native activation/process/state check. This never starts an agent.
+    pub fn smoke_test_clap_audio(
+        path: impl AsRef<Path>,
+        plugin_id: &str,
+        initial_state: Option<&[u8]>,
+    ) -> Result<ClapAudioSmokeResult, HostError> {
+        let entry = unsafe { PluginEntry::load(path.as_ref()) }
+            .map_err(|error| HostError::Scan(error.to_string()))?;
+        let host_info = HostInfo::new(
+            "Ghost CLAP Validator",
+            "Konko",
+            "https://github.com/free-audio/clap",
+            env!("CARGO_PKG_VERSION"),
+        )
+        .map_err(|error| HostError::Scan(error.to_string()))?;
+        let plugin_id = std::ffi::CString::new(plugin_id)
+            .map_err(|error| HostError::Scan(error.to_string()))?;
+        let mut instance =
+            PluginInstance::<ValidationHost>::new(|_| (), |_| (), &entry, &plugin_id, &host_info)
+                .map_err(|error| HostError::Scan(error.to_string()))?;
+        if let Some(initial_state) = initial_state {
+            let mut plugin = instance.plugin_handle();
+            let state = plugin
+                .get_extension::<PluginState>()
+                .ok_or_else(|| HostError::State("CLAP plugin does not expose clap.state".into()))?;
+            let mut reader = initial_state;
+            state
+                .load(&mut plugin, &mut reader)
+                .map_err(|error| HostError::State(error.to_string()))?;
+        }
+        let stopped = instance
+            .activate(
+                |_, _| (),
+                clack_host::prelude::PluginAudioConfiguration {
+                    sample_rate: 48_000.0,
+                    min_frames_count: 64,
+                    max_frames_count: 64,
+                },
+            )
+            .map_err(|error| HostError::Processing(error.to_string()))?;
+        let mut processor = stopped
+            .start_processing()
+            .map_err(|error| HostError::Processing(error.to_string()))?;
+        let mut inputs = [[0.25_f32; 64], [-0.25_f32; 64]];
+        let mut outputs = [[0.0_f32; 64]; 2];
+        let mut input_ports = clack_host::prelude::AudioPorts::with_capacity(2, 1);
+        let mut output_ports = clack_host::prelude::AudioPorts::with_capacity(2, 1);
+        let input_audio = input_ports.with_input_buffers([clack_host::prelude::AudioPortBuffer {
+            latency: 0,
+            channels: clack_host::prelude::AudioPortBufferType::f32_input_only(
+                inputs
+                    .iter_mut()
+                    .map(clack_host::prelude::InputChannel::variable),
+            ),
+        }]);
+        let mut output_audio =
+            output_ports.with_output_buffers([clack_host::prelude::AudioPortBuffer {
+                latency: 0,
+                channels: clack_host::prelude::AudioPortBufferType::f32_output_only(
+                    outputs.iter_mut().map(|channel| channel.as_mut_slice()),
+                ),
+            }]);
+        let input_events = clack_host::prelude::InputEvents::empty();
+        let mut output_buffer = clack_host::prelude::EventBuffer::new();
+        let mut output_events = output_buffer.as_output();
+        processor
+            .process(
+                &input_audio,
+                &mut output_audio,
+                &input_events,
+                &mut output_events,
+                None,
+                None,
+            )
+            .map_err(|error| HostError::Processing(error.to_string()))?;
+        let first_output = [outputs[0][0], outputs[1][0]];
+        let stopped = processor.stop_processing();
+        let mut saved = Vec::new();
+        {
+            let mut plugin = instance.plugin_handle();
+            if let Some(state) = plugin.get_extension::<PluginState>() {
+                state
+                    .save(&mut plugin, &mut saved)
+                    .map_err(|error| HostError::State(error.to_string()))?;
+            }
+        }
+        instance.deactivate(stopped);
+        Ok(ClapAudioSmokeResult {
+            first_output,
+            state_bytes: saved.len(),
+        })
+    }
+
     pub fn smoke_test_clap_gui(path: impl AsRef<Path>) -> Result<(u32, u32), HostError> {
+        smoke_test_clap_gui_id(path, "ai.konko.ghost-agent-host")
+    }
+
+    pub fn smoke_test_clap_gui_id(
+        path: impl AsRef<Path>,
+        plugin_id: &str,
+    ) -> Result<(u32, u32), HostError> {
         #[cfg(not(target_os = "windows"))]
         {
             let _ = path;
@@ -245,11 +378,13 @@ pub mod clack_runtime {
                 env!("CARGO_PKG_VERSION"),
             )
             .map_err(|error| HostError::Scan(error.to_string()))?;
+            let plugin_id = std::ffi::CString::new(plugin_id)
+                .map_err(|error| HostError::Scan(error.to_string()))?;
             let mut instance = PluginInstance::<ValidationHost>::new(
                 |_| (),
                 |_| (),
                 &entry,
-                c"ai.konko.ghost-agent-host",
+                &plugin_id,
                 &host_info,
             )
             .map_err(|error| HostError::Scan(error.to_string()))?;

@@ -6,17 +6,23 @@ use std::thread;
 
 use anyhow::{Context, Result};
 use clap::{Parser, ValueEnum};
+use ghost_application::{analyze_path, NoProgress};
 use ghost_codex::{CodexAppServerAgent, MixingAgent, MockMixingAgent};
-use ghost_core::prompt::PluginCapabilitySummary;
+use ghost_core::{AnalysisConfig, UserIntent};
 use ghost_core::{
-    analyze_audio, build_prompt_bundle, read_wav, validate_mix_plan, AnalysisConfig, UserIntent,
+    ProtocolError, RequestEnvelope, ResponseEnvelope, ResponseStatus, PROTOCOL_VERSION,
 };
 use ghost_db::GhostDatabase;
+use ghost_mix::{build_prompt_bundle, validate_mix_plan, PluginCapabilitySummary};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
 #[derive(Debug, Parser)]
-#[command(name = "ghost-agentd", version, about = "Local Ghost analysis and agent daemon")]
+#[command(
+    name = "ghost-agentd",
+    version,
+    about = "Local Ghost analysis and agent daemon"
+)]
 struct Args {
     #[arg(long, default_value = "127.0.0.1:47644")]
     listen: String,
@@ -54,7 +60,7 @@ enum Request {
     },
     Propose {
         path: PathBuf,
-        intent: UserIntent,
+        intent: Box<UserIntent>,
         #[serde(default)]
         config: Option<AnalysisConfig>,
     },
@@ -114,30 +120,121 @@ fn handle_client(mut stream: TcpStream, state: Arc<AppState>) -> Result<()> {
         if reader.read_line(&mut line)? == 0 {
             break;
         }
-        let response = match serde_json::from_str::<Request>(&line) {
-            Ok(request) => match execute(request, &state) {
-                Ok(result) => Response {
-                    ok: true,
-                    result: Some(result),
-                    error: None,
-                },
-                Err(error) => Response {
-                    ok: false,
-                    result: None,
-                    error: Some(error.to_string()),
-                },
-            },
-            Err(error) => Response {
-                ok: false,
-                result: None,
-                error: Some(format!("invalid request: {error}")),
-            },
-        };
+        let response = handle_line(&line, &state);
         serde_json::to_writer(&mut stream, &response)?;
         stream.write_all(b"\n")?;
         stream.flush()?;
     }
     Ok(())
+}
+
+fn handle_line(line: &str, state: &AppState) -> Value {
+    let value: Value = match serde_json::from_str(line) {
+        Ok(value) => value,
+        Err(error) => {
+            return serde_json::to_value(Response {
+                ok: false,
+                result: None,
+                error: Some(format!("invalid request: {error}")),
+            })
+            .expect("legacy response serializes");
+        }
+    };
+    if value.get("protocol").is_some() {
+        return handle_envelope(value, state);
+    }
+    let response = match serde_json::from_value::<Request>(value) {
+        Ok(request) => match execute(request, state) {
+            Ok(result) => Response {
+                ok: true,
+                result: Some(result),
+                error: None,
+            },
+            Err(error) => Response {
+                ok: false,
+                result: None,
+                error: Some(error.to_string()),
+            },
+        },
+        Err(error) => Response {
+            ok: false,
+            result: None,
+            error: Some(format!("invalid request: {error}")),
+        },
+    };
+    serde_json::to_value(response).expect("legacy response serializes")
+}
+
+fn handle_envelope(value: Value, state: &AppState) -> Value {
+    let envelope: RequestEnvelope = match serde_json::from_value(value) {
+        Ok(envelope) => envelope,
+        Err(error) => return json!({"error": format!("invalid envelope: {error}")}),
+    };
+    let result = if envelope.protocol != PROTOCOL_VERSION {
+        Err(anyhow::anyhow!(
+            "unsupported protocol {}",
+            envelope.protocol
+        ))
+    } else {
+        envelope_request(&envelope).and_then(|request| execute(request, state))
+    };
+    let response = match result {
+        Ok(payload) => ResponseEnvelope {
+            protocol: PROTOCOL_VERSION.into(),
+            request_id: envelope.request_id,
+            status: ResponseStatus::Complete,
+            payload,
+            error: None,
+        },
+        Err(error) => ResponseEnvelope {
+            protocol: PROTOCOL_VERSION.into(),
+            request_id: envelope.request_id,
+            status: ResponseStatus::Failed,
+            payload: Value::Null,
+            error: Some(ProtocolError {
+                code: "request_failed".into(),
+                message: error.to_string(),
+                retryable: false,
+            }),
+        },
+    };
+    serde_json::to_value(response).expect("protocol response serializes")
+}
+
+fn envelope_request(envelope: &RequestEnvelope) -> Result<Request> {
+    match envelope.operation.as_str() {
+        "health" => Ok(Request::Health),
+        "stats" => Ok(Request::Stats),
+        "analyze" => {
+            #[derive(Deserialize)]
+            struct Payload {
+                path: PathBuf,
+                #[serde(default)]
+                config: Option<AnalysisConfig>,
+            }
+            let payload: Payload = serde_json::from_value(envelope.payload.clone())?;
+            Ok(Request::Analyze {
+                path: payload.path,
+                config: payload.config,
+            })
+        }
+        "propose" => {
+            #[derive(Deserialize)]
+            struct Payload {
+                path: PathBuf,
+                intent: UserIntent,
+                #[serde(default)]
+                config: Option<AnalysisConfig>,
+            }
+            let payload: Payload = serde_json::from_value(envelope.payload.clone())?;
+            Ok(Request::Propose {
+                path: payload.path,
+                intent: Box::new(payload.intent),
+                config: payload.config,
+            })
+        }
+        operation => Err(anyhow::anyhow!("unknown operation `{operation}`")),
+    }
 }
 
 fn execute(request: Request, state: &AppState) -> Result<Value> {
@@ -154,8 +251,7 @@ fn execute(request: Request, state: &AppState) -> Result<Value> {
             Ok(serde_json::to_value(database.counts()?)?)
         }
         Request::Analyze { path, config } => {
-            let audio = read_wav(&path)?;
-            let analysis = analyze_audio(path.display().to_string(), &audio, &config.unwrap_or_default())?;
+            let analysis = analyze_path(&path, &config.unwrap_or_default(), &NoProgress)?;
             let database = state
                 .database
                 .lock()
@@ -168,11 +264,12 @@ fn execute(request: Request, state: &AppState) -> Result<Value> {
             intent,
             config,
         } => {
-            let audio = read_wav(&path)?;
-            let analysis = analyze_audio(path.display().to_string(), &audio, &config.unwrap_or_default())?;
+            let intent = *intent;
+            let analysis = analyze_path(&path, &config.unwrap_or_default(), &NoProgress)?;
             let system_prompt = std::fs::read_to_string("prompts/system.md")?;
             let capabilities = default_capabilities();
-            let prompt = build_prompt_bundle(system_prompt, intent.clone(), &analysis, &capabilities)?;
+            let prompt =
+                build_prompt_bundle(system_prompt, intent.clone(), &analysis, &capabilities)?;
             let (analysis_run_id, request_id) = {
                 let database = state
                     .database
@@ -207,12 +304,7 @@ fn execute(request: Request, state: &AppState) -> Result<Value> {
                     .lock()
                     .map_err(|_| anyhow::anyhow!("database lock poisoned"))?;
                 database.complete_agent_run(agent_run_id, &encoded)?;
-                database.store_mix_plan(
-                    agent_run_id,
-                    &plan,
-                    "valid",
-                    json!({ "ok": true }),
-                )?
+                database.store_mix_plan(agent_run_id, &plan, "valid", json!({ "ok": true }))?
             };
             Ok(json!({
                 "analysis_run_id": analysis_run_id,
@@ -227,19 +319,50 @@ fn execute(request: Request, state: &AppState) -> Result<Value> {
 fn default_capabilities() -> Vec<PluginCapabilitySummary> {
     vec![
         PluginCapabilitySummary {
-            plugin: "FabFilter Pro-Q 4".into(),
-            version: "runtime-manifest".into(),
-            supported_operations: vec!["static bell EQ".into(), "dynamic bell EQ".into()],
-            safety_notes: vec!["Semantic operations only".into()],
+            plugin: "Equalizer role".into(),
+            version: "scanned-public-interface".into(),
+            supported_operations: vec!["equalizer.band".into()],
+            safety_notes: vec!["Map semantic values to scanned parameters".into()],
+            public_parameters: Vec::new(),
         },
         PluginCapabilitySummary {
-            plugin: "FabFilter Pro-C 3".into(),
-            version: "runtime-manifest".into(),
-            supported_operations: vec![
-                "threshold/ratio/knee".into(),
-                "attack/release/range/mix".into(),
-            ],
-            safety_notes: vec!["Style requires runtime validation".into()],
+            plugin: "Compressor role".into(),
+            version: "scanned-public-interface".into(),
+            supported_operations: vec!["compressor.settings".into()],
+            safety_notes: vec!["Validate capabilities before apply".into()],
+            public_parameters: Vec::new(),
         },
     ]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use uuid::Uuid;
+
+    #[test]
+    fn protocol_envelope_preserves_health_request_correlation() {
+        let root = std::env::temp_dir().join(format!("ghost-agentd-test-{}", Uuid::new_v4()));
+        std::fs::create_dir_all(&root).unwrap();
+        let state = AppState {
+            database: Mutex::new(
+                GhostDatabase::open(root.join("ghost.db"), root.join("artifacts")).unwrap(),
+            ),
+            agent: Mutex::new(Box::new(MockMixingAgent)),
+        };
+        let request_id = Uuid::new_v4();
+        let response = handle_line(
+            &serde_json::to_string(&RequestEnvelope {
+                protocol: PROTOCOL_VERSION.into(),
+                request_id,
+                operation: "health".into(),
+                payload: Value::Null,
+            })
+            .unwrap(),
+            &state,
+        );
+        assert_eq!(response["request_id"], json!(request_id));
+        assert_eq!(response["status"], "complete");
+        let _ = std::fs::remove_dir_all(root);
+    }
 }
