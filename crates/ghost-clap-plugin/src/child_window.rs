@@ -53,7 +53,7 @@ impl DetachedChildWindow {
             SetWindowLongPtrW(
                 hwnd,
                 GWLP_WNDPROC,
-                detached_child_window_proc as usize as isize,
+                detached_child_window_proc as *const () as usize as isize,
             )
         };
         if previous == 0 {
