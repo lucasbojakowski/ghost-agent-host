@@ -367,8 +367,8 @@ fn compile_eq_band(
             plugin,
             parameters,
             field,
-            current_values,
             0.08,
+            current_values,
             patch,
         );
     }
