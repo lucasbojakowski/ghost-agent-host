@@ -8,13 +8,12 @@ use windows_sys::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
 use windows_sys::Win32::System::Threading::GetCurrentThreadId;
 use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetKeyState, VK_CONTROL, VK_MENU, VK_SHIFT};
 use windows_sys::Win32::UI::WindowsAndMessaging::{
-    AdjustWindowRectEx, CallNextHookEx, CreateWindowExW, DefWindowProcW, DestroyWindow,
-    GetActiveWindow, GetAncestor, GetForegroundWindow, IsChild, IsIconic, IsWindow, PostMessageW,
-    SetWindowLongPtrW, SetWindowPos, SetWindowsHookExW, ShowWindow, UnhookWindowsHookEx,
-    CW_USEDEFAULT, GA_ROOT, GWLP_WNDPROC, HHOOK, MSG, PM_REMOVE, SWP_NOACTIVATE, SWP_NOMOVE,
-    SWP_NOZORDER, SW_HIDE, SW_RESTORE, SW_SHOW, WH_GETMESSAGE, WM_CLOSE, WM_KEYDOWN, WM_KEYUP,
-    WM_SYSKEYDOWN, WM_SYSKEYUP, WS_CAPTION, WS_CLIPCHILDREN, WS_EX_TOOLWINDOW, WS_MINIMIZEBOX,
-    WS_OVERLAPPED, WS_SYSMENU,
+    AdjustWindowRectEx, CallNextHookEx, CreateWindowExW, DefWindowProcW, DestroyWindow, GetAncestor,
+    GetForegroundWindow, IsChild, IsIconic, IsWindow, PostMessageW, SetWindowLongPtrW, SetWindowPos,
+    SetWindowsHookExW, ShowWindow, UnhookWindowsHookEx, CW_USEDEFAULT, GA_ROOT, GWLP_WNDPROC, HHOOK,
+    MSG, PM_REMOVE, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOZORDER, SW_HIDE, SW_RESTORE, SW_SHOW,
+    WH_GETMESSAGE, WM_CLOSE, WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP, WS_CAPTION,
+    WS_CLIPCHILDREN, WS_EX_TOOLWINDOW, WS_MINIMIZEBOX, WS_OVERLAPPED, WS_SYSMENU,
 };
 
 const CHILD_WINDOW_STYLE: u32 =
@@ -182,17 +181,12 @@ unsafe extern "system" fn detached_child_window_proc(
 }
 
 fn daw_owner_window() -> HWND {
-    // The Show UI command originates from Ghost's editor on the DAW UI thread. At creation time the
-    // active/foreground top-level window is therefore the wrapper/editor window that should own the
-    // detached child. Prefer the thread-active window and fall back to the process foreground one.
+    // The Show UI command originates from Ghost's editor while FL Studio is foreground. Resolve
+    // that foreground window to its root so the detached child becomes DAW-owned without becoming
+    // a child of Ghost's editor or Fruity Wrapper internals.
     // SAFETY: these queries do not take ownership of the returned HWNDs.
     unsafe {
-        let active = GetActiveWindow();
-        let candidate = if active.is_null() {
-            GetForegroundWindow()
-        } else {
-            active
-        };
+        let candidate = GetForegroundWindow();
         if candidate.is_null() {
             return std::ptr::null_mut();
         }
