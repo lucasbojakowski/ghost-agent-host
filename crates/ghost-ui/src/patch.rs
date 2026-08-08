@@ -263,16 +263,20 @@ fn compile_eq_band(
         Some("db"),
     );
     let q = Field::required("q", &["q", "quality", "band q"], settings.q, None);
+
+    // Pro-Q 4 exposes both `Band N Used` and `Band N Enabled`. They are not synonyms: `Used`
+    // materializes/removes a physical band slot, while `Enabled` controls the active state of a
+    // band that already exists. Keeping them in one alias set makes both equally plausible and the
+    // optional mapping silently disappears, which is why edits worked only after manual creation.
+    let used = Field::optional(
+        "used",
+        &["used", "band used", "in use"],
+        if settings.enabled { 1.0 } else { 0.0 },
+        None,
+    );
     let enabled = Field::optional(
         "enabled",
-        &[
-            "enabled",
-            "enable",
-            "used",
-            "active",
-            "band enabled",
-            "band used",
-        ],
+        &["enabled", "enable", "active", "band enabled"],
         if settings.enabled { 1.0 } else { 0.0 },
         None,
     );
@@ -291,7 +295,7 @@ fn compile_eq_band(
         )
     });
 
-    let mut grouping_fields = vec![&frequency, &gain, &q, &enabled, &shape];
+    let mut grouping_fields = vec![&frequency, &gain, &q, &used, &enabled, &shape];
     if let Some(slope) = slope.as_ref() {
         grouping_fields.push(slope);
     }
@@ -331,10 +335,10 @@ fn compile_eq_band(
     let selected_family = if let Some(family) = allocations.logical_to_family.get(&allocation_key) {
         family.clone()
     } else {
-        let used = allocations.used_by_node.entry(node.id.clone()).or_default();
+        let allocated = allocations.used_by_node.entry(node.id.clone()).or_default();
         let available: Vec<_> = complete
             .iter()
-            .filter(|(key, _)| !used.contains(key.as_str()))
+            .filter(|(key, _)| !allocated.contains(key.as_str()))
             .copied()
             .collect();
         let Some((family, _)) = available.first() else {
@@ -345,7 +349,7 @@ fn compile_eq_band(
             return;
         };
         let family = (*family).clone();
-        used.insert(family.clone());
+        allocated.insert(family.clone());
         allocations
             .logical_to_family
             .insert(allocation_key, family.clone());
@@ -373,23 +377,26 @@ fn compile_eq_band(
         );
     }
 
-    if let MatchResult::Found(parameter, confidence) = best_parameter_in(parameters, &enabled) {
-        let value = if settings.enabled {
-            parameter.maximum
-        } else {
-            parameter.minimum
-        };
-        push_parameter_change(
-            node,
-            revision,
-            parameter,
-            "enabled",
-            value,
-            (confidence + 0.08).min(1.0),
-            current_values,
-            patch,
-        );
-    }
+    compile_optional_band_switch(
+        node,
+        revision,
+        plugin,
+        parameters,
+        &used,
+        settings.enabled,
+        current_values,
+        patch,
+    );
+    compile_optional_band_switch(
+        node,
+        revision,
+        plugin,
+        parameters,
+        &enabled,
+        settings.enabled,
+        current_values,
+        patch,
+    );
 
     match best_parameter_in(parameters, &shape) {
         MatchResult::Found(parameter, confidence) => {
@@ -440,6 +447,42 @@ fn compile_eq_band(
             "channel mode `{}` is requested for `{}` but channel routing is not safely mapped in {}",
             settings.channel_mode, settings.band_id, plugin.name
         ));
+    }
+}
+
+fn compile_optional_band_switch(
+    node: &GraphNodeSpec,
+    revision: u64,
+    plugin: &PluginAssignment,
+    parameters: &[&ParameterDescriptor],
+    field: &Field<'_>,
+    switched_on: bool,
+    current_values: &BTreeMap<(String, String), f64>,
+    patch: &mut CompiledParameterPatch,
+) {
+    match best_parameter_in(parameters, field) {
+        MatchResult::Found(parameter, confidence) => {
+            let value = if switched_on {
+                parameter.maximum
+            } else {
+                parameter.minimum
+            };
+            push_parameter_change(
+                node,
+                revision,
+                parameter,
+                field.semantic,
+                value,
+                (confidence + 0.08).min(1.0),
+                current_values,
+                patch,
+            );
+        }
+        MatchResult::Ambiguous => patch.mapping_issues.push(format!(
+            "{} has multiple plausible parameters inside the selected EQ band in {}",
+            field.semantic, plugin.name
+        )),
+        MatchResult::Missing => {}
     }
 }
 
@@ -899,11 +942,7 @@ mod tests {
             cautions: Vec::new(),
         };
         let preview = compile_preview(plan, &state, &BTreeMap::new());
-        assert!(
-            preview.patch.can_apply(),
-            "{:?}",
-            preview.patch.mapping_issues
-        );
+        assert!(preview.patch.can_apply(), "{:?}", preview.patch.mapping_issues);
         let ids: Vec<_> = preview
             .patch
             .parameter_changes
@@ -914,7 +953,7 @@ mod tests {
     }
 
     #[test]
-    fn eq_band_activation_and_shape_use_public_labels_when_available() {
+    fn pro_q_style_used_and_enabled_are_distinct_band_controls() {
         let mut state = PersistedUiState::default();
         state.graph = EditableGraph {
             nodes: vec![GraphNodeSpec {
@@ -922,47 +961,44 @@ mod tests {
                 class: ProcessorClass::Equalizer,
                 bypassed: false,
                 plugin: Some(PluginAssignment {
-                    path: PathBuf::from("labelled.clap"),
-                    plugin_id: Some("labelled".into()),
-                    name: "Labelled EQ".into(),
-                    vendor: None,
+                    path: PathBuf::from("pro-q-4.clap"),
+                    plugin_id: Some("pro-q-4".into()),
+                    name: "Pro-Q 4".into(),
+                    vendor: Some("FabFilter".into()),
                     version: None,
                     public_parameters: vec![
-                        parameter("101", "Band 1 Frequency", "Hz", 20.0, 20_000.0),
-                        parameter("102", "Band 1 Gain", "dB", -24.0, 24.0),
-                        parameter("103", "Band 1 Q", "", 0.1, 20.0),
-                        stepped_parameter("104", "Band 1 Used", 0.0, 1.0, &[('O', 0.0)]),
-                        labelled_shape_parameter("105", "Band 1 Shape"),
+                        parameter("101", "Band 1 Frequency", "Hz", 20.0, 30_000.0),
+                        parameter("102", "Band 1 Gain", "dB", -30.0, 30.0),
+                        parameter("103", "Band 1 Q", "", 0.025, 40.0),
+                        stepped_parameter("104", "Band 1 Used", 0.0, 1.0),
+                        stepped_parameter("105", "Band 1 Enabled", 0.0, 1.0),
+                        labelled_shape_parameter("106", "Band 1 Shape"),
                     ],
                     state: None,
                 }),
             }],
         };
-        let mut settings = eq_settings("shelf", 120.0, 2.0, 0.8);
-        settings.shape = EqShape::LowShelf;
         let plan = MixPlan {
             schema_version: MixPlan::SCHEMA.into(),
-            summary: "shelf".into(),
+            summary: "create a band".into(),
             confidence: 1.0,
             assumptions: Vec::new(),
-            operations: vec![MixOperation::EqBand { settings }],
+            operations: vec![MixOperation::EqBand {
+                settings: eq_settings("created", 250.0, -3.0, 0.7),
+            }],
             expected_changes: Vec::new(),
             cautions: Vec::new(),
         };
         let preview = compile_preview(plan, &state, &BTreeMap::new());
-        assert!(
-            preview.patch.can_apply(),
-            "{:?}",
-            preview.patch.mapping_issues
-        );
+        assert!(preview.patch.can_apply(), "{:?}", preview.patch.mapping_issues);
         assert!(preview.patch.parameter_changes.iter().any(|change| {
             change.parameter_id == "104"
-                && change.semantic_field == "enabled"
+                && change.semantic_field == "used"
                 && change.plain_value == 1.0
         }));
         assert!(preview.patch.parameter_changes.iter().any(|change| {
             change.parameter_id == "105"
-                && change.semantic_field == "shape"
+                && change.semantic_field == "enabled"
                 && change.plain_value == 1.0
         }));
     }
@@ -1009,7 +1045,6 @@ mod tests {
         name: &str,
         minimum: f64,
         maximum: f64,
-        _labels: &[(char, f64)],
     ) -> ParameterDescriptor {
         ParameterDescriptor {
             stable_id: stable_id.into(),

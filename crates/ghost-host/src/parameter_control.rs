@@ -142,13 +142,12 @@ impl RealtimeParameterControl {
             return Err(ParameterQueueError::TooLarge);
         }
 
-        // Some child plugins expose a fixed bank of EQ parameter slots whose `Used`/`Enabled`
-        // control materializes the actual band. The semantic compiler may naturally emit
-        // frequency/gain/Q before that activation control, but those values can be ignored while
-        // the slot is inactive. Preserve the compiler's relative ordering while moving activation
-        // changes to the front so a child sees "create/enable band" before its band values.
+        // Multiband plugins such as Pro-Q expose separate `Used` and `Enabled` controls. `Used`
+        // materializes a physical band slot, while `Enabled` controls an already-materialized
+        // band's active state. Preserve relative order within each phase while forcing the host to
+        // create a band before enabling it and before sending frequency/gain/Q values.
         let mut changes = patch.parameter_changes.clone();
-        changes.sort_by_key(|change| u8::from(change.semantic_field != "enabled"));
+        changes.sort_by_key(parameter_change_priority);
 
         self.transactions
             .push(ParameterTransaction {
@@ -171,6 +170,14 @@ impl RealtimeParameterControl {
         while let Some(acknowledgement) = self.acknowledgements.pop() {
             output.push(acknowledgement);
         }
+    }
+}
+
+fn parameter_change_priority(change: &CompiledParameterChange) -> u8 {
+    match change.semantic_field.as_str() {
+        "used" => 0,
+        "enabled" => 1,
+        _ => 2,
     }
 }
 
@@ -211,12 +218,12 @@ mod tests {
     }
 
     #[test]
-    fn activation_changes_are_queued_before_band_values() {
+    fn materialization_and_activation_are_queued_before_band_values() {
         let control = RealtimeParameterControl::new();
         let mut frequency = change();
         frequency.semantic_field = "frequency_hz".into();
         frequency.parameter_id = "10".into();
-        frequency.plain_value = 12.0;
+        frequency.plain_value = 250.0;
 
         let mut enabled = change();
         enabled.semantic_field = "enabled".into();
@@ -225,17 +232,24 @@ mod tests {
         enabled.maximum = 1.0;
         enabled.plain_value = 1.0;
 
+        let mut used = change();
+        used.semantic_field = "used".into();
+        used.parameter_id = "12".into();
+        used.minimum = 0.0;
+        used.maximum = 1.0;
+        used.plain_value = 1.0;
+
         let mut q = change();
         q.semantic_field = "q".into();
-        q.parameter_id = "12".into();
-        q.minimum = 0.0;
-        q.maximum = 1.0;
-        q.plain_value = 0.5;
+        q.parameter_id = "13".into();
+        q.minimum = 0.05;
+        q.maximum = 40.0;
+        q.plain_value = 0.7;
 
         let patch = CompiledParameterPatch {
             transaction_id: 10,
             expected_graph_revision: 4,
-            parameter_changes: vec![frequency, enabled, q],
+            parameter_changes: vec![frequency, enabled, q, used],
             bypass_changes: Vec::new(),
             mapping_issues: Vec::new(),
         };
@@ -246,7 +260,7 @@ mod tests {
             .iter()
             .map(|change| change.semantic_field.as_str())
             .collect();
-        assert_eq!(semantics, vec!["enabled", "frequency_hz", "q"]);
+        assert_eq!(semantics, vec!["used", "enabled", "frequency_hz", "q"]);
     }
 
     #[test]
