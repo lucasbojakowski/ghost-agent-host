@@ -472,7 +472,9 @@ impl NativeClapMain {
         if self.gui_created {
             return (self.gui_mode == Some(ChildGuiMode::HostedDetached))
                 .then_some(())
-                .ok_or_else(|| ChildError::Failed("child GUI is already created in floating mode".into()));
+                .ok_or_else(|| {
+                    ChildError::Failed("child GUI is already created in floating mode".into())
+                });
         }
 
         let mut plugin = self.instance.plugin_handle();
