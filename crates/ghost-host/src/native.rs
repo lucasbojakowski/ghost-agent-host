@@ -27,6 +27,11 @@ use crate::{
     ProcessConfig,
 };
 
+const LOG2_FREQUENCY_ADAPTER: &str = "__ghost_adapter:log2_frequency";
+const PRO_Q_Q_ADAPTER: &str = "__ghost_adapter:pro_q_q";
+const PRO_Q_Q_MINIMUM: f64 = 0.025;
+const PRO_Q_Q_RATIO: f64 = 1600.0;
+
 #[derive(Debug, Clone)]
 struct ChildAudioPort {
     channel_count: usize,
@@ -93,6 +98,7 @@ fn parameter_manifest(
         let Some(info) = params.get_info(&mut plugin, index, &mut buffer) else {
             continue;
         };
+        let name = String::from_utf8_lossy(info.name).into_owned();
         let mut display = [0_u8; 256];
         let default_text = params
             .value_to_text(&mut plugin, info.id, info.default_value, &mut display)
@@ -103,7 +109,7 @@ fn parameter_manifest(
                     .trim()
                     .to_owned()
             });
-        let unit = default_text.as_deref().and_then(infer_display_unit);
+        let inferred_unit = default_text.as_deref().and_then(infer_display_unit);
         let mut labels = BTreeMap::new();
         if info.flags.contains(ParamInfoFlags::IS_STEPPED) {
             let start = info.min_value.ceil() as i64;
@@ -124,21 +130,122 @@ fn parameter_manifest(
                 }
             }
         }
+
+        // CLAP's parameter value is explicitly plugin-defined and is not required to equal the
+        // value printed by the editor. Pro-Q 4 exposes frequency as log2(Hz) and Q as a normalized
+        // exponential coordinate. Expose those two well-identified public parameter families to
+        // the rest of Ghost in their display/semantic domains and translate only at the native
+        // CLAP boundary. The marker travels with the descriptor so feedback uses the inverse map.
+        let (minimum, maximum, default, unit) = if is_log2_frequency_parameter(
+            &name,
+            info.min_value,
+            info.max_value,
+        ) {
+            labels.insert(LOG2_FREQUENCY_ADAPTER.into(), 0.0);
+            (
+                2.0_f64.powf(info.min_value),
+                2.0_f64.powf(info.max_value),
+                2.0_f64.powf(info.default_value),
+                Some("hz".into()),
+            )
+        } else if is_pro_q_q_parameter(&name, info.min_value, info.max_value) {
+            labels.insert(PRO_Q_Q_ADAPTER.into(), 0.0);
+            (
+                pro_q_q_from_raw(info.min_value),
+                pro_q_q_from_raw(info.max_value),
+                pro_q_q_from_raw(info.default_value),
+                None,
+            )
+        } else {
+            (
+                info.min_value,
+                info.max_value,
+                info.default_value,
+                inferred_unit,
+            )
+        };
+
         manifest.push(ParameterDescriptor {
             stable_id: info.id.get().to_string(),
-            name: String::from_utf8_lossy(info.name).into_owned(),
+            name,
             module: (!info.module.is_empty())
                 .then(|| String::from_utf8_lossy(info.module).into_owned()),
             unit,
-            minimum: info.min_value,
-            maximum: info.max_value,
-            default: info.default_value,
+            minimum,
+            maximum,
+            default,
             stepped: info.flags.contains(ParamInfoFlags::IS_STEPPED),
             read_only: info.flags.contains(ParamInfoFlags::IS_READONLY),
             labels,
         });
     }
     Ok(manifest)
+}
+
+fn normalized_parameter_name(value: &str) -> String {
+    value
+        .chars()
+        .filter(|character| character.is_ascii_alphanumeric())
+        .flat_map(char::to_lowercase)
+        .collect()
+}
+
+fn is_log2_frequency_parameter(name: &str, minimum: f64, maximum: f64) -> bool {
+    if !normalized_parameter_name(name).contains("frequency")
+        || !minimum.is_finite()
+        || !maximum.is_finite()
+        || minimum >= maximum
+        || minimum <= 0.0
+        || maximum >= 32.0
+    {
+        return false;
+    }
+    let display_minimum = 2.0_f64.powf(minimum);
+    let display_maximum = 2.0_f64.powf(maximum);
+    (5.0..=30.0).contains(&display_minimum)
+        && (20_000.0..=100_000.0).contains(&display_maximum)
+}
+
+fn is_pro_q_q_parameter(name: &str, minimum: f64, maximum: f64) -> bool {
+    let name = normalized_parameter_name(name);
+    name.starts_with("band")
+        && name.ends_with('q')
+        && minimum.abs() <= 1.0e-9
+        && (maximum - 1.0).abs() <= 1.0e-9
+}
+
+fn pro_q_q_from_raw(raw: f64) -> f64 {
+    PRO_Q_Q_MINIMUM * PRO_Q_Q_RATIO.powf(raw)
+}
+
+fn pro_q_q_to_raw(value: f64) -> f64 {
+    (value / PRO_Q_Q_MINIMUM).ln() / PRO_Q_Q_RATIO.ln()
+}
+
+fn raw_to_semantic(parameter: &ParameterDescriptor, raw: f64) -> f64 {
+    if parameter.labels.contains_key(LOG2_FREQUENCY_ADAPTER) {
+        2.0_f64.powf(raw)
+    } else if parameter.labels.contains_key(PRO_Q_Q_ADAPTER) {
+        pro_q_q_from_raw(raw)
+    } else {
+        raw
+    }
+}
+
+fn semantic_to_raw(parameter: &ParameterDescriptor, value: f64) -> f64 {
+    if parameter.labels.contains_key(LOG2_FREQUENCY_ADAPTER) {
+        value.log2()
+    } else if parameter.labels.contains_key(PRO_Q_Q_ADAPTER) {
+        pro_q_q_to_raw(value)
+    } else {
+        value
+    }
+}
+
+fn materializes_eq_band(parameter: &ParameterDescriptor, value: f64) -> bool {
+    let name = normalized_parameter_name(&parameter.name);
+    (name.contains("used") || name.contains("enabled"))
+        && value > parameter.minimum + (parameter.maximum - parameter.minimum) * 0.5
 }
 
 fn audio_topology(
@@ -256,6 +363,7 @@ impl NativeClapMain {
             .iter()
             .find(|parameter| parameter.stable_id == parameter_id)
             .ok_or(ChildError::UnknownRealtimeParameter)?;
+        let raw_value = semantic_to_raw(parameter, value);
         let (params, previous) = {
             let mut plugin = self.instance.plugin_handle();
             let params = plugin
@@ -263,6 +371,7 @@ impl NativeClapMain {
                 .ok_or_else(|| ChildError::Unsupported("clap.params".into()))?;
             let previous = params
                 .get_value(&mut plugin, raw_id)
+                .map(|raw| raw_to_semantic(parameter, raw))
                 .unwrap_or(parameter.default);
             (params, previous)
         };
@@ -272,7 +381,7 @@ impl NativeClapMain {
             0,
             raw_id,
             Pckn::match_all(),
-            value,
+            raw_value,
             Cookie::empty(),
         ));
         let mut output = EventBuffer::with_capacity(16);
@@ -357,9 +466,12 @@ impl NativeClapMain {
                             .parse::<u32>()
                             .ok()
                             .and_then(ClapId::from_raw)?;
-                        params
-                            .get_value(&mut plugin, id)
-                            .map(|value| (parameter.stable_id.clone(), value))
+                        params.get_value(&mut plugin, id).map(|raw| {
+                            (
+                                parameter.stable_id.clone(),
+                                raw_to_semantic(parameter, raw),
+                            )
+                        })
                     })
                     .collect()
             })
@@ -836,24 +948,40 @@ impl NativeClapAudio {
             .and_then(ClapId::from_raw)
             .ok_or(ChildError::UnknownRealtimeParameter)?;
         self.can_set_parameter_plain(parameter_id, value)?;
-        let parameter = self
-            .descriptor
-            .parameters
-            .iter()
-            .find(|parameter| parameter.stable_id == parameter_id)
-            .ok_or(ChildError::UnknownRealtimeParameter)?;
+        let (raw_value, default, flush_activation) = {
+            let parameter = self
+                .descriptor
+                .parameters
+                .iter()
+                .find(|parameter| parameter.stable_id == parameter_id)
+                .ok_or(ChildError::UnknownRealtimeParameter)?;
+            (
+                semantic_to_raw(parameter, value),
+                parameter.default,
+                materializes_eq_band(parameter, value),
+            )
+        };
         self.input_events.push(&ParamValueEvent::new(
             0,
             raw_id,
             Pckn::match_all(),
-            value,
+            raw_value,
             Cookie::empty(),
         ));
         let previous = self
             .current_values
             .get_mut(parameter_id)
             .map(|current| std::mem::replace(current, value))
-            .unwrap_or(parameter.default);
+            .unwrap_or(default);
+
+        // Pro-Q keeps a fixed bank of public band parameters even while a slot is unused. The
+        // Used/Enabled event must be committed before frequency/gain/Q are sent; putting all four
+        // events in one flush leaves the later values attached to a still-inactive slot. Flush the
+        // activation event immediately, then the transaction can enqueue the remaining values and
+        // the outer host performs its normal second child flush.
+        if flush_activation {
+            self.flush_parameter_events()?;
+        }
         Ok(previous)
     }
 
@@ -1004,13 +1132,16 @@ impl NativeClapAudio {
                                     item.stable_id.parse::<u32>().ok() == Some(id.get())
                                 })
                             {
+                                let value = raw_to_semantic(descriptor, parameter.value());
                                 if let Some(current) =
                                     self.current_values.get_mut(&descriptor.stable_id)
                                 {
-                                    *current = parameter.value();
+                                    *current = value;
                                 }
+                                shared.parameter_feedback(id.get(), value);
+                            } else {
+                                shared.parameter_feedback(id.get(), parameter.value());
                             }
-                            shared.parameter_feedback(id.get(), parameter.value());
                         }
                     }
                 }
