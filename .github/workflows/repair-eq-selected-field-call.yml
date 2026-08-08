@@ -1,0 +1,39 @@
+name: Repair EQ Selected Field Call
+on:
+  push:
+    branches: [fix/eq-band-mapping-and-shortcuts]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/eq-band-mapping-and-shortcuts
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Repair argument order
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path("crates/ghost-ui/src/patch.rs")
+          text = path.read_text()
+          old = """            field,\n            current_values,\n            0.08,\n            patch,\n"""
+          new = """            field,\n            0.08,\n            current_values,\n            patch,\n"""
+          if old in text:
+              path.write_text(text.replace(old, new, 1))
+      - run: cargo fmt --all
+      - name: Commit repair if needed
+        shell: bash
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add crates/ghost-ui/src/patch.rs
+            git commit -m "Fix EQ selected-field argument order"
+            git push origin HEAD:fix/eq-band-mapping-and-shortcuts
+          fi
