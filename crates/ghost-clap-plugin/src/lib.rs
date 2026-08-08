@@ -81,10 +81,15 @@ impl ghost_host::NestedHostBridge for OuterNestedHostBridge {
     }
 
     fn request_process(&self) {
+        self.host.request_process();
+    }
+
+    fn request_params_flush(&self) {
         if let Some(params) = self.host.get_extension::<HostParams>() {
             params.request_flush(&self.host);
+        } else {
+            self.host.request_process();
         }
-        self.host.request_process();
     }
 
     fn request_main_thread(&self) {
@@ -269,16 +274,13 @@ impl<'a> PluginAudioProcessor<'a, GhostShared, MainThreadState> for GhostAudioPr
         &mut self,
         process: Process,
         mut audio: Audio,
-        events: Events,
+        _events: Events,
     ) -> Result<ProcessStatus, PluginError> {
-        let latest_transport = events
-            .input
-            .iter()
-            .filter_map(|event| event.as_event::<TransportEvent>())
-            .next_back()
-            .or(process.transport);
+        // CLAP defines process.transport as the transport state at sample zero. Transport events
+        // inside the block describe later sample-accurate changes and must not replace this value.
+        let block_transport = process.transport;
         self.daw
-            .publish_transport(transport_snapshot(process.steady_time, latest_transport));
+            .publish_transport(transport_snapshot(process.steady_time, block_transport));
         self.apply_parameter_commands();
         for mut port_pair in &mut audio {
             let Some(channel_pairs) = port_pair.channels()?.into_f32() else {
@@ -299,7 +301,7 @@ impl<'a> PluginAudioProcessor<'a, GhostShared, MainThreadState> for GhostAudioPr
                         left_out,
                         right_out,
                         process.steady_time,
-                        latest_transport,
+                        block_transport,
                     )?;
                     self.capture.push_stereo_for_tap(
                         &self.capture_left[..frames],
@@ -314,7 +316,7 @@ impl<'a> PluginAudioProcessor<'a, GhostShared, MainThreadState> for GhostAudioPr
                     self.capture_left[..frames].copy_from_slice(&left[..frames]);
                     self.capture_right[..frames].copy_from_slice(&right[..frames]);
                     let actual_tap =
-                        self.process_children(left, right, process.steady_time, latest_transport)?;
+                        self.process_children(left, right, process.steady_time, block_transport)?;
                     self.capture.push_stereo_for_tap(
                         &self.capture_left[..frames],
                         &self.capture_right[..frames],
