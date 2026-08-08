@@ -6,6 +6,9 @@ use std::path::Path;
 use std::sync::Arc;
 use std::time::Instant;
 
+use clack_extensions::audio_ports::{
+    AudioPortFlags, AudioPortInfoBuffer, PluginAudioPorts,
+};
 #[cfg(target_os = "windows")]
 use clack_extensions::gui::{GuiApiType, GuiConfiguration, PluginGui, Window};
 use clack_extensions::latency::PluginLatency;
@@ -18,13 +21,38 @@ use clack_host::utils::Cookie;
 use ghost_core::{ParameterDescriptor, ProcessorDescriptor};
 
 use crate::native_host::{
-    NativeHost, NativeHostMain, NativeHostShared, NestedHostBridge, NestedHostEvent,
-    NoopNestedHostBridge,
+    with_audio_thread_scope, NativeHost, NativeHostMain, NativeHostShared, NestedHostBridge,
+    NestedHostEvent, NoopNestedHostBridge,
 };
 use crate::{
     AudioBlock, ChildError, ChildStateBlob, HostError, ParentWindow, PluginDescriptorRecord,
     ProcessConfig,
 };
+
+#[derive(Debug, Clone)]
+struct ChildAudioPort {
+    name: String,
+    channel_count: usize,
+    is_main: bool,
+}
+
+#[derive(Debug, Clone)]
+struct ChildAudioTopology {
+    inputs: Vec<ChildAudioPort>,
+    outputs: Vec<ChildAudioPort>,
+    main_input: usize,
+    main_output: usize,
+}
+
+impl ChildAudioTopology {
+    fn total_input_channels(&self) -> usize {
+        self.inputs.iter().map(|port| port.channel_count).sum()
+    }
+
+    fn total_output_channels(&self) -> usize {
+        self.outputs.iter().map(|port| port.channel_count).sum()
+    }
+}
 
 /// Inspects every descriptor in a CLAP file and retrieves its public parameter manifest without
 /// activating audio processing.
@@ -114,6 +142,53 @@ fn parameter_manifest(
         });
     }
     Ok(manifest)
+}
+
+fn audio_topology(instance: &mut PluginInstance<NativeHost>) -> Result<ChildAudioTopology, ChildError> {
+    let mut plugin = instance.plugin_handle();
+    let ports = plugin
+        .get_extension::<PluginAudioPorts>()
+        .ok_or_else(|| ChildError::Unsupported("clap.audio-ports".into()))?;
+    let inspect = |plugin: &mut PluginMainThreadHandle<'_>, is_input: bool| {
+        let count = ports.count(plugin, is_input);
+        let mut result = Vec::with_capacity(count as usize);
+        for index in 0..count {
+            let mut buffer = AudioPortInfoBuffer::new();
+            let info = ports.get(plugin, index, is_input, &mut buffer).ok_or_else(|| {
+                ChildError::Failed(format!(
+                    "child failed to describe {} audio port {index}",
+                    if is_input { "input" } else { "output" }
+                ))
+            })?;
+            if info.channel_count == 0 {
+                return Err(ChildError::Failed(format!(
+                    "child {} audio port {index} has zero channels",
+                    if is_input { "input" } else { "output" }
+                )));
+            }
+            result.push(ChildAudioPort {
+                name: String::from_utf8_lossy(info.name).into_owned(),
+                channel_count: info.channel_count as usize,
+                is_main: info.flags.contains(AudioPortFlags::IS_MAIN),
+            });
+        }
+        Ok::<_, ChildError>(result)
+    };
+    let inputs = inspect(&mut plugin, true)?;
+    let outputs = inspect(&mut plugin, false)?;
+    if inputs.is_empty() || outputs.is_empty() {
+        return Err(ChildError::Unsupported(
+            "Ghost graph currently requires an audio input and output".into(),
+        ));
+    }
+    let main_input = inputs.iter().position(|port| port.is_main).unwrap_or(0);
+    let main_output = outputs.iter().position(|port| port.is_main).unwrap_or(0);
+    Ok(ChildAudioTopology {
+        inputs,
+        outputs,
+        main_input,
+        main_output,
+    })
 }
 
 fn infer_display_unit(text: &str) -> Option<String> {
@@ -305,6 +380,7 @@ impl NativeClapMain {
                 "invalid native child configuration".into(),
             ));
         }
+        let topology = audio_topology(&mut self.instance)?;
         let current_values = self.parameter_values();
         let stopped = self
             .instance
@@ -318,26 +394,43 @@ impl NativeClapMain {
             )
             .map_err(|error| ChildError::Failed(error.to_string()))?;
         let mut processor: PluginAudioProcessor<NativeHost> = stopped.into();
-        processor
-            .ensure_processing_started()
+        with_audio_thread_scope(|| processor.ensure_processing_started())
             .map_err(|error| ChildError::Failed(error.to_string()))?;
+        let input_scratch = topology
+            .inputs
+            .iter()
+            .map(|port| vec![vec![0.0; config.maximum_frames]; port.channel_count])
+            .collect();
+        let output_scratch = topology
+            .outputs
+            .iter()
+            .map(|port| vec![vec![0.0; config.maximum_frames]; port.channel_count])
+            .collect();
         Ok(NativeClapAudio {
             processor: Some(processor),
             descriptor: self.descriptor.clone(),
             config,
-            input_ports: AudioPorts::with_capacity(config.channels, 1),
-            output_ports: AudioPorts::with_capacity(config.channels, 1),
-            input_scratch: vec![vec![0.0; config.maximum_frames]; config.channels],
-            output_scratch: vec![vec![0.0; config.maximum_frames]; config.channels],
+            input_ports: AudioPorts::with_capacity(
+                topology.total_input_channels(),
+                topology.inputs.len(),
+            ),
+            output_ports: AudioPorts::with_capacity(
+                topology.total_output_channels(),
+                topology.outputs.len(),
+            ),
+            topology,
+            input_scratch,
+            output_scratch,
             output_events: EventBuffer::with_capacity(1024),
-            input_events: EventBuffer::with_capacity(64),
+            input_events: EventBuffer::with_capacity(256),
             current_values,
         })
     }
 
     pub fn deactivate(&mut self, mut audio: NativeClapAudio) {
         if let Some(processor) = audio.processor.take() {
-            self.instance.deactivate(processor.into_stopped());
+            let stopped = with_audio_thread_scope(|| processor.into_stopped());
+            self.instance.deactivate(stopped);
         }
     }
 
@@ -649,10 +742,11 @@ pub struct NativeClapAudio {
     processor: Option<PluginAudioProcessor<NativeHost>>,
     descriptor: ProcessorDescriptor,
     config: ProcessConfig,
+    topology: ChildAudioTopology,
     input_ports: AudioPorts,
     output_ports: AudioPorts,
-    input_scratch: Vec<Vec<f32>>,
-    output_scratch: Vec<Vec<f32>>,
+    input_scratch: Vec<Vec<Vec<f32>>>,
+    output_scratch: Vec<Vec<Vec<f32>>>,
     output_events: EventBuffer,
     input_events: EventBuffer,
     current_values: BTreeMap<String, f64>,
@@ -718,7 +812,9 @@ impl NativeClapAudio {
         let params = plugin
             .get_extension::<PluginParams>()
             .ok_or_else(|| ChildError::Unsupported("clap.params".into()))?;
-        params.flush_active(&mut plugin, &input_events, &mut output_events);
+        with_audio_thread_scope(|| {
+            params.flush_active(&mut plugin, &input_events, &mut output_events);
+        });
         self.consume_parameter_output_events()?;
         self.input_events.clear();
         Ok(())
@@ -734,28 +830,48 @@ impl NativeClapAudio {
         {
             return Err(ChildError::BlockShapeMismatch);
         }
-        for (source, scratch) in block.channels.iter().zip(&mut self.input_scratch) {
-            scratch[..block.frames].copy_from_slice(&source[..block.frames]);
+
+        for port in &mut self.input_scratch {
+            for channel in port {
+                channel[..block.frames].fill(0.0);
+            }
         }
-        for scratch in &mut self.output_scratch {
-            scratch[..block.frames].fill(0.0);
+        let main_input = &mut self.input_scratch[self.topology.main_input];
+        match main_input.len() {
+            0 => return Err(ChildError::BlockShapeMismatch),
+            1 => {
+                for frame in 0..block.frames {
+                    main_input[0][frame] = 0.5 * (block.channels[0][frame] + block.channels[1][frame]);
+                }
+            }
+            _ => {
+                main_input[0][..block.frames].copy_from_slice(&block.channels[0][..block.frames]);
+                main_input[1][..block.frames].copy_from_slice(&block.channels[1][..block.frames]);
+            }
         }
-        let input_audio = self.input_ports.with_input_buffers([AudioPortBuffer {
-            latency: 0,
-            channels: AudioPortBufferType::f32_input_only(
-                self.input_scratch
-                    .iter_mut()
-                    .map(|channel| InputChannel::variable(&mut channel[..block.frames])),
-            ),
-        }]);
-        let mut output_audio = self.output_ports.with_output_buffers([AudioPortBuffer {
-            latency: 0,
-            channels: AudioPortBufferType::f32_output_only(
-                self.output_scratch
-                    .iter_mut()
-                    .map(|channel| &mut channel[..block.frames]),
-            ),
-        }]);
+        for port in &mut self.output_scratch {
+            for channel in port {
+                channel[..block.frames].fill(0.0);
+            }
+        }
+
+        let input_audio = self.input_ports.with_input_buffers(self.input_scratch.iter_mut().map(
+            |port| AudioPortBuffer {
+                latency: 0,
+                channels: AudioPortBufferType::f32_input_only(
+                    port.iter_mut()
+                        .map(|channel| InputChannel::variable(&mut channel[..block.frames])),
+                ),
+            },
+        ));
+        let mut output_audio = self.output_ports.with_output_buffers(
+            self.output_scratch.iter_mut().map(|port| AudioPortBuffer {
+                latency: 0,
+                channels: AudioPortBufferType::f32_output_only(
+                    port.iter_mut().map(|channel| &mut channel[..block.frames]),
+                ),
+            }),
+        );
         self.output_events.clear();
         let input_events = self.input_events.as_input();
         let mut output_events = self.output_events.as_output();
@@ -764,31 +880,38 @@ impl NativeClapAudio {
             .ok_or(ChildError::NotActive)?
             .access_shared_handler(|shared| {
                 let _ = shared.take_flush_request();
-                shared.set_processing(true);
             });
-        let process_result = self
-            .processor
-            .as_mut()
-            .ok_or(ChildError::NotActive)?
-            .as_started_mut()
-            .map_err(|_| ChildError::ProcessFailed)?
-            .process(
-                &input_audio,
-                &mut output_audio,
-                &input_events,
-                &mut output_events,
-                steady_time,
-                transport,
-            )
-            .map_err(|_| ChildError::ProcessFailed);
-        self.processor
-            .as_ref()
-            .ok_or(ChildError::NotActive)?
-            .access_shared_handler(|shared| shared.set_processing(false));
+        let process_result = with_audio_thread_scope(|| {
+            self.processor
+                .as_mut()
+                .ok_or(ChildError::NotActive)?
+                .as_started_mut()
+                .map_err(|_| ChildError::ProcessFailed)?
+                .process(
+                    &input_audio,
+                    &mut output_audio,
+                    &input_events,
+                    &mut output_events,
+                    steady_time,
+                    transport,
+                )
+                .map_err(|_| ChildError::ProcessFailed)
+        });
         process_result?;
         self.consume_parameter_output_events()?;
-        for (destination, scratch) in block.channels.iter_mut().zip(&self.output_scratch) {
-            destination[..block.frames].copy_from_slice(&scratch[..block.frames]);
+
+        let main_output = &self.output_scratch[self.topology.main_output];
+        match main_output.len() {
+            0 => return Err(ChildError::BlockShapeMismatch),
+            1 => {
+                for destination in block.channels.iter_mut().take(2) {
+                    destination[..block.frames].copy_from_slice(&main_output[0][..block.frames]);
+                }
+            }
+            _ => {
+                block.channels[0][..block.frames].copy_from_slice(&main_output[0][..block.frames]);
+                block.channels[1][..block.frames].copy_from_slice(&main_output[1][..block.frames]);
+            }
         }
         self.input_events.clear();
         Ok(())

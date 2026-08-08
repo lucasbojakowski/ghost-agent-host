@@ -4,7 +4,12 @@ use realfft::RealFftPlanner;
 
 use super::{
     percentile, AnalysisConfig, AnalysisError, BandEnergy, ResonanceCandidate, SpectralFeatures,
+    SpectrumPoint,
 };
+
+const DISPLAY_SPECTRUM_POINTS: usize = 320;
+const DISPLAY_SPECTRUM_FLOOR_DB: f64 = -96.0;
+
 #[derive(Default)]
 struct SpectralAccumulator {
     centroid_sum: f64,
@@ -14,6 +19,7 @@ struct SpectralAccumulator {
     frames: usize,
     frame_centroids: Vec<f32>,
     average_spectrum: Vec<f64>,
+    frame_spectra_db: Vec<Vec<f32>>,
     average_spectrum_frames: usize,
     fft_size: usize,
 }
@@ -32,6 +38,14 @@ pub(super) fn analyze_spectrum(
         }
         let current = spectral_pass(mono, sample_rate, fft_size, config.hop_ratio)?;
         if current.fft_size > best.fft_size {
+            if best.frames > 0 {
+                combined.centroid_sum += best.centroid_sum;
+                combined.rolloff_sum += best.rolloff_sum;
+                combined.flatness_sum += best.flatness_sum;
+                combined.flux_sum += best.flux_sum;
+                combined.frames += best.frames;
+                combined.frame_centroids.extend(best.frame_centroids);
+            }
             best = current;
         } else {
             combined.centroid_sum += current.centroid_sum;
@@ -56,7 +70,7 @@ pub(super) fn analyze_spectrum(
     combined.frames += best.frames;
     combined
         .frame_centroids
-        .extend(best.frame_centroids.clone());
+        .extend(best.frame_centroids.iter().copied());
 
     let frame_count = combined.frames.max(1) as f64;
     let spectrum = &best.average_spectrum;
@@ -64,9 +78,17 @@ pub(super) fn analyze_spectrum(
     let tilt = spectral_tilt(spectrum, best.fft_size, sample_rate);
     let resonances = resonance_candidates(
         spectrum,
+        &best.frame_spectra_db,
         best.fft_size,
         sample_rate,
         config.resonance_threshold_db,
+        config.minimum_frequency_hz as f64,
+        config.maximum_frequency_hz as f64,
+    );
+    let display_spectrum = display_spectrum(
+        spectrum,
+        best.fft_size,
+        sample_rate,
         config.minimum_frequency_hz as f64,
         config.maximum_frequency_hz as f64,
     );
@@ -84,6 +106,7 @@ pub(super) fn analyze_spectrum(
         } else {
             Vec::new()
         },
+        display_spectrum,
     })
 }
 
@@ -163,6 +186,12 @@ fn spectral_pass(
         for (average, magnitude) in accumulator.average_spectrum.iter_mut().zip(&magnitudes) {
             *average += magnitude;
         }
+        accumulator.frame_spectra_db.push(
+            magnitudes
+                .iter()
+                .map(|magnitude| (20.0 * magnitude.max(1.0e-20).log10()) as f32)
+                .collect(),
+        );
         accumulator.average_spectrum_frames += 1;
         previous.copy_from_slice(&magnitudes);
     }
@@ -212,6 +241,7 @@ fn spectral_tilt(spectrum: &[f64], fft_size: usize, sample_rate: u32) -> f64 {
 
 fn resonance_candidates(
     spectrum: &[f64],
+    frame_spectra_db: &[Vec<f32>],
     fft_size: usize,
     sample_rate: u32,
     threshold_db: f32,
@@ -241,23 +271,85 @@ fn resonance_candidates(
             let bandwidth_octaves = ((hz + bandwidth_hz) / (hz - bandwidth_hz).max(1.0))
                 .log2()
                 .abs();
+            let persistent_frames = frame_spectra_db
+                .iter()
+                .filter(|frame| {
+                    if frame.len() <= index + radius {
+                        return false;
+                    }
+                    let local: Vec<f64> = frame[index - radius..=index + radius]
+                        .iter()
+                        .map(|value| f64::from(*value))
+                        .collect();
+                    let local_median = percentile(&local, 0.5);
+                    f64::from(frame[index]) - local_median >= f64::from(threshold_db)
+                })
+                .count();
+            let persistence = if frame_spectra_db.is_empty() {
+                0.0
+            } else {
+                persistent_frames as f64 / frame_spectra_db.len() as f64
+            };
             candidates.push(ResonanceCandidate {
                 frequency_hz: hz,
                 prominence_db: prominence,
-                persistence: 1.0,
+                persistence,
                 bandwidth_octaves,
             });
         }
     }
 
     candidates.sort_by(|left, right| {
-        right
-            .prominence_db
-            .partial_cmp(&left.prominence_db)
+        resonance_score(right)
+            .partial_cmp(&resonance_score(left))
             .unwrap_or(Ordering::Equal)
     });
     candidates.truncate(16);
     candidates
+}
+
+fn resonance_score(candidate: &ResonanceCandidate) -> f64 {
+    candidate.prominence_db * (0.35 + 0.65 * candidate.persistence)
+}
+
+fn display_spectrum(
+    spectrum: &[f64],
+    fft_size: usize,
+    sample_rate: u32,
+    minimum_hz: f64,
+    maximum_hz: f64,
+) -> Vec<SpectrumPoint> {
+    if spectrum.len() < 2 || sample_rate == 0 || fft_size == 0 {
+        return Vec::new();
+    }
+    let nyquist = f64::from(sample_rate) * 0.5;
+    let minimum_hz = minimum_hz.max(20.0).min(nyquist);
+    let maximum_hz = maximum_hz.min(nyquist).max(minimum_hz);
+    let minimum_log = minimum_hz.ln();
+    let maximum_log = maximum_hz.ln();
+
+    let mut samples = Vec::with_capacity(DISPLAY_SPECTRUM_POINTS);
+    let mut peak_db = f64::NEG_INFINITY;
+    for index in 0..DISPLAY_SPECTRUM_POINTS {
+        let t = index as f64 / (DISPLAY_SPECTRUM_POINTS - 1) as f64;
+        let hz = (minimum_log + (maximum_log - minimum_log) * t).exp();
+        let bin = hz * fft_size as f64 / f64::from(sample_rate);
+        let lower = (bin.floor() as usize).min(spectrum.len() - 1);
+        let upper = (lower + 1).min(spectrum.len() - 1);
+        let fraction = (bin - lower as f64).clamp(0.0, 1.0);
+        let magnitude = spectrum[lower] * (1.0 - fraction) + spectrum[upper] * fraction;
+        let db = 20.0 * magnitude.max(1.0e-20).log10();
+        peak_db = peak_db.max(db);
+        samples.push((hz, db));
+    }
+
+    samples
+        .into_iter()
+        .map(|(frequency_hz, db)| SpectrumPoint {
+            frequency_hz: frequency_hz as f32,
+            magnitude_db: (db - peak_db).clamp(DISPLAY_SPECTRUM_FLOOR_DB, 0.0) as f32,
+        })
+        .collect()
 }
 
 fn frequency(index: usize, fft_size: usize, sample_rate: u32) -> f64 {
@@ -277,4 +369,21 @@ fn linear_slope(x: &[f64], y: &[f64]) -> f64 {
         .sum::<f64>();
     let denominator = x.iter().map(|x| (x - mean_x).powi(2)).sum::<f64>();
     numerator / denominator.max(1.0e-30)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn display_spectrum_is_log_spaced_and_peak_normalized() {
+        let spectrum = vec![1.0; 2049];
+        let points = display_spectrum(&spectrum, 4096, 48_000, 20.0, 20_000.0);
+        assert_eq!(points.len(), DISPLAY_SPECTRUM_POINTS);
+        assert!(points.windows(2).all(|window| {
+            window[1].frequency_hz > window[0].frequency_hz
+                && window[1].magnitude_db <= 0.0
+        }));
+        assert!(points.iter().all(|point| point.magnitude_db.abs() < 1.0e-4));
+    }
 }
