@@ -8,12 +8,12 @@ use windows_sys::Win32::Foundation::{HWND, LPARAM, LRESULT, WPARAM};
 use windows_sys::Win32::System::Threading::GetCurrentThreadId;
 use windows_sys::Win32::UI::Input::KeyboardAndMouse::{GetKeyState, VK_CONTROL, VK_MENU, VK_SHIFT};
 use windows_sys::Win32::UI::WindowsAndMessaging::{
-    AdjustWindowRectEx, CallNextHookEx, CreateWindowExW, DefWindowProcW, DestroyWindow, GetAncestor,
-    GetForegroundWindow, IsChild, IsIconic, IsWindow, PostMessageW, SetWindowLongPtrW, SetWindowPos,
-    SetWindowsHookExW, ShowWindow, UnhookWindowsHookEx, CW_USEDEFAULT, GA_ROOT, GWLP_WNDPROC, HHOOK,
-    MSG, PM_REMOVE, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOZORDER, SW_HIDE, SW_RESTORE, SW_SHOW,
-    WH_GETMESSAGE, WM_CLOSE, WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP, WS_CAPTION,
-    WS_CLIPCHILDREN, WS_EX_TOOLWINDOW, WS_MINIMIZEBOX, WS_OVERLAPPED, WS_SYSMENU,
+    AdjustWindowRectEx, CallNextHookEx, CreateWindowExW, DefWindowProcW, DestroyWindow,
+    GetAncestor, GetForegroundWindow, IsChild, IsIconic, IsWindow, PostMessageW, SetWindowLongPtrW,
+    SetWindowPos, SetWindowsHookExW, ShowWindow, UnhookWindowsHookEx, CW_USEDEFAULT, GA_ROOT,
+    GWLP_WNDPROC, HHOOK, MSG, PM_REMOVE, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOZORDER, SW_HIDE,
+    SW_RESTORE, SW_SHOW, WH_GETMESSAGE, WM_CLOSE, WM_KEYDOWN, WM_KEYUP, WM_SYSKEYDOWN, WM_SYSKEYUP,
+    WS_CAPTION, WS_CLIPCHILDREN, WS_EX_TOOLWINDOW, WS_MINIMIZEBOX, WS_OVERLAPPED, WS_SYSMENU,
 };
 
 const CHILD_WINDOW_STYLE: u32 =
