@@ -1,0 +1,29 @@
+name: Format Child Shortcut Bridge
+on:
+  push:
+    branches: [fix/eq-band-mapping-and-shortcuts]
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/eq-band-mapping-and-shortcuts
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all
+      - name: Commit rustfmt output
+        shell: bash
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add crates/ghost-clap-plugin/src/child_window.rs
+            git commit -m "Format child shortcut bridge"
+            git push origin HEAD:fix/eq-band-mapping-and-shortcuts
+          fi
