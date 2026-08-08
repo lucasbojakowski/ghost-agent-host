@@ -733,15 +733,16 @@ mod tests {
             persistence_blocks: 1,
             pre_roll_ms: 100,
         }));
-        assert!(capture.arm(3, 48_000));
+        assert!(capture.arm(5, 48_000));
         capture.push_stereo(&[0.0, 0.0], &[0.0, 0.0], &[0.0, 0.0], &[0.0, 0.0]);
         assert_eq!(capture.state(), RealtimeCaptureState::Armed);
         capture.push_stereo(&[0.1, 0.2], &[0.3, 0.4], &[0.5, 0.6], &[0.7, 0.8]);
         assert_eq!(capture.state(), RealtimeCaptureState::Recording);
+        assert_eq!(capture.progress(), (4, 5));
         capture.push_stereo(&[0.9], &[0.8], &[0.6], &[0.4]);
         assert_eq!(capture.state(), RealtimeCaptureState::Complete);
         let snapshot = capture.snapshot(DawTransportSnapshot::default()).unwrap();
-        assert_eq!(snapshot.input.channels[0], vec![0.1, 0.2, 0.9]);
-        assert_eq!(snapshot.output.channels[1], vec![0.7, 0.8, 0.4]);
+        assert_eq!(snapshot.input.channels[0], vec![0.0, 0.0, 0.1, 0.2, 0.9]);
+        assert_eq!(snapshot.output.channels[1], vec![0.0, 0.0, 0.7, 0.8, 0.4]);
     }
 }
