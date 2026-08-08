@@ -424,7 +424,8 @@ impl RealtimeCaptureBuffer {
             .store(config.threshold_dbfs.to_bits(), Ordering::Release);
         self.trigger_persistence_blocks
             .store(config.persistence_blocks, Ordering::Release);
-        self.pre_roll_ms.store(config.pre_roll_ms, Ordering::Release);
+        self.pre_roll_ms
+            .store(config.pre_roll_ms, Ordering::Release);
         true
     }
 
@@ -500,13 +501,7 @@ impl RealtimeCaptureBuffer {
 
         match self.state.load(Ordering::Acquire) {
             ARMED => {
-                self.push_pre_roll(
-                    input_left,
-                    input_right,
-                    output_left,
-                    output_right,
-                    frames,
-                );
+                self.push_pre_roll(input_left, input_right, output_left, output_right, frames);
                 if !self.signal_triggered(output_left, output_right, frames) {
                     return;
                 }
@@ -541,10 +536,10 @@ impl RealtimeCaptureBuffer {
         let written = self.written_frames.load(Ordering::Relaxed);
         let target = self.target_frames.load(Ordering::Acquire);
         let pre_roll = self.captured_pre_roll_frames.load(Ordering::Acquire);
-        let copy_frames = target
-            .saturating_sub(written)
-            .min(frames)
-            .min(self.capacity_frames.saturating_sub(written.saturating_sub(pre_roll)));
+        let copy_frames = target.saturating_sub(written).min(frames).min(
+            self.capacity_frames
+                .saturating_sub(written.saturating_sub(pre_roll)),
+        );
         let post_start = written.saturating_sub(pre_roll);
         for offset in 0..copy_frames {
             let index = post_start + offset;

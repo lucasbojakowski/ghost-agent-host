@@ -381,8 +381,7 @@ mod tests {
         let points = display_spectrum(&spectrum, 4096, 48_000, 20.0, 20_000.0);
         assert_eq!(points.len(), DISPLAY_SPECTRUM_POINTS);
         assert!(points.windows(2).all(|window| {
-            window[1].frequency_hz > window[0].frequency_hz
-                && window[1].magnitude_db <= 0.0
+            window[1].frequency_hz > window[0].frequency_hz && window[1].magnitude_db <= 0.0
         }));
         assert!(points.iter().all(|point| point.magnitude_db.abs() < 1.0e-4));
     }

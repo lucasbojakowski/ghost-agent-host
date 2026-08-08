@@ -6,9 +6,7 @@ use std::path::Path;
 use std::sync::Arc;
 use std::time::Instant;
 
-use clack_extensions::audio_ports::{
-    AudioPortFlags, AudioPortInfoBuffer, PluginAudioPorts,
-};
+use clack_extensions::audio_ports::{AudioPortFlags, AudioPortInfoBuffer, PluginAudioPorts};
 #[cfg(target_os = "windows")]
 use clack_extensions::gui::{GuiApiType, GuiConfiguration, PluginGui, Window};
 use clack_extensions::latency::PluginLatency;
@@ -143,7 +141,9 @@ fn parameter_manifest(
     Ok(manifest)
 }
 
-fn audio_topology(instance: &mut PluginInstance<NativeHost>) -> Result<ChildAudioTopology, ChildError> {
+fn audio_topology(
+    instance: &mut PluginInstance<NativeHost>,
+) -> Result<ChildAudioTopology, ChildError> {
     let mut plugin = instance.plugin_handle();
     let ports = plugin
         .get_extension::<PluginAudioPorts>()
@@ -153,12 +153,14 @@ fn audio_topology(instance: &mut PluginInstance<NativeHost>) -> Result<ChildAudi
         let mut result = Vec::with_capacity(count as usize);
         for index in 0..count {
             let mut buffer = AudioPortInfoBuffer::new();
-            let info = ports.get(plugin, index, is_input, &mut buffer).ok_or_else(|| {
-                ChildError::Failed(format!(
-                    "child failed to describe {} audio port {index}",
-                    if is_input { "input" } else { "output" }
-                ))
-            })?;
+            let info = ports
+                .get(plugin, index, is_input, &mut buffer)
+                .ok_or_else(|| {
+                    ChildError::Failed(format!(
+                        "child failed to describe {} audio port {index}",
+                        if is_input { "input" } else { "output" }
+                    ))
+                })?;
             if info.channel_count == 0 {
                 return Err(ChildError::Failed(format!(
                     "child {} audio port {index} has zero channels",
@@ -838,14 +840,11 @@ impl NativeClapAudio {
         match main_input.len() {
             0 => return Err(ChildError::BlockShapeMismatch),
             1 => {
-                for (destination, (left, right)) in main_input[0][..block.frames]
-                    .iter_mut()
-                    .zip(
-                        block.channels[0][..block.frames]
-                            .iter()
-                            .zip(block.channels[1][..block.frames].iter()),
-                    )
-                {
+                for (destination, (left, right)) in main_input[0][..block.frames].iter_mut().zip(
+                    block.channels[0][..block.frames]
+                        .iter()
+                        .zip(block.channels[1][..block.frames].iter()),
+                ) {
                     *destination = 0.5 * (*left + *right);
                 }
             }
@@ -860,23 +859,25 @@ impl NativeClapAudio {
             }
         }
 
-        let input_audio = self.input_ports.with_input_buffers(self.input_scratch.iter_mut().map(
-            |port| AudioPortBuffer {
-                latency: 0,
-                channels: AudioPortBufferType::f32_input_only(
-                    port.iter_mut()
-                        .map(|channel| InputChannel::variable(&mut channel[..block.frames])),
-                ),
-            },
-        ));
-        let mut output_audio = self.output_ports.with_output_buffers(
-            self.output_scratch.iter_mut().map(|port| AudioPortBuffer {
-                latency: 0,
-                channels: AudioPortBufferType::f32_output_only(
-                    port.iter_mut().map(|channel| &mut channel[..block.frames]),
-                ),
-            }),
-        );
+        let input_audio = self
+            .input_ports
+            .with_input_buffers(self.input_scratch.iter_mut().map(|port| {
+                AudioPortBuffer {
+                    latency: 0,
+                    channels: AudioPortBufferType::f32_input_only(
+                        port.iter_mut()
+                            .map(|channel| InputChannel::variable(&mut channel[..block.frames])),
+                    ),
+                }
+            }));
+        let mut output_audio =
+            self.output_ports
+                .with_output_buffers(self.output_scratch.iter_mut().map(|port| AudioPortBuffer {
+                    latency: 0,
+                    channels: AudioPortBufferType::f32_output_only(
+                        port.iter_mut().map(|channel| &mut channel[..block.frames]),
+                    ),
+                }));
         self.output_events.clear();
         let input_events = self.input_events.as_input();
         let mut output_events = self.output_events.as_output();

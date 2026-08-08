@@ -54,8 +54,8 @@ pub(crate) fn signal_field(ui: &mut egui::Ui, result: Option<&AnalysisResult>) {
     let graph = rect.shrink2(egui::vec2(42.0, 28.0));
 
     let x_for_hz = |hz: f32| {
-        let normalized = (hz.clamp(MIN_HZ, MAX_HZ).ln() - MIN_HZ.ln())
-            / (MAX_HZ.ln() - MIN_HZ.ln());
+        let normalized =
+            (hz.clamp(MIN_HZ, MAX_HZ).ln() - MIN_HZ.ln()) / (MAX_HZ.ln() - MIN_HZ.ln());
         egui::lerp(graph.x_range(), normalized)
     };
     let y_for_db = |db: f32| {
@@ -63,7 +63,9 @@ pub(crate) fn signal_field(ui: &mut egui::Ui, result: Option<&AnalysisResult>) {
         egui::lerp(graph.y_range(), 1.0 - normalized)
     };
 
-    for frequency in [20.0_f32, 50.0, 100.0, 200.0, 500.0, 1_000.0, 2_000.0, 5_000.0, 10_000.0, 20_000.0] {
+    for frequency in [
+        20.0_f32, 50.0, 100.0, 200.0, 500.0, 1_000.0, 2_000.0, 5_000.0, 10_000.0, 20_000.0,
+    ] {
         let x = x_for_hz(frequency);
         painter.line_segment(
             [egui::pos2(x, graph.top()), egui::pos2(x, graph.bottom())],
@@ -121,19 +123,18 @@ pub(crate) fn signal_field(ui: &mut egui::Ui, result: Option<&AnalysisResult>) {
             egui::pos2(left, graph.top()),
             egui::pos2(right.max(left + 1.0), graph.bottom()),
         );
-        painter.rect_filled(region, 0.0, orange().gamma_multiply(0.035 + 0.075 * strength));
+        painter.rect_filled(
+            region,
+            0.0,
+            orange().gamma_multiply(0.035 + 0.075 * strength),
+        );
     }
 
     if spectral.display_spectrum.len() > 1 {
         let points: Vec<_> = spectral
             .display_spectrum
             .iter()
-            .map(|point| {
-                egui::pos2(
-                    x_for_hz(point.frequency_hz),
-                    y_for_db(point.magnitude_db),
-                )
-            })
+            .map(|point| egui::pos2(x_for_hz(point.frequency_hz), y_for_db(point.magnitude_db)))
             .collect();
         for width in [8.0, 4.0] {
             painter.add(egui::Shape::line(

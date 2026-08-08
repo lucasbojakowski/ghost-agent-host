@@ -7,9 +7,7 @@ use std::sync::Arc;
 use std::thread::ThreadId;
 use std::time::{Duration, Instant};
 
-use clack_extensions::audio_ports::{
-    AudioPortRescanFlags, HostAudioPorts, HostAudioPortsImpl,
-};
+use clack_extensions::audio_ports::{AudioPortRescanFlags, HostAudioPorts, HostAudioPortsImpl};
 use clack_extensions::gui::{GuiSize, HostGui, HostGuiImpl};
 use clack_extensions::latency::{HostLatency, HostLatencyImpl};
 use clack_extensions::log::{HostLog, HostLogImpl, LogSeverity};
