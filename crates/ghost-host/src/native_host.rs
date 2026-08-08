@@ -60,7 +60,6 @@ pub enum NestedHostEvent {
     GuiHideRequested,
     GuiClosed { was_destroyed: bool },
     ParametersRescan { flags: u32 },
-    AudioPortsRescan { flags: u32 },
     ParameterClear { parameter_id: u32, flags: u32 },
     ParameterValue { parameter_id: u32, value: f64 },
     StateDirty,
@@ -258,9 +257,9 @@ impl HostAudioPortsImpl for NativeHostMain<'_> {
     }
 
     fn rescan(&mut self, flags: AudioPortRescanFlags) {
-        self.shared.push(NestedHostEvent::AudioPortsRescan {
-            flags: flags.bits(),
-        });
+        // Port topology is discovered again whenever the outer graph reactivates the child.
+        // Structural rescan flags therefore translate directly into a graph restart. Name-only
+        // changes do not affect Ghost's routing and need no additional main-thread event.
         if flags.requires_deactivate() {
             self.shared.bridge.request_restart();
         }
@@ -415,5 +414,18 @@ mod tests {
             assert!(HostThreadCheckImpl::is_audio_thread(&shared));
         });
         assert!(HostThreadCheckImpl::is_main_thread(&shared));
+    }
+
+    #[test]
+    fn structural_audio_port_rescan_requests_graph_restart() {
+        let bridge = Arc::new(ProbeBridge::default());
+        let shared = NativeHostShared::new(bridge.clone());
+        let mut main = NativeHostMain::new(&shared);
+
+        HostAudioPortsImpl::rescan(&mut main, AudioPortRescanFlags::NAMES);
+        assert_eq!(bridge.restart.load(Ordering::Relaxed), 0);
+
+        HostAudioPortsImpl::rescan(&mut main, AudioPortRescanFlags::CHANNEL_COUNT);
+        assert_eq!(bridge.restart.load(Ordering::Relaxed), 1);
     }
 }
