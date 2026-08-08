@@ -1,0 +1,25 @@
+name: Host Hardening Validation
+on:
+  push:
+    branches: [fix/clap-host-hardening]
+  workflow_dispatch:
+
+jobs:
+  compile:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Format working tree for compile validation
+        run: cargo fmt --all
+      - name: Compile workspace
+        run: cargo check --workspace --all-features
+      - name: Run focused core tests
+        run: cargo test -p ghost-core -p ghost-host --all-features
