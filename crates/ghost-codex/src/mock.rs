@@ -1,9 +1,7 @@
-use ghost_mix::{
-    CompressorOperation, DynamicEqSettings, EqBandOperation, EqShape, ExpectedChange, MixOperation,
-    MixPlan, PromptBundle,
-};
+use ghost_mix::{EqBandOperation, EqShape, MixOperation, MixPlan, PromptBundle};
 
 use super::{AgentError, MixingAgent};
+
 #[derive(Default)]
 pub struct MockMixingAgent;
 
@@ -12,124 +10,82 @@ impl MixingAgent for MockMixingAgent {
         "mock"
     }
 
-    fn propose(&mut self, bundle: &PromptBundle) -> Result<MixPlan, AgentError> {
-        let analysis: ghost_core::AnalysisBundle =
-            serde_json::from_str(&bundle.analysis_text_json)?;
-        let signal = &analysis.signal;
-        let mut operations = Vec::new();
-        let mut expected_changes = Vec::new();
-        let bands = &signal.spectrum.bands;
+    fn propose(&mut self, _bundle: &PromptBundle) -> Result<MixPlan, AgentError> {
+        Ok(validation_plan())
+    }
+}
 
-        if bands.low_mid_db > bands.mid_db + 4.0 {
-            operations.push(MixOperation::EqBand {
-                settings: EqBandOperation {
-                    band_id: "agent-low-mid-control".into(),
-                    enabled: true,
-                    shape: EqShape::Bell,
-                    frequency_hz: 260.0,
-                    gain_db: -2.0,
-                    q: 1.05,
-                    slope_db_oct: None,
-                    channel_mode: "stereo".into(),
-                    dynamic: Some(DynamicEqSettings {
-                        enabled: true,
-                        range_db: -1.5,
-                        threshold_db: None,
-                    }),
-                    rationale:
-                        "Reduce persistent low-mid concentration without removing bass weight."
-                            .into(),
-                    evidence: vec![format!(
-                        "low_mid_db={:.2}; mid_db={:.2}",
-                        bands.low_mid_db, bands.mid_db
-                    )],
-                },
-            });
-            expected_changes.push(ExpectedChange {
-                metric: "spectrum.bands.low_mid_db".into(),
-                direction: "decrease".into(),
-                maximum_delta: Some(4.0),
-                unit: Some("dB".into()),
-            });
-        }
+fn validation_plan() -> MixPlan {
+    // This backend is intentionally not an analysis simulation. It is a deterministic child-host
+    // fixture used to prove that a semantic proposal can compile into public child parameters and
+    // be applied through the CLAP host.
+    //
+    // Pro-Q 4 currently exposes its frequency parameter plain-value domain as roughly
+    // 3.322..14.873 even though the semantic field is named `frequency_hz`. Until the semantic
+    // mapper converts display Hz into the plugin's plain domain, keep these fixture frequencies in
+    // the overlap between the workflow's accepted semantic range (>= 10) and Pro-Q's current plain
+    // range. The resulting child bands are intentionally just a visible parameter-editing test.
+    let bands = [
+        ("mock-band-1", 10.0, -3.0, 0.75),
+        ("mock-band-2", 12.0, 2.5, 1.10),
+        ("mock-band-3", 14.0, -1.5, 2.00),
+    ];
 
-        if signal.loudness.crest_factor_db > 12.0 && signal.dynamics.transient_density_hz > 1.0 {
-            operations.push(MixOperation::Compressor {
-                settings: CompressorOperation {
-                    enabled: true,
-                    style: "clean".into(),
-                    threshold_db: -18.0,
-                    ratio: 2.0,
-                    knee_db: 6.0,
-                    attack_ms: 25.0,
-                    release_ms: 140.0,
-                    range_db: 3.0,
-                    mix_percent: 70.0,
-                    output_gain_db: 0.0,
-                    rationale:
-                        "Control event-to-event level variation while preserving initial attack."
-                            .into(),
-                    evidence: vec![format!(
-                        "crest_factor_db={:.2}; transient_density_hz={:.2}",
-                        signal.loudness.crest_factor_db, signal.dynamics.transient_density_hz
-                    )],
-                },
-            });
-            expected_changes.push(ExpectedChange {
-                metric: "loudness.crest_factor_db".into(),
-                direction: "decrease".into(),
-                maximum_delta: Some(3.0),
-                unit: Some("dB".into()),
-            });
-        }
-
-        if let Some(resonance) = signal.spectrum.resonances.first() {
-            if resonance.prominence_db > 7.0 {
-                operations.push(MixOperation::EqBand {
-                    settings: EqBandOperation {
-                        band_id: "agent-resonance-control".into(),
-                        enabled: true,
-                        shape: EqShape::Bell,
-                        frequency_hz: resonance.frequency_hz,
-                        gain_db: -resonance.prominence_db.min(4.5) * 0.55,
-                        q: (1.0 / resonance.bandwidth_octaves.max(0.08)).clamp(1.0, 12.0),
-                        slope_db_oct: None,
-                        channel_mode: "stereo".into(),
-                        dynamic: Some(DynamicEqSettings {
-                            enabled: true,
-                            range_db: -2.0,
-                            threshold_db: None,
-                        }),
-                        rationale:
-                            "Control the most prominent persistent narrow-band concentration."
-                                .into(),
-                        evidence: vec![format!(
-                            "resonance_hz={:.1}; prominence_db={:.2}",
-                            resonance.frequency_hz, resonance.prominence_db
-                        )],
-                    },
-                });
-            }
-        }
-
-        Ok(MixPlan {
-            schema_version: "ghost.mix-plan/1".into(),
-            summary: if operations.is_empty() {
-                "No conservative EQ or compression intervention was justified by the current text evidence."
-                    .into()
-            } else {
-                "Conservative plugin-in-the-loop proposal derived from measured spectral and dynamic evidence."
-                    .into()
-            },
-            confidence: if operations.is_empty() { 0.55 } else { 0.78 },
-            assumptions: vec![
-                "The captured region is representative of the requested source.".into(),
-                "The mock backend approximates, but does not duplicate, FabFilter processing."
+    let operations = bands
+        .into_iter()
+        .map(|(band_id, frequency_hz, gain_db, q)| MixOperation::EqBand {
+            settings: EqBandOperation {
+                band_id: band_id.into(),
+                enabled: true,
+                shape: EqShape::Bell,
+                frequency_hz,
+                gain_db,
+                q,
+                slope_db_oct: None,
+                channel_mode: "stereo".into(),
+                dynamic: None,
+                rationale: "Deterministic mock band for child-parameter integration testing."
                     .into(),
-            ],
-            operations,
-            expected_changes,
-            cautions: vec!["Verify the result in context and with level-matched A/B.".into()],
+                evidence: Vec::new(),
+            },
         })
+        .collect();
+
+    MixPlan {
+        schema_version: MixPlan::SCHEMA.into(),
+        summary: "Deterministic three-band EQ fixture for validating child parameter writes."
+            .into(),
+        confidence: 1.0,
+        assumptions: vec![
+            "Mock mode intentionally ignores the prompt and analysis payload.".into(),
+            "The proposal exists only to validate child-plugin parameter interaction.".into(),
+        ],
+        operations,
+        expected_changes: Vec::new(),
+        cautions: vec!["Validation fixture only; do not treat this as a mixing recommendation.".into()],
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use ghost_mix::validate_mix_plan;
+
+    use super::*;
+
+    #[test]
+    fn validation_plan_is_static_eq_only_and_schema_valid() {
+        let plan = validation_plan();
+        validate_mix_plan(&plan).unwrap();
+        assert_eq!(plan.operations.len(), 3);
+
+        for operation in plan.operations {
+            let MixOperation::EqBand { settings } = operation else {
+                panic!("mock validation fixture must contain EQ operations only");
+            };
+            assert!(settings.enabled);
+            assert!(settings.dynamic.is_none());
+            assert_eq!(settings.channel_mode, "stereo");
+            assert_eq!(settings.shape, EqShape::Bell);
+        }
     }
 }
