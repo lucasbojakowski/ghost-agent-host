@@ -1,11 +1,15 @@
 //! Child-facing CLAP host callbacks and their bounded handoff to the outer host.
 
+use std::cell::Cell;
 use std::collections::BTreeMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::thread::ThreadId;
 use std::time::{Duration, Instant};
 
+use clack_extensions::audio_ports::{
+    AudioPortRescanFlags, HostAudioPorts, HostAudioPortsImpl,
+};
 use clack_extensions::gui::{GuiSize, HostGui, HostGuiImpl};
 use clack_extensions::latency::{HostLatency, HostLatencyImpl};
 use clack_extensions::log::{HostLog, HostLogImpl, LogSeverity};
@@ -23,6 +27,31 @@ use crossbeam_queue::ArrayQueue;
 
 const EVENT_CAPACITY: usize = 256;
 
+thread_local! {
+    /// CLAP's audio/main distinction is an execution domain, not a permanent OS-thread identity.
+    /// A nested plugin may be started/stopped from the outer main OS thread as long as that call is
+    /// executed under audio-domain guarantees. Track that scope per calling thread rather than via
+    /// a global "some processor is active" bit.
+    static AUDIO_DOMAIN_DEPTH: Cell<u32> = const { Cell::new(0) };
+}
+
+pub(crate) fn with_audio_thread_scope<R>(function: impl FnOnce() -> R) -> R {
+    struct Guard;
+    impl Drop for Guard {
+        fn drop(&mut self) {
+            AUDIO_DOMAIN_DEPTH.with(|depth| depth.set(depth.get().saturating_sub(1)));
+        }
+    }
+
+    AUDIO_DOMAIN_DEPTH.with(|depth| depth.set(depth.get().saturating_add(1)));
+    let _guard = Guard;
+    function()
+}
+
+fn in_audio_thread_scope() -> bool {
+    AUDIO_DOMAIN_DEPTH.with(|depth| depth.get() > 0)
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum NestedHostEvent {
     GuiResizeHintsChanged,
@@ -31,6 +60,7 @@ pub enum NestedHostEvent {
     GuiHideRequested,
     GuiClosed { was_destroyed: bool },
     ParametersRescan { flags: u32 },
+    AudioPortsRescan { flags: u32 },
     ParameterClear { parameter_id: u32, flags: u32 },
     ParameterValue { parameter_id: u32, value: f64 },
     StateDirty,
@@ -43,6 +73,9 @@ pub enum NestedHostEvent {
 pub trait NestedHostBridge: Send + Sync {
     fn request_restart(&self) {}
     fn request_process(&self) {}
+    fn request_params_flush(&self) {
+        self.request_process();
+    }
     fn request_main_thread(&self) {}
 }
 
@@ -57,7 +90,6 @@ pub(crate) struct NativeHostShared {
     events: ArrayQueue<NestedHostEvent>,
     callback_requested: AtomicBool,
     flush_requested: AtomicBool,
-    processing: AtomicBool,
     main_thread_id: ThreadId,
 }
 
@@ -68,7 +100,6 @@ impl NativeHostShared {
             events: ArrayQueue::new(EVENT_CAPACITY),
             callback_requested: AtomicBool::new(false),
             flush_requested: AtomicBool::new(false),
-            processing: AtomicBool::new(false),
             main_thread_id: std::thread::current().id(),
         }
     }
@@ -90,10 +121,6 @@ impl NativeHostShared {
 
     pub(crate) fn take_flush_request(&self) -> bool {
         self.flush_requested.swap(false, Ordering::AcqRel)
-    }
-
-    pub(crate) fn set_processing(&self, processing: bool) {
-        self.processing.store(processing, Ordering::Release);
     }
 
     pub(crate) fn parameter_feedback(&self, parameter_id: u32, value: f64) {
@@ -150,24 +177,24 @@ impl HostGuiImpl for NativeHostShared {
 impl HostParamsImplShared for NativeHostShared {
     fn request_flush(&self) {
         self.flush_requested.store(true, Ordering::Release);
-        self.bridge.request_process();
+        self.bridge.request_params_flush();
     }
 }
 
 impl HostThreadCheckImpl for NativeHostShared {
     fn is_main_thread(&self) -> bool {
-        std::thread::current().id() == self.main_thread_id
+        !in_audio_thread_scope() && std::thread::current().id() == self.main_thread_id
     }
 
     fn is_audio_thread(&self) -> bool {
-        self.processing.load(Ordering::Acquire)
+        in_audio_thread_scope()
     }
 }
 
 impl HostLogImpl for NativeHostShared {
     fn log(&self, severity: LogSeverity, message: &str) {
-        // Never allocate or forward diagnostics from inside the child's process callback.
-        if self.processing.load(Ordering::Acquire) {
+        // Never allocate or forward diagnostics from an audio execution domain.
+        if in_audio_thread_scope() {
             return;
         }
         self.push(NestedHostEvent::Log {
@@ -222,6 +249,21 @@ impl HostParamsImplMainThread for NativeHostMain<'_> {
             parameter_id: param_id.get(),
             flags: flags.bits(),
         });
+    }
+}
+
+impl HostAudioPortsImpl for NativeHostMain<'_> {
+    fn is_rescan_flag_supported(&self, _flag: AudioPortRescanFlags) -> bool {
+        true
+    }
+
+    fn rescan(&mut self, flags: AudioPortRescanFlags) {
+        self.shared.push(NestedHostEvent::AudioPortsRescan {
+            flags: flags.bits(),
+        });
+        if flags.requires_deactivate() {
+            self.shared.bridge.request_restart();
+        }
     }
 }
 
@@ -289,6 +331,7 @@ impl HostHandlers for NativeHost {
     fn declare_extensions(builder: &mut HostExtensions<Self>, _shared: &Self::Shared<'_>) {
         builder.register::<HostGui>();
         builder.register::<HostParams>();
+        builder.register::<HostAudioPorts>();
         builder.register::<HostState>();
         builder.register::<HostLatency>();
         builder.register::<HostTimer>();
@@ -307,6 +350,7 @@ mod tests {
     struct ProbeBridge {
         restart: AtomicUsize,
         process: AtomicUsize,
+        flush: AtomicUsize,
         main: AtomicUsize,
     }
 
@@ -317,6 +361,10 @@ mod tests {
 
         fn request_process(&self) {
             self.process.fetch_add(1, Ordering::Relaxed);
+        }
+
+        fn request_params_flush(&self) {
+            self.flush.fetch_add(1, Ordering::Relaxed);
         }
 
         fn request_main_thread(&self) {
@@ -347,12 +395,25 @@ mod tests {
         let mut events = Vec::new();
         shared.drain_events(&mut events);
         assert_eq!(bridge.restart.load(Ordering::Relaxed), 1);
-        assert_eq!(bridge.process.load(Ordering::Relaxed), 2);
+        assert_eq!(bridge.process.load(Ordering::Relaxed), 1);
+        assert_eq!(bridge.flush.load(Ordering::Relaxed), 1);
         assert!(bridge.main.load(Ordering::Relaxed) >= 4);
         assert!(events.contains(&NestedHostEvent::GuiShowRequested));
         assert!(events.contains(&NestedHostEvent::StateDirty));
         assert!(events.contains(&NestedHostEvent::LatencyChanged));
         assert!(shared.take_callback_request());
         assert!(shared.take_flush_request());
+    }
+
+    #[test]
+    fn thread_check_reports_scoped_audio_domain() {
+        let shared = NativeHostShared::new(Arc::new(NoopNestedHostBridge));
+        assert!(HostThreadCheckImpl::is_main_thread(&shared));
+        assert!(!HostThreadCheckImpl::is_audio_thread(&shared));
+        with_audio_thread_scope(|| {
+            assert!(!HostThreadCheckImpl::is_main_thread(&shared));
+            assert!(HostThreadCheckImpl::is_audio_thread(&shared));
+        });
+        assert!(HostThreadCheckImpl::is_main_thread(&shared));
     }
 }
