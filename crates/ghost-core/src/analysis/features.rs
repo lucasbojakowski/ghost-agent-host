@@ -58,8 +58,9 @@ pub struct ResonanceCandidate {
 }
 
 /// Compact, display-oriented spectrum sample. Magnitude is normalized so the strongest retained
-/// spectral point is 0 dB and the floor is limited to -96 dB. This keeps rendering data useful
-/// without exposing every FFT bin in persisted analysis/context payloads.
+/// spectral point is 0 dB and the floor is limited to -96 dB. This is intentionally excluded from
+/// serialized analysis/context payloads; it exists to render the analyzer without polluting agent
+/// context with hundreds of redundant FFT display points.
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, Default)]
 pub struct SpectrumPoint {
     pub frequency_hz: f32,
@@ -76,7 +77,7 @@ pub struct SpectralFeatures {
     pub bands: BandEnergy,
     pub resonances: Vec<ResonanceCandidate>,
     pub frame_centroid_hz: Vec<f32>,
-    #[serde(default)]
+    #[serde(skip, default)]
     pub display_spectrum: Vec<SpectrumPoint>,
 }
 
