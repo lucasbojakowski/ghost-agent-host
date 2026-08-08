@@ -1,0 +1,28 @@
+name: Windows Child Integration
+
+on:
+  pull_request:
+    paths:
+      - Cargo.toml
+      - crates/ghost-clap-plugin/**
+      - crates/ghost-host/**
+      - crates/ghost-ui/**
+      - .github/workflows/windows-child-integration.yml
+  push:
+    branches: [fix/eq-band-mapping-and-shortcuts]
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Compile workspace
+        run: cargo check --workspace --all-features
+      - name: Test mapping and child host crates
+        run: cargo test -p ghost-ui -p ghost-host -p ghost-clap-plugin --all-features
