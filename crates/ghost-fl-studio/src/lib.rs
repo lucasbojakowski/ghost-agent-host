@@ -13,4 +13,4 @@ pub use adapter::{
     AdapterError, CapabilityManifest, FlCapability, FlStudioAdapterConfig, GopherNativeAdapter,
     MutationRecord, NativeToolDefinition, NativeToolResult, VerifiedMutation, DEFAULT_DEBUG_PORT,
 };
-pub use codex_tools::{register_codex_tools, FlAgentToolPolicy};
+pub use codex_tools::{register_codex_tools, FlAgentToolPolicy, FlPluginWriteScope};
