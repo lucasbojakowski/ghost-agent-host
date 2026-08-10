@@ -12,7 +12,7 @@ $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $rustTarget = "x86_64-pc-windows-msvc"
 $pluginPackage = "ghost-clap-plugin"
 $pluginLibrary = "ghost_clap_plugin.dll"
-$pluginFileName = "Ghost Agent.clap"
+$pluginFileName = "Ghost Tap.clap"
 
 function Resolve-Cargo {
     $cargoCommand = Get-Command cargo -ErrorAction SilentlyContinue
@@ -97,7 +97,10 @@ namespace GhostClapPackaging {
 $cargo = Resolve-Cargo
 Push-Location $repositoryRoot
 try {
-    $metadataJson = & $cargo metadata --locked --no-deps --format-version 1
+    # This branch intentionally changes workspace-local dependency edges while Ghost Tap is being
+    # hardened. Let Cargo refresh Cargo.lock locally during the validation cycle; the lockfile is
+    # committed once the runtime shape is green.
+    $metadataJson = & $cargo metadata --no-deps --format-version 1
     if ($LASTEXITCODE -ne 0) {
         throw "cargo metadata failed with exit code $LASTEXITCODE."
     }
@@ -108,9 +111,9 @@ try {
         throw "Cargo package '$pluginPackage' was not found in the workspace."
     }
 
-    & $cargo build --locked --release --package $pluginPackage --target $rustTarget
+    & $cargo build --release --package $pluginPackage --target $rustTarget
     if ($LASTEXITCODE -ne 0) {
-        throw "CLAP release build failed with exit code $LASTEXITCODE."
+        throw "Ghost Tap CLAP release build failed with exit code $LASTEXITCODE."
     }
 
     $libraryPath = Join-Path $metadata.target_directory "$rustTarget\release\$pluginLibrary"
@@ -139,7 +142,7 @@ try {
     $checksumLine = "{0} *{1}{2}" -f $hash.Hash.ToLowerInvariant(), $pluginFileName, [Environment]::NewLine
     [System.IO.File]::WriteAllText($checksumPath, $checksumLine, [System.Text.Encoding]::ASCII)
 
-    $archiveName = "ghost-agent-host-{0}-windows-x86_64.zip" -f $package.version
+    $archiveName = "ghost-tap-{0}-windows-x86_64.zip" -f $package.version
     $archivePath = Join-Path $outputPath $archiveName
     Compress-Archive -LiteralPath $clapPath, $checksumPath -DestinationPath $archivePath -Force
 
@@ -157,11 +160,11 @@ try {
         Copy-Item -LiteralPath $clapPath -Destination $installedPath -Force
     }
 
-    Write-Host "CLAP:    $clapPath"
-    Write-Host "SHA-256: $($hash.Hash.ToLowerInvariant())"
-    Write-Host "Archive: $archivePath"
+    Write-Host "Ghost Tap CLAP: $clapPath"
+    Write-Host "SHA-256:       $($hash.Hash.ToLowerInvariant())"
+    Write-Host "Archive:       $archivePath"
     if ($null -ne $installedPath) {
-        Write-Host "Installed: $installedPath"
+        Write-Host "Installed:     $installedPath"
     }
 }
 finally {
