@@ -24,10 +24,10 @@ if (-not (Test-Path $caller)) {
 function Invoke-GopherTool {
     param(
         [string]$Tool,
-        [hashtable]$Args
+        [hashtable]$ToolArgs
     )
 
-    $json = $Args | ConvertTo-Json -Compress -Depth 20
+    $json = $ToolArgs | ConvertTo-Json -Compress -Depth 20
     $output = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $caller `
         -Port $Port `
         -Tool $Tool `
@@ -41,7 +41,7 @@ function Invoke-GopherTool {
 }
 
 Write-Step "Preflight: checking '$Plugin' exists in FL Studio's Plugin database ..."
-$browser = Invoke-GopherTool -Tool 'get_browser_names' -Args @{
+$browser = Invoke-GopherTool -Tool 'get_browser_names' -ToolArgs @{
     name = 'Plugin database'
     fullRecursive = 1
 }
@@ -53,7 +53,7 @@ if ($browser -notmatch $escaped) {
 Write-Step "Plugin database contains '$Plugin'."
 
 Write-Step "Inserting '$Plugin' into Mixer Insert $Track, slot $Slot ..."
-$add = Invoke-GopherTool -Tool 'add_effect' -Args @{
+$add = Invoke-GopherTool -Tool 'add_effect' -ToolArgs @{
     plugin = $Plugin
     target_tracks = [string]$Track
     slot_number = $Slot
@@ -63,7 +63,7 @@ Write-Host $add
 Start-Sleep -Milliseconds 750
 
 Write-Step 'Reading the inserted plugin parameter manifest ...'
-$params = Invoke-GopherTool -Tool 'get_plugin_parameter_list' -Args @{
+$params = Invoke-GopherTool -Tool 'get_plugin_parameter_list' -ToolArgs @{
     target = [string]$Track
     slot_number = $Slot
 }
