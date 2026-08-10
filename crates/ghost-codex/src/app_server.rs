@@ -45,9 +45,9 @@ impl CodexThreadConfig {
 
 /// One initialized Codex App Server process that can own many Codex threads.
 ///
-/// This is intentionally different from [`crate::CodexAppServerAgent`], which is the legacy
-/// one-agent convenience wrapper. Product code should prefer this host so a single long-lived
-/// app-server process owns conversation history, loaded threads, and bidirectional tool requests.
+/// The host intentionally serializes turns for now, while preserving thread-scoped tools and
+/// unrelated notifications. That gives Ghost a correct long-lived thread manager before we add a
+/// background dispatcher for truly concurrent turns.
 pub struct CodexAppServerHost {
     transport: Box<dyn RpcTransport>,
     next_id: u64,
@@ -96,7 +96,8 @@ impl CodexAppServerHost {
         config: CodexThreadConfig,
         tools: ToolRegistry,
     ) -> Result<CodexThreadHandle, AgentError> {
-        let mut params = json!({ "model": config.model });
+        let requested_model = config.model.clone();
+        let mut params = json!({ "model": requested_model });
         if let Some(cwd) = config.cwd {
             params["cwd"] = Value::String(cwd.to_string_lossy().into_owned());
         }
@@ -113,34 +114,21 @@ impl CodexAppServerHost {
             .and_then(Value::as_str)
             .ok_or_else(|| AgentError::Protocol("thread/start did not return a thread ID".into()))?
             .to_owned();
-        let model = result
-            .pointer("/thread/model")
-            .and_then(Value::as_str)
-            .unwrap_or_default();
-        let handle = CodexThreadHandle {
-            id: id.clone(),
-            model: if model.is_empty() {
-                // App-server does not guarantee a model field on the returned thread object.
-                // Keep the requested model locally for UI/session bookkeeping.
-                params
-                    .get("model")
-                    .and_then(Value::as_str)
-                    .unwrap_or_default()
-                    .to_owned()
-            } else {
-                model.to_owned()
-            },
-        };
-        self.tools_by_thread.insert(id, tools);
-        Ok(handle)
+        self.tools_by_thread.insert(id.clone(), tools);
+        Ok(CodexThreadHandle {
+            id,
+            model: config.model,
+        })
     }
 
     pub fn resume_thread(
         &mut self,
         thread_id: &str,
+        model: impl Into<String>,
         tools: ToolRegistry,
     ) -> Result<CodexThreadHandle, AgentError> {
-        let mut params = json!({ "threadId": thread_id });
+        let model = model.into();
+        let mut params = json!({ "threadId": thread_id, "model": model.clone() });
         if !tools.is_empty() {
             params["dynamicTools"] = serde_json::to_value(tools.definitions())?;
         }
@@ -149,11 +137,6 @@ impl CodexAppServerHost {
             .pointer("/thread/id")
             .and_then(Value::as_str)
             .ok_or_else(|| AgentError::Protocol("thread/resume did not return a thread ID".into()))?
-            .to_owned();
-        let model = result
-            .pointer("/thread/model")
-            .and_then(Value::as_str)
-            .unwrap_or_default()
             .to_owned();
         self.tools_by_thread.insert(id.clone(), tools);
         Ok(CodexThreadHandle { id, model })
@@ -190,9 +173,9 @@ impl CodexAppServerHost {
         events: &mut dyn FnMut(AgentEvent),
     ) -> Result<AgentOutput, AgentError> {
         let mut params = json!({
-            "threadId": thread.id,
+            "threadId": thread.id.clone(),
             "input": [{ "type": "text", "text": context.text() }],
-            "model": thread.model,
+            "model": thread.model.clone(),
             "effort": options.effort,
             "summary": options.summary,
             "approvalPolicy": options.approval_policy,
@@ -213,18 +196,16 @@ impl CodexAppServerHost {
 
         let mut final_text = None;
         let mut turn_error = None;
+        let mut deferred = VecDeque::new();
         loop {
             let message = self.read_message()?;
             if self.handle_tool_request(&message, &thread.id)? {
                 continue;
             }
 
-            // A single app-server connection can be subscribed to many threads. Preserve
-            // unrelated notifications for the caller that later drives that thread instead of
-            // treating them as part of this turn.
             if let Some(message_thread) = message_thread_id(&message) {
                 if message_thread != thread.id {
-                    self.pending_messages.push_back(message);
+                    deferred.push_back(message);
                     continue;
                 }
             }
@@ -250,6 +231,7 @@ impl CodexAppServerHost {
                     .pointer("/params/turn/status")
                     .and_then(Value::as_str)
                     .unwrap_or("failed");
+                self.pending_messages.extend(deferred);
                 if status != "completed" {
                     let details = message
                         .pointer("/params/turn/error")
@@ -333,6 +315,8 @@ impl CodexAppServerHost {
         self.next_id += 1;
         self.send(json!({ "method": method, "id": id, "params": params }))?;
         loop {
+            // Management requests read fresh wire messages so stale notifications cannot be
+            // popped and requeued forever while waiting for this response id.
             let message = self.transport.receive()?;
             if message.get("id").and_then(Value::as_u64) == Some(id) {
                 if let Some(error) = message.get("error") {
