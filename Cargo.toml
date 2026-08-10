@@ -13,6 +13,7 @@ members = [
   "apps/ghost-cli",
   "apps/ghost-agentd",
   "apps/ghost-lab",
+  "apps/ghost-fl-native-bridge",
 ]
 resolver = "2"
 
