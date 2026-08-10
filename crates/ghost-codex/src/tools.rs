@@ -22,6 +22,8 @@ impl fmt::Display for ToolError {
     }
 }
 
+impl std::error::Error for ToolError {}
+
 type ToolHandler = Arc<dyn Fn(Value) -> Result<Value, ToolError> + Send + Sync>;
 
 struct RegisteredTool {
@@ -103,5 +105,11 @@ mod tests {
             registry.call("capture_analysis", serde_json::json!({"tap": "input"})),
             Ok(serde_json::json!({"received": {"tap": "input"}}))
         );
+    }
+
+    #[test]
+    fn tool_error_is_a_standard_error() {
+        fn assert_error<T: std::error::Error>() {}
+        assert_error::<ToolError>();
     }
 }
