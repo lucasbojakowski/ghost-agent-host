@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use anyhow::{bail, Context, Result};
 use clap::Parser;
-use ghost_codex::{AgentRuntime, CodexAppServerAgent, ToolRegistry, TurnOptions};
+use ghost_codex::{CodexAppServerHost, CodexThreadConfig, ToolRegistry, TurnOptions};
 use ghost_context::{CompiledContext, ContextMessage, MessageRole, OutputContract};
 use ghost_fl_studio::{
     register_codex_tools, FlAgentToolPolicy, FlStudioAdapterConfig, GopherNativeAdapter,
@@ -12,7 +12,7 @@ use serde_json::json;
 #[derive(Debug, Parser)]
 #[command(
     name = "ghost-fl-agent-smoke",
-    about = "Run one bounded Codex tool call against a live FL Studio project"
+    about = "Run a bounded multi-thread Codex App Server tool call against a live FL Studio project"
 )]
 struct Cli {
     #[arg(long, default_value_t = 9222)]
@@ -76,21 +76,31 @@ fn main() -> Result<()> {
         "[ghost-fl-agent-smoke] Original tempo: {original:.4} BPM. Agent target: {} BPM.",
         cli.target_bpm
     );
-    println!(
-        "[ghost-fl-agent-smoke] Codex will receive ONLY fl_get_tempo and fl_set_tempo. The write tool verifies native readback."
-    );
 
-    let journal_before = adapter.journal_snapshot()?.len();
-    let mut registry = ToolRegistry::default();
+    // Start one long-lived app-server process. The `codex` executable is only the launcher;
+    // this host speaks the app-server JSON-RPC protocol and owns multiple Codex threads.
+    let mut app_server = CodexAppServerHost::spawn(&cli.codex_binary)
+        .context("failed to start the persistent Codex App Server host")?;
+
+    let mut controller_tools = ToolRegistry::default();
     register_codex_tools(
-        &mut registry,
+        &mut controller_tools,
         Arc::clone(&adapter),
         FlAgentToolPolicy::tempo_smoke(),
     )?;
+    let controller = app_server
+        .start_thread(
+            CodexThreadConfig::new(&cli.model).service_name("ghost_fl_controller"),
+            controller_tools,
+        )
+        .context("failed to start the FL controller thread")?;
 
-    let mut agent = CodexAppServerAgent::spawn_with_tools(&cli.codex_binary, &cli.model, registry)
-        .context("failed to start Codex App Server with FL Studio dynamic tools")?;
+    println!(
+        "[ghost-fl-agent-smoke] Persistent app-server controller thread: {}. It receives ONLY fl_get_tempo and fl_set_tempo.",
+        controller.id
+    );
 
+    let journal_before = adapter.journal_snapshot()?.len();
     let context = CompiledContext {
         schema_version: CompiledContext::SCHEMA.into(),
         messages: vec![
@@ -111,17 +121,18 @@ fn main() -> Result<()> {
         ],
         output: OutputContract::Text,
         metadata: json!({
-            "test": "ghost.fl.codex-tempo-smoke/1",
+            "test": "ghost.fl.codex-app-server-tempo-smoke/2",
             "targetBpm": cli.target_bpm,
-            "originalBpm": original
+            "originalBpm": original,
+            "controllerThreadId": controller.id
         }),
     };
 
     let mut options = TurnOptions::default();
     options.summary = "concise".into();
 
-    let turn = agent.run_turn(&context, &options, &mut |event| {
-        println!("[ghost-fl-agent-smoke] agent event: {event:?}");
+    let turn = app_server.run_turn(&controller, &context, &options, &mut |event| {
+        println!("[ghost-fl-agent-smoke] controller event: {event:?}");
     });
 
     let after_turn = adapter.get_tempo();
@@ -140,7 +151,7 @@ fn main() -> Result<()> {
             .map_err(anyhow::Error::from)
     };
 
-    let output = turn.context("Codex turn failed")?;
+    let output = turn.context("Codex App Server controller turn failed")?;
     let after_turn = after_turn.context("failed to read FL tempo after Codex turn")?;
     let journal_after = journal_after?;
     let agent_mutations = &journal_after[journal_before..];
@@ -150,7 +161,7 @@ fn main() -> Result<()> {
 
     println!("[ghost-fl-agent-smoke] Codex final response: {}", output.text);
     println!(
-        "[ghost-fl-agent-smoke] Tempo after Codex turn: {after_turn:.4} BPM; mutation records observed: {}.",
+        "[ghost-fl-agent-smoke] Tempo after controller turn: {after_turn:.4} BPM; mutation records observed: {}.",
         agent_mutations.len()
     );
 
@@ -176,8 +187,35 @@ fn main() -> Result<()> {
         println!("[ghost-fl-agent-smoke] --keep-change set; leaving the agent mutation in place.");
     }
 
+    // Prove the same initialized app-server process can own a second Ghost thread with a
+    // different tool scope. No second Codex process is spawned here.
+    let mut observer_tools = ToolRegistry::default();
+    register_codex_tools(
+        &mut observer_tools,
+        Arc::clone(&adapter),
+        FlAgentToolPolicy::tempo_read_only(),
+    )?;
+    let observer = app_server
+        .start_thread(
+            CodexThreadConfig::new(&cli.model).service_name("ghost_fl_observer"),
+            observer_tools,
+        )
+        .context("failed to start the FL observer thread on the existing app-server")?;
+    let loaded = app_server.loaded_thread_ids()?;
     println!(
-        "[ghost-fl-agent-smoke] GREEN: Codex selected a Ghost dynamic tool, Ghost executed it through GopherNativeAdapter, FL Studio changed state, native readback verified the action{}.",
+        "[ghost-fl-agent-smoke] Same app-server loaded threads: {:?}",
+        loaded
+    );
+    if !loaded.contains(&controller.id) || !loaded.contains(&observer.id) {
+        bail!(
+            "persistent app-server did not report both Ghost threads loaded (controller={}, observer={})",
+            controller.id,
+            observer.id
+        );
+    }
+
+    println!(
+        "[ghost-fl-agent-smoke] GREEN: one persistent Codex App Server hosted controller + observer threads; the controller selected a Ghost dynamic tool, Ghost executed it through GopherNativeAdapter, FL Studio changed state, native readback verified the action{}.",
         if cli.keep_change { "" } else { ", and Ghost restored the original tempo" }
     );
     Ok(())
