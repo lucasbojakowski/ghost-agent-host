@@ -311,12 +311,28 @@ fn print_agent_event(event: &AgentEvent, verbose: bool) {
         AgentEvent::ItemCompleted { item }
             if item.get("type").and_then(Value::as_str) == Some("dynamicToolCall") =>
         {
+            let tool = item.get("tool").and_then(Value::as_str).unwrap_or("<unknown>");
+            let success = item.get("success").and_then(Value::as_bool).unwrap_or(false);
+            let duration = item.get("durationMs").and_then(Value::as_u64).unwrap_or(0);
             println!(
-                "[ghost-workflow] tool <- {} success={} duration_ms={}",
-                item.get("tool").and_then(Value::as_str).unwrap_or("<unknown>"),
-                item.get("success").and_then(Value::as_bool).unwrap_or(false),
-                item.get("durationMs").and_then(Value::as_u64).unwrap_or(0)
+                "[ghost-workflow] tool <- {tool} success={success} duration_ms={duration}"
             );
+            if !success {
+                let details = item
+                    .get("contentItems")
+                    .and_then(Value::as_array)
+                    .into_iter()
+                    .flatten()
+                    .filter_map(|content| content.get("text").and_then(Value::as_str))
+                    .collect::<Vec<_>>();
+                if details.is_empty() {
+                    println!("[ghost-workflow] tool !! {tool}: no error detail returned");
+                } else {
+                    for detail in details {
+                        println!("[ghost-workflow] tool !! {tool}: {detail}");
+                    }
+                }
+            }
         }
         AgentEvent::TurnCompleted { status } => {
             println!("[ghost-workflow] agent turn completed: {status}");
