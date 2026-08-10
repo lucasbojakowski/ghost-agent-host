@@ -1,6 +1,7 @@
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
+use std::sync::{Arc, Mutex};
 
 use serde_json::Value;
 
@@ -42,6 +43,63 @@ impl StdioTransport {
             stdout: BufReader::new(stdout),
         })
     }
+}
+
+/// Split stdio ownership for the concurrent App Server runtime. Exactly one reader thread owns
+/// stdout while any number of caller threads may serialize writes through `stdin`.
+pub(crate) struct SplitStdioTransport {
+    pub stdin: Arc<Mutex<ChildStdin>>,
+    pub stdout: BufReader<ChildStdout>,
+    pub child: Arc<Mutex<Child>>,
+}
+
+impl SplitStdioTransport {
+    pub fn spawn(binary: &Path) -> Result<Self, AgentError> {
+        let mut command = codex_command(binary);
+        let mut child = command
+            .args(["app-server", "--listen", "stdio://"])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::inherit())
+            .spawn()?;
+        let stdin = child
+            .stdin
+            .take()
+            .ok_or_else(|| AgentError::Protocol("Codex stdin unavailable".into()))?;
+        let stdout = child
+            .stdout
+            .take()
+            .ok_or_else(|| AgentError::Protocol("Codex stdout unavailable".into()))?;
+        Ok(Self {
+            stdin: Arc::new(Mutex::new(stdin)),
+            stdout: BufReader::new(stdout),
+            child: Arc::new(Mutex::new(child)),
+        })
+    }
+}
+
+pub(crate) fn write_stdio_message(
+    stdin: &Arc<Mutex<ChildStdin>>,
+    message: &Value,
+) -> Result<(), AgentError> {
+    let mut stdin = stdin
+        .lock()
+        .map_err(|_| AgentError::Protocol("Codex stdin lock poisoned".into()))?;
+    serde_json::to_writer(&mut *stdin, message)?;
+    stdin.write_all(b"\n")?;
+    stdin.flush()?;
+    Ok(())
+}
+
+pub(crate) fn read_stdio_message(
+    stdout: &mut BufReader<ChildStdout>,
+) -> Result<Value, AgentError> {
+    let mut line = String::new();
+    let read = stdout.read_line(&mut line)?;
+    if read == 0 {
+        return Err(AgentError::Protocol("Codex closed stdout".into()));
+    }
+    Ok(serde_json::from_str(&line)?)
 }
 
 fn codex_command(binary: &Path) -> Command {
@@ -91,12 +149,7 @@ impl RpcTransport for StdioTransport {
     }
 
     fn receive(&mut self) -> Result<Value, AgentError> {
-        let mut line = String::new();
-        let read = self.stdout.read_line(&mut line)?;
-        if read == 0 {
-            return Err(AgentError::Protocol("Codex closed stdout".into()));
-        }
-        Ok(serde_json::from_str(&line)?)
+        read_stdio_message(&mut self.stdout)
     }
 
     fn shutdown(&mut self) {
