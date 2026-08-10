@@ -46,19 +46,26 @@ function Invoke-GopherTool {
     return ($output -join [Environment]::NewLine)
 }
 
-Write-Step "Preflight: checking '$Plugin' exists in FL Studio's Plugin database ..."
+Write-Step "Advisory preflight: checking '$Plugin' against FL Studio's Plugin database ..."
 $browser = Invoke-GopherTool -Tool 'get_browser_names' -ToolArgs @{
     name = 'Plugin database'
     fullRecursive = 1
 }
 
+# The browser tool returns a large nested text payload. Matching against the
+# pretty-printed wrapper is useful as a hint, but it is not reliable enough to
+# gate the mutation. The add_effect tool is the authoritative validator.
+$browserText = [string]$browser
 $escaped = [Regex]::Escape($Plugin)
-if ($browser -notmatch $escaped) {
-    throw "Plugin '$Plugin' was not found in this FL Studio Plugin database. No mutation was attempted. Pass -Plugin with an exact base name returned by get_browser_names."
+if ($browserText -match $escaped) {
+    Write-Step "Plugin database text contains '$Plugin'."
 }
-Write-Step "Plugin database contains '$Plugin'."
+else {
+    Write-Step "Plugin database text matcher did not find '$Plugin'; continuing so FL's add_effect tool can validate the exact base name directly."
+}
 
 Write-Step "Inserting '$Plugin' into Mixer Insert $Track, slot $Slot ..."
+Write-Step "Use the exact base plugin name only (for example 'Fruity Reeverb 2'), not a .fst suffix or browser path."
 $add = Invoke-GopherTool -Tool 'add_effect' -ToolArgs @{
     plugin = $Plugin
     target_tracks = [string]$Track
