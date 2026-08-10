@@ -10,10 +10,12 @@ members = [
   "crates/ghost-host",
   "crates/ghost-clap-plugin",
   "crates/ghost-ui",
+  "crates/ghost-fl-studio",
   "apps/ghost-cli",
   "apps/ghost-agentd",
   "apps/ghost-lab",
   "apps/ghost-fl-native-bridge",
+  "apps/ghost-fl-agent-smoke",
 ]
 resolver = "2"
 

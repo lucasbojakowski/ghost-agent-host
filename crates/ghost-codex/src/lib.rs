@@ -6,11 +6,13 @@ use ghost_mix::{MixPlan, PromptBundle};
 use serde_json::{json, Value};
 use thiserror::Error;
 
+mod app_server;
 mod mock;
 mod runtime;
 mod tools;
 mod transport;
 
+pub use app_server::*;
 pub use mock::MockMixingAgent;
 pub use runtime::*;
 pub use tools::*;
