@@ -7,10 +7,12 @@
 
 mod adapter;
 mod codex_tools;
+mod processor_tools;
 mod transport;
 
 pub use adapter::{
     AdapterError, CapabilityManifest, FlCapability, FlStudioAdapterConfig, GopherNativeAdapter,
     MutationRecord, NativeToolDefinition, NativeToolResult, VerifiedMutation, DEFAULT_DEBUG_PORT,
 };
-pub use codex_tools::{register_codex_tools, FlAgentToolPolicy, FlPluginWriteScope};
+pub use codex_tools::{FlAgentToolPolicy, FlPluginWriteScope};
+pub use processor_tools::register_codex_tools;
