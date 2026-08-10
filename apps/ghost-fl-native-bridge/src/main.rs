@@ -13,12 +13,12 @@ use anyhow::{anyhow, bail, Context, Result};
 use clap::{Parser, Subcommand};
 use serde::Deserialize;
 use serde_json::{json, Value};
-use tungstenite::{connect, Message, WebSocket};
-use tungstenite::stream::MaybeTlsStream;
 
 const DEFAULT_DEBUG_PORT: u16 = 9222;
 const DEFAULT_WAIT_SECONDS: u64 = 180;
 const BRIDGE_TIMEOUT_MS: u64 = 20_000;
+const WS_IO_TIMEOUT_SECONDS: u64 = 30;
+const MAX_WS_MESSAGE_BYTES: usize = 64 * 1024 * 1024;
 
 #[derive(Debug, Parser)]
 #[command(
@@ -85,15 +85,166 @@ struct CdpTarget {
     web_socket_debugger_url: String,
 }
 
+struct RawWebSocket {
+    stream: TcpStream,
+    mask_counter: u32,
+}
+
+impl RawWebSocket {
+    fn connect(url: &str) -> Result<Self> {
+        let (host, port, path) = parse_ws_url(url)?;
+        let mut stream = TcpStream::connect((host.as_str(), port))
+            .with_context(|| format!("failed to connect to CDP WebSocket at {host}:{port}"))?;
+        let io_timeout = Some(Duration::from_secs(WS_IO_TIMEOUT_SECONDS));
+        stream.set_read_timeout(io_timeout)?;
+        stream.set_write_timeout(io_timeout)?;
+
+        // A valid 16-byte WebSocket nonce encoded as base64. Randomness is not
+        // security-sensitive here because CDP is bound to localhost and the key
+        // only participates in the RFC 6455 handshake challenge.
+        const WS_KEY: &str = "R2hvc3RGTENEUFByb2JlIQ==";
+        write!(
+            stream,
+            "GET {path} HTTP/1.1\r\n\
+             Host: {host}:{port}\r\n\
+             Upgrade: websocket\r\n\
+             Connection: Upgrade\r\n\
+             Sec-WebSocket-Key: {WS_KEY}\r\n\
+             Sec-WebSocket-Version: 13\r\n\
+             \r\n"
+        )?;
+        stream.flush()?;
+
+        let headers = read_http_headers(&mut stream)?;
+        let status = headers.lines().next().unwrap_or_default();
+        if !status.contains(" 101 ") {
+            bail!("CDP WebSocket upgrade failed: {status}\n{headers}");
+        }
+
+        Ok(Self {
+            stream,
+            mask_counter: 1,
+        })
+    }
+
+    fn send_text(&mut self, text: &str) -> Result<()> {
+        self.send_frame(0x1, text.as_bytes())
+    }
+
+    fn send_frame(&mut self, opcode: u8, payload: &[u8]) -> Result<()> {
+        let mut header = Vec::with_capacity(14);
+        header.push(0x80 | (opcode & 0x0f));
+        match payload.len() {
+            len if len < 126 => header.push(0x80 | len as u8),
+            len if len <= u16::MAX as usize => {
+                header.push(0x80 | 126);
+                header.extend_from_slice(&(len as u16).to_be_bytes());
+            }
+            len => {
+                header.push(0x80 | 127);
+                header.extend_from_slice(&(len as u64).to_be_bytes());
+            }
+        }
+
+        let mask = self.mask_counter.to_be_bytes();
+        self.mask_counter = self.mask_counter.wrapping_add(1).max(1);
+        header.extend_from_slice(&mask);
+
+        let mut masked = Vec::with_capacity(payload.len());
+        for (index, byte) in payload.iter().enumerate() {
+            masked.push(*byte ^ mask[index % 4]);
+        }
+
+        self.stream.write_all(&header)?;
+        self.stream.write_all(&masked)?;
+        self.stream.flush()?;
+        Ok(())
+    }
+
+    fn read_text(&mut self) -> Result<String> {
+        let mut assembled = Vec::new();
+        let mut assembling_text = false;
+
+        loop {
+            let mut first = [0u8; 2];
+            self.stream.read_exact(&mut first)?;
+            let fin = first[0] & 0x80 != 0;
+            let opcode = first[0] & 0x0f;
+            let masked = first[1] & 0x80 != 0;
+            let mut len = (first[1] & 0x7f) as u64;
+
+            if len == 126 {
+                let mut bytes = [0u8; 2];
+                self.stream.read_exact(&mut bytes)?;
+                len = u16::from_be_bytes(bytes) as u64;
+            } else if len == 127 {
+                let mut bytes = [0u8; 8];
+                self.stream.read_exact(&mut bytes)?;
+                len = u64::from_be_bytes(bytes);
+            }
+            if len as usize > MAX_WS_MESSAGE_BYTES {
+                bail!("CDP WebSocket message exceeded {MAX_WS_MESSAGE_BYTES} bytes");
+            }
+
+            let mask = if masked {
+                let mut key = [0u8; 4];
+                self.stream.read_exact(&mut key)?;
+                Some(key)
+            } else {
+                None
+            };
+
+            let mut payload = vec![0u8; len as usize];
+            self.stream.read_exact(&mut payload)?;
+            if let Some(mask) = mask {
+                for (index, byte) in payload.iter_mut().enumerate() {
+                    *byte ^= mask[index % 4];
+                }
+            }
+
+            match opcode {
+                0x0 => {
+                    if !assembling_text {
+                        bail!("unexpected WebSocket continuation frame");
+                    }
+                    assembled.extend_from_slice(&payload);
+                    if fin {
+                        return String::from_utf8(assembled)
+                            .context("CDP returned non-UTF-8 text frame");
+                    }
+                }
+                0x1 => {
+                    if assembling_text {
+                        bail!("new WebSocket text frame arrived during fragmented message");
+                    }
+                    if fin {
+                        return String::from_utf8(payload)
+                            .context("CDP returned non-UTF-8 text frame");
+                    }
+                    assembling_text = true;
+                    assembled.extend_from_slice(&payload);
+                }
+                0x8 => bail!("CDP WebSocket closed"),
+                0x9 => self.send_frame(0xA, &payload)?,
+                0xA => {}
+                _ => {}
+            }
+        }
+    }
+}
+
 struct CdpClient {
-    socket: WebSocket<MaybeTlsStream<TcpStream>>,
+    socket: RawWebSocket,
     next_id: u64,
 }
 
 impl CdpClient {
-    fn connect(url: &str) -> Result<Self> {
-        let (socket, _) = connect(url).context("failed to connect to Gopher's CDP WebSocket")?;
-        Ok(Self { socket, next_id: 1 })
+    fn connect(url: &str, debug_port: u16) -> Result<Self> {
+        let fixed = fix_debug_ws_url(url, debug_port);
+        Ok(Self {
+            socket: RawWebSocket::connect(&fixed)?,
+            next_id: 1,
+        })
     }
 
     fn call(&mut self, method: &str, params: Value) -> Result<Value> {
@@ -105,15 +256,12 @@ impl CdpClient {
             "params": params,
         });
         self.socket
-            .send(Message::text(request.to_string()))
+            .send_text(&request.to_string())
             .with_context(|| format!("failed to send CDP request {method}"))?;
 
         loop {
-            let message = self.socket.read().context("failed to read CDP response")?;
-            if !message.is_text() {
-                continue;
-            }
-            let payload: Value = serde_json::from_str(message.to_text()?)
+            let message = self.socket.read_text().context("failed to read CDP response")?;
+            let payload: Value = serde_json::from_str(&message)
                 .context("CDP returned malformed JSON")?;
             if payload.get("id").and_then(Value::as_u64) != Some(id) {
                 continue;
@@ -161,7 +309,11 @@ fn main() -> Result<()> {
         if cdp_targets(cli.debug_port).is_err() {
             let fl = resolve_fl_executable(cli.fl.as_deref())?;
             launch_fl_with_debugging(&fl, cli.debug_port)?;
-            eprintln!("Launched {} with WebView2 debugging on port {}.", fl.display(), cli.debug_port);
+            eprintln!(
+                "Launched {} with WebView2 debugging on port {}.",
+                fl.display(),
+                cli.debug_port
+            );
         } else {
             eprintln!("CDP endpoint is already available; attaching to the existing FL Studio process.");
         }
@@ -174,12 +326,15 @@ fn main() -> Result<()> {
         target.title, target.kind, target.url
     );
 
-    let mut cdp = CdpClient::connect(&target.web_socket_debugger_url)?;
+    let mut cdp = CdpClient::connect(&target.web_socket_debugger_url, cli.debug_port)?;
     cdp.call("Runtime.enable", json!({}))?;
 
     let probe = cdp.evaluate(handler_probe_script(), false)?;
     let present = probe.get("present").and_then(Value::as_bool).unwrap_or(false);
-    println!("script_handler probe: {}", serde_json::to_string_pretty(&probe)?);
+    println!(
+        "script_handler probe: {}",
+        serde_json::to_string_pretty(&probe)?
+    );
     if !present {
         bail!(
             "Gopher target was found, but script_handler is not visible in its page context. \
@@ -285,12 +440,17 @@ fn wait_for_gopher_target(port: u16, needle: &str, timeout: Duration) -> Result<
     let mut prompted = false;
     while started.elapsed() < timeout {
         if let Ok(targets) = cdp_targets(port) {
-            if let Some(target) = targets.into_iter().find(|target| target_matches(target, &needle)) {
+            if let Some(target) = targets
+                .into_iter()
+                .find(|target| target_matches(target, &needle))
+            {
                 return Ok(target);
             }
         }
         if !prompted {
-            eprintln!("Waiting for the Gopher WebView. Open Gopher in FL Studio (Alt+F1) if it is not already visible...");
+            eprintln!(
+                "Waiting for the Gopher WebView. Open Gopher in FL Studio (Alt+F1) if it is not already visible..."
+            );
             prompted = true;
         }
         thread::sleep(Duration::from_millis(750));
@@ -332,6 +492,52 @@ fn http_get(port: u16, path: &str) -> Result<String> {
         bail!("CDP HTTP request failed: {status}");
     }
     Ok(body.to_owned())
+}
+
+fn read_http_headers(stream: &mut TcpStream) -> Result<String> {
+    let mut bytes = Vec::with_capacity(1024);
+    let mut byte = [0u8; 1];
+    while bytes.len() < 64 * 1024 {
+        stream.read_exact(&mut byte)?;
+        bytes.push(byte[0]);
+        if bytes.ends_with(b"\r\n\r\n") {
+            return String::from_utf8(bytes).context("WebSocket upgrade headers were not UTF-8");
+        }
+    }
+    bail!("WebSocket upgrade headers exceeded 64 KiB")
+}
+
+fn parse_ws_url(url: &str) -> Result<(String, u16, String)> {
+    let rest = url
+        .strip_prefix("ws://")
+        .ok_or_else(|| anyhow!("only ws:// CDP URLs are supported, got {url}"))?;
+    let (authority, path) = match rest.split_once('/') {
+        Some((authority, tail)) => (authority, format!("/{tail}")),
+        None => (rest, "/".to_owned()),
+    };
+    let (host, port) = match authority.rsplit_once(':') {
+        Some((host, port)) if !host.contains(']') => {
+            let port = port
+                .parse::<u16>()
+                .with_context(|| format!("invalid WebSocket port in {url}"))?;
+            (host.to_owned(), port)
+        }
+        _ => (authority.to_owned(), 80),
+    };
+    if host.is_empty() {
+        bail!("missing WebSocket host in {url}");
+    }
+    Ok((host, port, path))
+}
+
+fn fix_debug_ws_url(url: &str, debug_port: u16) -> String {
+    for host in ["localhost", "127.0.0.1"] {
+        let prefix = format!("ws://{host}/");
+        if url.starts_with(&prefix) {
+            return url.replacen(&prefix, &format!("ws://{host}:{debug_port}/"), 1);
+        }
+    }
+    url.to_owned()
 }
 
 fn handler_probe_script() -> &'static str {
@@ -390,7 +596,7 @@ fn request_tool_catalog(cdp: &mut CdpClient) -> Result<Value> {
         timeout = BRIDGE_TIMEOUT_MS,
     );
     let payload = cdp.evaluate(&script, true)?;
-    parse_maybe_json_string(payload)
+    Ok(parse_maybe_json_string(payload))
 }
 
 fn call_fl_tool(cdp: &mut CdpClient, tool: &str, args: Value) -> Result<Value> {
@@ -430,13 +636,13 @@ fn call_fl_tool(cdp: &mut CdpClient, tool: &str, args: Value) -> Result<Value> {
         timeout = BRIDGE_TIMEOUT_MS,
     );
     let payload = cdp.evaluate(&script, true)?;
-    parse_maybe_json_string(payload)
+    Ok(parse_maybe_json_string(payload))
 }
 
-fn parse_maybe_json_string(value: Value) -> Result<Value> {
+fn parse_maybe_json_string(value: Value) -> Value {
     match value {
-        Value::String(text) => Ok(serde_json::from_str(&text).unwrap_or(Value::String(text))),
-        other => Ok(other),
+        Value::String(text) => serde_json::from_str(&text).unwrap_or(Value::String(text)),
+        other => other,
     }
 }
 
@@ -448,13 +654,19 @@ fn tool_array(catalog: &Value) -> Option<&Vec<Value>> {
 
 fn print_catalog_summary(catalog: &Value) -> Result<()> {
     let Some(tools) = tool_array(catalog) else {
-        println!("Tool catalog returned an unexpected shape:\n{}", serde_json::to_string_pretty(catalog)?);
+        println!(
+            "Tool catalog returned an unexpected shape:\n{}",
+            serde_json::to_string_pretty(catalog)?
+        );
         return Ok(());
     };
 
     println!("FL native tool catalog: {} tools", tools.len());
     for tool in tools {
-        let name = tool.get("name").and_then(Value::as_str).unwrap_or("<unnamed>");
+        let name = tool
+            .get("name")
+            .and_then(Value::as_str)
+            .unwrap_or("<unnamed>");
         let description = tool
             .get("description")
             .and_then(Value::as_str)
@@ -501,7 +713,24 @@ mod tests {
 
     #[test]
     fn parses_json_returned_as_bare_string() {
-        let parsed = parse_maybe_json_string(Value::String("{\"ok\":true}".into())).unwrap();
+        let parsed = parse_maybe_json_string(Value::String("{\"ok\":true}".into()));
         assert_eq!(parsed["ok"], true);
+    }
+
+    #[test]
+    fn fixes_missing_debug_port_in_chrome_target_url() {
+        assert_eq!(
+            fix_debug_ws_url("ws://localhost/devtools/page/abc", 9222),
+            "ws://localhost:9222/devtools/page/abc"
+        );
+    }
+
+    #[test]
+    fn parses_local_cdp_ws_url() {
+        let (host, port, path) =
+            parse_ws_url("ws://127.0.0.1:9222/devtools/page/abc").unwrap();
+        assert_eq!(host, "127.0.0.1");
+        assert_eq!(port, 9222);
+        assert_eq!(path, "/devtools/page/abc");
     }
 }
