@@ -29,10 +29,6 @@ function Invoke-GopherTool {
 
     $json = $ToolArgs | ConvertTo-Json -Compress -Depth 20
 
-    # Invoke the helper script in the current PowerShell process. Starting a new
-    # powershell.exe and passing JSON on its command line lets Windows/PowerShell
-    # strip the embedded JSON quotes before ArgsJson reaches the child process.
-    # Script invocation preserves the JSON string exactly.
     try {
         $output = & $caller `
             -Port $Port `
@@ -52,9 +48,6 @@ $browser = Invoke-GopherTool -Tool 'get_browser_names' -ToolArgs @{
     fullRecursive = 1
 }
 
-# The browser tool returns a large nested text payload. Matching against the
-# pretty-printed wrapper is useful as a hint, but it is not reliable enough to
-# gate the mutation. The add_effect tool is the authoritative validator.
 $browserText = [string]$browser
 $escaped = [Regex]::Escape($Plugin)
 if ($browserText -match $escaped) {
@@ -65,10 +58,10 @@ else {
 }
 
 Write-Step "Inserting '$Plugin' into Mixer Insert $Track, slot $Slot ..."
-Write-Step "Use the exact base plugin name only (for example 'Fruity Reeverb 2'), not a .fst suffix or browser path."
+Write-Step "Diagnostic note: FL 26.1.3's published add_effect schema says target_tracks is a string, but the previous native traceback attempted string-minus-integer. This run intentionally sends the track as a JSON integer to test the implementation behind the schema."
 $add = Invoke-GopherTool -Tool 'add_effect' -ToolArgs @{
     plugin = $Plugin
-    target_tracks = [string]$Track
+    target_tracks = $Track
     slot_number = $Slot
 }
 Write-Host $add
