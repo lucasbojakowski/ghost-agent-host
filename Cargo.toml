@@ -13,6 +13,7 @@ members = [
   "apps/ghost-cli",
   "apps/ghost-agentd",
   "apps/ghost-lab",
+  "apps/ghost-fl-native-bridge",
 ]
 resolver = "2"
 
@@ -49,6 +50,7 @@ thiserror = "2"
 toml = "0.9"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+tungstenite = "0.30"
 uuid = { version = "1", features = ["v4", "serde"] }
 windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_System_Threading", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_WindowsAndMessaging"] }
 zstd = "0.13"
