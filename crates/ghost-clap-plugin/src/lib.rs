@@ -36,7 +36,6 @@ const STATUS_INTERVAL: Duration = Duration::from_millis(500);
 static NEXT_INSTANCE_ID: AtomicU32 = AtomicU32::new(0);
 
 pub struct GhostShared {
-    instance_id: u32,
     daw: Arc<AtomicDawState>,
     capture: Arc<RealtimeCaptureBuffer>,
     _worker: Option<CaptureWorker>,
@@ -49,7 +48,6 @@ impl GhostShared {
         let capture = Arc::new(RealtimeCaptureBuffer::new(CAPTURE_CAPACITY_FRAMES));
         let worker = CaptureWorker::spawn(instance_id, Arc::clone(&daw), Arc::clone(&capture));
         Self {
-            instance_id,
             daw,
             capture,
             _worker: worker,
