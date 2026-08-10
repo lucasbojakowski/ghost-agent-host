@@ -39,7 +39,7 @@ pub fn register_codex_tools(
     policy: FlAgentToolPolicy,
 ) -> Result<(), ToolError> {
     if policy.inspect_session {
-        let adapter = Arc::clone(&adapter);
+        let inspect_adapter = Arc::clone(&adapter);
         registry.register(
             ToolDefinition {
                 name: "fl_get_session_context".into(),
@@ -47,7 +47,7 @@ pub fn register_codex_tools(
                 input_schema: empty_schema(),
             },
             move |_| {
-                let result = adapter
+                let result = inspect_adapter
                     .session_context()
                     .map_err(|error| ToolError(error.to_string()))?;
                 Ok(json!({
@@ -60,7 +60,7 @@ pub fn register_codex_tools(
     }
 
     if policy.read_tempo {
-        let adapter = Arc::clone(&adapter);
+        let read_tempo_adapter = Arc::clone(&adapter);
         registry.register(
             ToolDefinition {
                 name: "fl_get_tempo".into(),
@@ -68,7 +68,7 @@ pub fn register_codex_tools(
                 input_schema: empty_schema(),
             },
             move |_| {
-                let bpm = adapter
+                let bpm = read_tempo_adapter
                     .get_tempo()
                     .map_err(|error| ToolError(error.to_string()))?;
                 Ok(json!({"bpm": bpm}))
@@ -77,7 +77,7 @@ pub fn register_codex_tools(
     }
 
     if policy.set_tempo {
-        let adapter = Arc::clone(&adapter);
+        let set_tempo_adapter = Arc::clone(&adapter);
         registry.register(
             ToolDefinition {
                 name: "fl_set_tempo".into(),
@@ -101,7 +101,7 @@ pub fn register_codex_tools(
                 if !(20..=300).contains(&bpm) {
                     return Err(ToolError("fl_set_tempo smoke scope permits 20..=300 BPM".into()));
                 }
-                let mutation = adapter
+                let mutation = set_tempo_adapter
                     .set_tempo_verified(bpm)
                     .map_err(|error| ToolError(error.to_string()))?;
                 serde_json::to_value(mutation).map_err(|error| ToolError(error.to_string()))
@@ -110,7 +110,7 @@ pub fn register_codex_tools(
     }
 
     if policy.transport {
-        let adapter = Arc::clone(&adapter);
+        let play_adapter = Arc::clone(&adapter);
         registry.register(
             ToolDefinition {
                 name: "fl_play".into(),
@@ -118,14 +118,14 @@ pub fn register_codex_tools(
                 input_schema: empty_schema(),
             },
             move |_| {
-                adapter
+                play_adapter
                     .play()
                     .map(|result| json!({"content": result.content_text}))
                     .map_err(|error| ToolError(error.to_string()))
             },
         )?;
 
-        let adapter = Arc::clone(&adapter);
+        let stop_adapter = Arc::clone(&adapter);
         registry.register(
             ToolDefinition {
                 name: "fl_stop".into(),
@@ -133,7 +133,7 @@ pub fn register_codex_tools(
                 input_schema: empty_schema(),
             },
             move |_| {
-                adapter
+                stop_adapter
                     .stop()
                     .map(|result| json!({"content": result.content_text}))
                     .map_err(|error| ToolError(error.to_string()))
