@@ -1,0 +1,15 @@
+[package]
+name = "ghost-fl-agent-smoke"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+ghost-codex = { path = "../../crates/ghost-codex" }
+ghost-context = { path = "../../crates/ghost-context" }
+ghost-fl-studio = { path = "../../crates/ghost-fl-studio" }
+serde_json.workspace = true
