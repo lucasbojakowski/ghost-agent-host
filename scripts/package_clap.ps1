@@ -13,6 +13,7 @@ $rustTarget = "x86_64-pc-windows-msvc"
 $pluginPackage = "ghost-clap-plugin"
 $pluginLibrary = "ghost_clap_plugin.dll"
 $pluginFileName = "Ghost Tap.clap"
+$legacyPluginFileName = "Ghost Agent.clap"
 
 function Resolve-Cargo {
     $cargoCommand = Get-Command cargo -ErrorAction SilentlyContinue
@@ -97,9 +98,8 @@ namespace GhostClapPackaging {
 $cargo = Resolve-Cargo
 Push-Location $repositoryRoot
 try {
-    # This branch intentionally changes workspace-local dependency edges while Ghost Tap is being
-    # hardened. Let Cargo refresh Cargo.lock locally during the validation cycle; the lockfile is
-    # committed once the runtime shape is green.
+    # Ghost Tap intentionally changes workspace-local dependency edges during the local validation
+    # cycle. Let Cargo refresh Cargo.lock; we commit the settled lockfile after the runtime gate.
     $metadataJson = & $cargo metadata --no-deps --format-version 1
     if ($LASTEXITCODE -ne 0) {
         throw "cargo metadata failed with exit code $LASTEXITCODE."
@@ -147,6 +147,7 @@ try {
     Compress-Archive -LiteralPath $clapPath, $checksumPath -DestinationPath $archivePath -Force
 
     $installedPath = $null
+    $removedLegacyPath = $null
     if ($Install) {
         if ([string]::IsNullOrWhiteSpace($InstallDirectory)) {
             $InstallDirectory = Join-Path $env:CommonProgramFiles "CLAP"
@@ -156,6 +157,11 @@ try {
         }
 
         New-Item -ItemType Directory -Force -Path $InstallDirectory | Out-Null
+        $legacyPath = Join-Path $InstallDirectory $legacyPluginFileName
+        if (Test-Path -LiteralPath $legacyPath -PathType Leaf) {
+            Remove-Item -LiteralPath $legacyPath -Force
+            $removedLegacyPath = $legacyPath
+        }
         $installedPath = Join-Path $InstallDirectory $pluginFileName
         Copy-Item -LiteralPath $clapPath -Destination $installedPath -Force
     }
@@ -163,8 +169,11 @@ try {
     Write-Host "Ghost Tap CLAP: $clapPath"
     Write-Host "SHA-256:       $($hash.Hash.ToLowerInvariant())"
     Write-Host "Archive:       $archivePath"
+    if ($null -ne $removedLegacyPath) {
+        Write-Host "Removed legacy: $removedLegacyPath"
+    }
     if ($null -ne $installedPath) {
-        Write-Host "Installed:     $installedPath"
+        Write-Host "Installed:      $installedPath"
     }
 }
 finally {
