@@ -25,10 +25,16 @@ if (-not (Test-Path $caller)) {
 function Invoke-GopherTool {
     param(
         [string]$Tool,
-        [hashtable]$ToolArgs
+        [System.Collections.IDictionary]$ToolArgs
     )
 
+    # FL Studio 26.1.3's Gopher dispatcher is order-sensitive even though MCP
+    # represents arguments as named JSON properties. Always serialize arguments
+    # in the exact function-signature order discovered from the live tool schema.
     $json = $ToolArgs | ConvertTo-Json -Compress -Depth 20
+    $keyOrder = @($ToolArgs.Keys) -join ', '
+    Write-Step "RPC arg order for '$Tool': $keyOrder"
+
     try {
         $output = & $caller `
             -Port $Port `
@@ -42,7 +48,21 @@ function Invoke-GopherTool {
     return ($output -join [Environment]::NewLine)
 }
 
+function Assert-NoNativeError {
+    param(
+        [string]$Tool,
+        [string]$Output
+    )
+
+    if (($Output -match '"isError"\s*:\s*true') -or
+        ($Output -match 'Traceback') -or
+        ($Output -match 'Error: Could not resolve plugin target')) {
+        throw "Native tool '$Tool' returned an error:`n$Output"
+    }
+}
+
 function Get-NormalizedValue([string]$Output) {
+    Assert-NoNativeError -Tool 'get_plugin_parameter_value' -Output $Output
     $match = [Regex]::Match($Output, 'Normalized Value:\s*([0-9]+(?:\.[0-9]+)?)')
     if (-not $match.Success) {
         throw "Could not parse a normalized value from get_plugin_parameter_value output:`n$Output"
@@ -51,11 +71,11 @@ function Get-NormalizedValue([string]$Output) {
 }
 
 function Read-ParameterValue {
-    $output = Invoke-GopherTool -Tool 'get_plugin_parameter_value' -ToolArgs @{
+    $output = Invoke-GopherTool -Tool 'get_plugin_parameter_value' -ToolArgs ([ordered]@{
         target = [string]$Track
         param_identifier = [string]$ParamIdentifier
         slot_number = $Slot
-    }
+    })
     Write-Host $output
     return Get-NormalizedValue $output
 }
@@ -80,13 +100,14 @@ if ([Math]::Abs($testValue - $original) -lt 0.000001) {
 }
 
 Write-Step ("Temporarily writing {0:F4} ..." -f $testValue)
-$setOutput = Invoke-GopherTool -Tool 'set_plugin_parameter_value' -ToolArgs @{
+$setOutput = Invoke-GopherTool -Tool 'set_plugin_parameter_value' -ToolArgs ([ordered]@{
     target = [string]$Track
     param_identifier = [string]$ParamIdentifier
     value = $testValue
     slot_number = $Slot
-}
+})
 Write-Host $setOutput
+Assert-NoNativeError -Tool 'set_plugin_parameter_value' -Output $setOutput
 
 Start-Sleep -Milliseconds 250
 Write-Step 'Reading value back ...'
@@ -101,13 +122,14 @@ else {
 }
 
 Write-Step ("Restoring original value {0:F4} ..." -f $original)
-$restoreOutput = Invoke-GopherTool -Tool 'set_plugin_parameter_value' -ToolArgs @{
+$restoreOutput = Invoke-GopherTool -Tool 'set_plugin_parameter_value' -ToolArgs ([ordered]@{
     target = [string]$Track
     param_identifier = [string]$ParamIdentifier
     value = $original
     slot_number = $Slot
-}
+})
 Write-Host $restoreOutput
+Assert-NoNativeError -Tool 'set_plugin_parameter_value' -Output $restoreOutput
 
 Start-Sleep -Milliseconds 250
 Write-Step 'Verifying restoration ...'
