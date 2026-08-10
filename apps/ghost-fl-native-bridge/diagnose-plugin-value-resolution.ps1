@@ -20,10 +20,16 @@ if (-not (Test-Path $caller)) {
 function Invoke-GopherTool {
     param(
         [string]$Tool,
-        [hashtable]$ToolArgs
+        [System.Collections.IDictionary]$ToolArgs
     )
 
+    # IMPORTANT: Gopher/script_handler appears sensitive to JSON argument order.
+    # Use OrderedDictionary so ConvertTo-Json preserves the MCP function signature
+    # order instead of relying on PowerShell Hashtable enumeration order.
     $json = $ToolArgs | ConvertTo-Json -Compress -Depth 20
+    $keyOrder = @($ToolArgs.Keys) -join ', '
+    Write-Step "RPC arg order for '$Tool': $keyOrder"
+
     try {
         $output = & $caller `
             -Port $Port `
@@ -48,8 +54,10 @@ function Summarize-Result {
         return
     }
 
-    if ($Output -match "Parameters for '([^']+)'" ) {
-        Write-Step "$Label => PARAMETER LIST RESOLVED plugin '$($Matches[1])'"
+    # ConvertTo-Json escapes apostrophes as \u0027 in this environment, so accept
+    # either representation when recognizing the successful parameter-list text.
+    if (($Output -match "Parameters for '([^']+)'") -or ($Output -match 'Parameters for \\u0027([^\\]+)\\u0027')) {
+        Write-Step "$Label => PARAMETER LIST RESOLVED"
         return
     }
 
@@ -74,49 +82,32 @@ function Summarize-Result {
     Write-Host $Output.Substring(0, $previewLength)
 }
 
-Write-Step "Read-only diagnostic for Mixer Insert $Track, slot $Slot. No parameter writes will be performed."
-
-Write-Step 'Checking project/session snapshot for the target plugin slot context ...'
-$session = Invoke-GopherTool -Tool 'get_session_context' -ToolArgs @{}
-if ($session -match 'Pro-Q 4') {
-    Write-Step "Session context contains 'Pro-Q 4'."
-}
-else {
-    Write-Step "Session context text did not contain 'Pro-Q 4' (this is only a diagnostic hint)."
-}
+Write-Step "Read-only ordered-argument diagnostic for Mixer Insert $Track, slot $Slot. No parameter writes will be performed."
+Write-Step 'Hypothesis: script_handler may bind tool arguments positionally using JSON property order; ordinary PowerShell hashtables do not give us a reliable signature order.'
 
 $numericTarget = [string]$Track
-$visualNameTarget = "Insert $Track"
 
-Write-Step "Control check: get_plugin_parameter_list with target '$numericTarget' ..."
-$listNumeric = Invoke-GopherTool -Tool 'get_plugin_parameter_list' -ToolArgs @{
+Write-Step "Control check: parameter list with signature order target, slot_number ..."
+$listNumeric = Invoke-GopherTool -Tool 'get_plugin_parameter_list' -ToolArgs ([ordered]@{
     target = $numericTarget
     slot_number = $Slot
-}
-Summarize-Result -Label "list target='$numericTarget'" -Output $listNumeric
+})
+Summarize-Result -Label "ordered list target='$numericTarget'" -Output $listNumeric
 
-Write-Step "Trying get_plugin_parameter_value with the exact target/index shape used by the roundtrip test ..."
-$valueNumericIndex = Invoke-GopherTool -Tool 'get_plugin_parameter_value' -ToolArgs @{
+Write-Step "Testing value lookup with exact function signature order target, param_identifier, slot_number ..."
+$valueNumericIndex = Invoke-GopherTool -Tool 'get_plugin_parameter_value' -ToolArgs ([ordered]@{
     target = $numericTarget
     param_identifier = [string]$ParamIdentifier
     slot_number = $Slot
-}
-Summarize-Result -Label "value target='$numericTarget' param='$ParamIdentifier'" -Output $valueNumericIndex
+})
+Summarize-Result -Label "ordered value target='$numericTarget' param='$ParamIdentifier'" -Output $valueNumericIndex
 
-Write-Step "Trying the same target with exact parameter name '$ParamName' ..."
-$valueNumericName = Invoke-GopherTool -Tool 'get_plugin_parameter_value' -ToolArgs @{
+Write-Step "Testing exact parameter name with the same signature order ..."
+$valueNumericName = Invoke-GopherTool -Tool 'get_plugin_parameter_value' -ToolArgs ([ordered]@{
     target = $numericTarget
     param_identifier = $ParamName
     slot_number = $Slot
-}
-Summarize-Result -Label "value target='$numericTarget' param='$ParamName'" -Output $valueNumericName
+})
+Summarize-Result -Label "ordered value target='$numericTarget' param='$ParamName'" -Output $valueNumericName
 
-Write-Step "Trying visual mixer-track name '$visualNameTarget' with the parameter index ..."
-$valueNameIndex = Invoke-GopherTool -Tool 'get_plugin_parameter_value' -ToolArgs @{
-    target = $visualNameTarget
-    param_identifier = [string]$ParamIdentifier
-    slot_number = $Slot
-}
-Summarize-Result -Label "value target='$visualNameTarget' param='$ParamIdentifier'" -Output $valueNameIndex
-
-Write-Step 'Diagnostic complete. Send the compact summary lines back; no state was changed.'
+Write-Step 'Diagnostic complete. If either ordered value call returns VALUE, argument ordering is the missing bridge invariant.'
