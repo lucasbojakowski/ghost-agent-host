@@ -23,6 +23,15 @@ impl FlAgentToolPolicy {
         }
     }
 
+    pub const fn tempo_read_only() -> Self {
+        Self {
+            inspect_session: false,
+            read_tempo: true,
+            set_tempo: false,
+            transport: false,
+        }
+    }
+
     pub const fn tempo_smoke() -> Self {
         Self {
             inspect_session: false,
