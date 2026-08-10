@@ -10,7 +10,7 @@ rust-version.workspace = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-clack-common = { workspace = true, features = ["clack-plugin"] }
+clack-common.workspace = true
 clack-extensions.workspace = true
 clack-plugin.workspace = true
 ghost-core = { path = "../ghost-core" }
