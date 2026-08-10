@@ -5,6 +5,7 @@ pub mod daw;
 pub mod model;
 pub mod processor;
 pub mod protocol;
+pub mod tap;
 pub mod task;
 pub mod validation;
 
@@ -14,5 +15,6 @@ pub use daw::*;
 pub use model::*;
 pub use processor::*;
 pub use protocol::*;
+pub use tap::*;
 pub use task::*;
 pub use validation::*;
