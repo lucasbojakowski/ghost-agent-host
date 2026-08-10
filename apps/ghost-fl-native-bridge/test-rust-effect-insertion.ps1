@@ -22,7 +22,12 @@ function Invoke-RustTool {
         [string]$ArgsJson
     )
 
-    $nativeArgsJson = $ArgsJson.Replace('"', '\"')
+    # Windows PowerShell 5.1 -> native argv parsing can split a JSON argument at
+    # whitespace that lives inside a quoted JSON string after the quote escaping
+    # needed for cargo.exe. JSON \u0020 decodes back to an ordinary space in Rust,
+    # while keeping the native argv token free of literal spaces.
+    $wireArgsJson = $ArgsJson.Replace(' ', '\u0020')
+    $nativeArgsJson = $wireArgsJson.Replace('"', '\"')
     Write-Step "Input JSON for '$Tool' (intentionally scrambled): $ArgsJson"
 
     # Rust writes normal diagnostics to stderr. PowerShell 5.1 converts redirected
