@@ -28,13 +28,19 @@ function Invoke-GopherTool {
     )
 
     $json = $ToolArgs | ConvertTo-Json -Compress -Depth 20
-    $output = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $caller `
-        -Port $Port `
-        -Tool $Tool `
-        -ArgsJson $json 2>&1
 
-    if ($LASTEXITCODE -ne 0) {
-        throw "Tool '$Tool' failed:`n$($output -join [Environment]::NewLine)"
+    # Invoke the helper script in the current PowerShell process. Starting a new
+    # powershell.exe and passing JSON on its command line lets Windows/PowerShell
+    # strip the embedded JSON quotes before ArgsJson reaches the child process.
+    # Script invocation preserves the JSON string exactly.
+    try {
+        $output = & $caller `
+            -Port $Port `
+            -Tool $Tool `
+            -ArgsJson $json 2>&1
+    }
+    catch {
+        throw "Tool '$Tool' failed:`n$($_ | Out-String)"
     }
 
     return ($output -join [Environment]::NewLine)
