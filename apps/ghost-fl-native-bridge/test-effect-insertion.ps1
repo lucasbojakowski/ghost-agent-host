@@ -3,7 +3,8 @@ param(
     [int]$Slot = 10,
     [string]$Plugin = 'Fruity Reeverb 2',
     [int]$Port = 9222,
-    [switch]$IHaveConfirmedTheSlotIsEmpty
+    [switch]$IHaveConfirmedTheSlotIsEmpty,
+    [switch]$ForceKnownBrokenAddEffect
 )
 
 $ErrorActionPreference = 'Stop'
@@ -14,6 +15,10 @@ function Write-Step([string]$Message) {
 
 if (-not $IHaveConfirmedTheSlotIsEmpty) {
     throw "Safety stop: confirm Mixer Insert $Track, slot $Slot is empty, then rerun with -IHaveConfirmedTheSlotIsEmpty. This test deliberately inserts a plugin into that exact slot."
+}
+
+if (-not $ForceKnownBrokenAddEffect) {
+    throw "Known FL Studio 26.1.3 Gopher bug: MCPTools.py add_effect line 1480 computes slot_number - 1, but the Gopher bridge is delivering slot_number as a string. The uploaded MCPTools.pyc confirms target_tracks is resolved separately and is expected to remain a string. This test is disabled by default until FL changes or we find a lower-level route. Use -ForceKnownBrokenAddEffect only to deliberately reproduce the native failure."
 }
 
 $caller = Join-Path $PSScriptRoot 'call-gopher-tool.ps1'
@@ -57,25 +62,12 @@ else {
     Write-Step "Plugin database text matcher did not find '$Plugin'; continuing so FL's add_effect tool can validate the exact base name directly."
 }
 
-Write-Step "Inserting '$Plugin' into Mixer Insert $Track, slot $Slot ..."
-Write-Step "Diagnostic note: FL 26.1.3's published add_effect schema says target_tracks is a string, but the previous native traceback attempted string-minus-integer. This run intentionally sends the track as a JSON integer to test the implementation behind the schema."
+Write-Step "Reproducing known add_effect failure for '$Plugin' on Mixer Insert $Track, slot $Slot ..."
 $add = Invoke-GopherTool -Tool 'add_effect' -ToolArgs @{
     plugin = $Plugin
-    target_tracks = $Track
+    target_tracks = [string]$Track
     slot_number = $Slot
 }
 Write-Host $add
 
-Start-Sleep -Milliseconds 750
-
-Write-Step 'Reading the inserted plugin parameter manifest ...'
-$params = Invoke-GopherTool -Tool 'get_plugin_parameter_list' -ToolArgs @{
-    target = [string]$Track
-    slot_number = $Slot
-}
-Write-Host $params
-
-Write-Step 'Insertion + inspection stage completed.'
-Write-Step "Verify visually that '$Plugin' appeared on Mixer Insert $Track, slot $Slot."
-Write-Step 'Do not remove it yet; send the parameter-list output back so the next test can choose one harmless parameter for write/readback.'
-Write-Step "If you need to clean up manually, remove only the plugin created by this test from Insert $Track, slot $Slot."
+Write-Step 'Known-broken reproduction completed. No parameter inspection is attempted unless add_effect is fixed by FL Studio.'
