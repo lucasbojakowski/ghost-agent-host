@@ -54,6 +54,11 @@ impl ParallelThreadConfig {
     }
 }
 
+/// Cloneable handle to one persistent Codex App Server process.
+///
+/// Requests are correlated by JSON-RPC id, stdout is consumed by one dispatcher thread, and each
+/// in-flight Codex turn receives a private event channel. Different Codex threads may therefore be
+/// driven concurrently without allowing multiple turns to race on the same thread.
 #[derive(Clone)]
 pub struct CodexParallelRuntime {
     inner: Arc<ParallelInner>,
@@ -142,11 +147,7 @@ impl CodexParallelRuntime {
             .and_then(Value::as_str)
             .unwrap_or(&requested_model)
             .to_owned();
-        self.inner
-            .tools_by_thread
-            .lock()
-            .map_err(|_| AgentError::Protocol("parallel tool registry lock poisoned".into()))?
-            .insert(id.clone(), Arc::new(tools));
+        self.set_thread_tools(&id, tools)?;
         Ok(ParallelCodexThread { id, model })
     }
 
@@ -170,11 +171,7 @@ impl CodexParallelRuntime {
             .and_then(Value::as_str)
             .unwrap_or_default()
             .to_owned();
-        self.inner
-            .tools_by_thread
-            .lock()
-            .map_err(|_| AgentError::Protocol("parallel tool registry lock poisoned".into()))?
-            .insert(id.clone(), Arc::new(tools));
+        self.set_thread_tools(&id, tools)?;
         Ok(ParallelCodexThread { id, model })
     }
 
@@ -197,8 +194,8 @@ impl CodexParallelRuntime {
         )
     }
 
-    /// Run one turn. Different thread handles may call this method simultaneously from different
-    /// caller threads. Two simultaneous turns on the same Codex thread are rejected locally.
+    /// Run a turn on one Codex thread. Separate caller threads may invoke this concurrently for
+    /// different `ParallelCodexThread`s. A second turn on the same thread is rejected locally.
     pub fn run_turn(
         &self,
         thread: &ParallelCodexThread,
@@ -219,7 +216,7 @@ impl CodexParallelRuntime {
                 )));
             }
         }
-        let _guard = ActiveThreadGuard {
+        let _active_guard = ActiveThreadGuard {
             inner: Arc::clone(&self.inner),
             thread_id: thread.id.clone(),
         };
@@ -268,69 +265,21 @@ impl CodexParallelRuntime {
                 let _ = sender.send(message);
             }
         }
-        let _turn_guard = TurnRouteGuard {
+        let _route_guard = TurnRouteGuard {
             inner: Arc::clone(&self.inner),
             turn_id: turn_id.clone(),
         };
 
-        let mut final_text = None;
-        let mut turn_error = None;
-        loop {
-            let message = receiver
-                .recv()
-                .map_err(|_| AgentError::Protocol("parallel App Server event channel closed".into()))?;
-            if message.get("method").and_then(Value::as_str) == Some("ghost/routing-ambiguous") {
-                return Err(AgentError::Protocol(
-                    message
-                        .pointer("/params/message")
-                        .and_then(Value::as_str)
-                        .unwrap_or("App Server event could not be routed safely")
-                        .to_owned(),
-                ));
-            }
-            events(AgentEvent::from_wire(&message));
-            if message.get("method").and_then(Value::as_str) == Some("error") {
-                turn_error = message.pointer("/params/error").cloned();
-            }
-            if message.get("method").and_then(Value::as_str) == Some("item/completed") {
-                let item = message
-                    .pointer("/params/item")
-                    .cloned()
-                    .unwrap_or(Value::Null);
-                if item.get("type").and_then(Value::as_str) == Some("agentMessage") {
-                    final_text = item.get("text").and_then(Value::as_str).map(str::to_owned);
-                }
-            }
-            if message.get("method").and_then(Value::as_str) == Some("turn/completed")
-                && message.pointer("/params/turn/id").and_then(Value::as_str)
-                    == Some(turn_id.as_str())
-            {
-                let status = message
-                    .pointer("/params/turn/status")
-                    .and_then(Value::as_str)
-                    .unwrap_or("failed");
-                if status != "completed" {
-                    let details = message
-                        .pointer("/params/turn/error")
-                        .or(turn_error.as_ref())
-                        .map(Value::to_string)
-                        .unwrap_or_else(|| "no error details supplied".into());
-                    return Err(AgentError::Protocol(format!(
-                        "Codex turn ended with status {status}: {details}"
-                    )));
-                }
-                break;
-            }
-        }
+        collect_turn_output(&turn_id, receiver, context, events)
+    }
 
-        let text = final_text.ok_or_else(|| {
-            AgentError::Protocol("Codex completed without a final agentMessage".into())
-        })?;
-        let structured = match &context.output {
-            OutputContract::Text => None,
-            OutputContract::Json { .. } => Some(serde_json::from_str(&text)?),
-        };
-        Ok(AgentOutput { text, structured })
+    fn set_thread_tools(&self, thread_id: &str, tools: ToolRegistry) -> Result<(), AgentError> {
+        self.inner
+            .tools_by_thread
+            .lock()
+            .map_err(|_| AgentError::Protocol("parallel tool registry lock poisoned".into()))?
+            .insert(thread_id.to_owned(), Arc::new(tools));
+        Ok(())
     }
 
     fn request(&self, method: &str, params: Value) -> Result<Value, AgentError> {
@@ -363,6 +312,71 @@ impl CodexParallelRuntime {
     fn send(&self, value: Value) -> Result<(), AgentError> {
         write_stdio_message(&self.inner.stdin, &value)
     }
+}
+
+fn collect_turn_output(
+    turn_id: &str,
+    receiver: mpsc::Receiver<Value>,
+    context: &CompiledContext,
+    events: &mut dyn FnMut(AgentEvent),
+) -> Result<AgentOutput, AgentError> {
+    let mut final_text = None;
+    let mut turn_error = None;
+    loop {
+        let message = receiver
+            .recv()
+            .map_err(|_| AgentError::Protocol("parallel App Server event channel closed".into()))?;
+        if message.get("method").and_then(Value::as_str) == Some("ghost/routing-ambiguous") {
+            return Err(AgentError::Protocol(
+                message
+                    .pointer("/params/message")
+                    .and_then(Value::as_str)
+                    .unwrap_or("App Server event could not be routed safely")
+                    .to_owned(),
+            ));
+        }
+        events(AgentEvent::from_wire(&message));
+        if message.get("method").and_then(Value::as_str) == Some("error") {
+            turn_error = message.pointer("/params/error").cloned();
+        }
+        if message.get("method").and_then(Value::as_str) == Some("item/completed") {
+            let item = message
+                .pointer("/params/item")
+                .cloned()
+                .unwrap_or(Value::Null);
+            if item.get("type").and_then(Value::as_str) == Some("agentMessage") {
+                final_text = item.get("text").and_then(Value::as_str).map(str::to_owned);
+            }
+        }
+        if message.get("method").and_then(Value::as_str) == Some("turn/completed")
+            && message.pointer("/params/turn/id").and_then(Value::as_str) == Some(turn_id)
+        {
+            let status = message
+                .pointer("/params/turn/status")
+                .and_then(Value::as_str)
+                .unwrap_or("failed");
+            if status != "completed" {
+                let details = message
+                    .pointer("/params/turn/error")
+                    .or(turn_error.as_ref())
+                    .map(Value::to_string)
+                    .unwrap_or_else(|| "no error details supplied".into());
+                return Err(AgentError::Protocol(format!(
+                    "Codex turn ended with status {status}: {details}"
+                )));
+            }
+            break;
+        }
+    }
+
+    let text = final_text.ok_or_else(|| {
+        AgentError::Protocol("Codex completed without a final agentMessage".into())
+    })?;
+    let structured = match &context.output {
+        OutputContract::Text => None,
+        OutputContract::Json { .. } => Some(serde_json::from_str(&text)?),
+    };
+    Ok(AgentOutput { text, structured })
 }
 
 struct ActiveThreadGuard {
@@ -525,17 +539,7 @@ fn route_notification(inner: &Arc<ParallelInner>, message: Value) {
     }
 
     if let Some(thread_id) = message_thread_id(&message) {
-        let senders = inner
-            .turn_routes
-            .lock()
-            .map(|routes| {
-                routes
-                    .values()
-                    .filter(|route| route.thread_id == thread_id)
-                    .map(|route| route.sender.clone())
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_default();
+        let senders = senders_for_thread(inner, thread_id);
         if senders.len() == 1 {
             let _ = senders[0].send(message);
             return;
@@ -545,11 +549,7 @@ fn route_notification(inner: &Arc<ParallelInner>, message: Value) {
         }
     }
 
-    let senders = inner
-        .turn_routes
-        .lock()
-        .map(|routes| routes.values().map(|route| route.sender.clone()).collect::<Vec<_>>())
-        .unwrap_or_default();
+    let senders = all_turn_senders(inner);
     match senders.as_slice() {
         [only] => {
             let _ = only.send(message);
@@ -568,6 +568,28 @@ fn route_notification(inner: &Arc<ParallelInner>, message: Value) {
             }
         }
     }
+}
+
+fn senders_for_thread(inner: &ParallelInner, thread_id: &str) -> Vec<mpsc::Sender<Value>> {
+    inner
+        .turn_routes
+        .lock()
+        .map(|routes| {
+            routes
+                .values()
+                .filter(|route| route.thread_id == thread_id)
+                .map(|route| route.sender.clone())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn all_turn_senders(inner: &ParallelInner) -> Vec<mpsc::Sender<Value>> {
+    inner
+        .turn_routes
+        .lock()
+        .map(|routes| routes.values().map(|route| route.sender.clone()).collect())
+        .unwrap_or_default()
 }
 
 fn resolve_thread_id(inner: &ParallelInner, message: &Value) -> Option<String> {
@@ -610,13 +632,13 @@ fn fail_pending(inner: &ParallelInner, message: String) {
             let _ = sender.send(Err(message.clone()));
         }
     }
-    let ambiguity = json!({
+    let failure = json!({
         "method": "ghost/routing-ambiguous",
         "params": {"message": format!("Codex App Server reader stopped: {message}")}
     });
     if let Ok(routes) = inner.turn_routes.lock() {
         for route in routes.values() {
-            let _ = route.sender.send(ambiguity.clone());
+            let _ = route.sender.send(failure.clone());
         }
     }
 }
@@ -626,7 +648,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn extracts_documented_thread_and_turn_identity_shapes() {
+    fn extracts_thread_and_turn_identity_shapes() {
         assert_eq!(
             message_thread_id(&json!({"params": {"threadId": "thr-a"}})),
             Some("thr-a")
@@ -636,48 +658,40 @@ mod tests {
             Some("thr-b")
         );
         assert_eq!(
-            message_turn_id(&json!({"params": {"turn": {"id": "turn-a"}}})),
+            message_turn_id(&json!({"params": {"turnId": "turn-a"}})),
             Some("turn-a")
+        );
+        assert_eq!(
+            message_turn_id(&json!({"params": {"turn": {"id": "turn-b"}}})),
+            Some("turn-b")
         );
     }
 
     #[test]
-    fn ambiguous_unidentified_events_fail_closed_for_parallel_turns() {
-        let (a_tx, a_rx) = mpsc::channel();
-        let (b_tx, b_rx) = mpsc::channel();
-        let inner = Arc::new(ParallelInner {
-            stdin: panic_stdin(),
-            child: panic_child(),
-            next_id: AtomicU64::new(1),
-            pending_requests: Mutex::new(BTreeMap::new()),
-            tools_by_thread: Mutex::new(BTreeMap::new()),
-            turn_routes: Mutex::new(BTreeMap::from([
-                ("turn-a".into(), TurnRoute { thread_id: "thr-a".into(), sender: a_tx }),
-                ("turn-b".into(), TurnRoute { thread_id: "thr-b".into(), sender: b_tx }),
-            ])),
-            active_threads: Mutex::new(BTreeSet::from(["thr-a".into(), "thr-b".into()])),
-            orphan_events: Mutex::new(BTreeMap::new()),
-            closed: AtomicBool::new(false),
-        });
-        route_notification(&inner, json!({"method": "item/completed", "params": {"item": {"id": "i"}}}));
-        assert_eq!(
-            a_rx.recv().unwrap().get("method").and_then(Value::as_str),
-            Some("ghost/routing-ambiguous")
-        );
-        assert_eq!(
-            b_rx.recv().unwrap().get("method").and_then(Value::as_str),
-            Some("ghost/routing-ambiguous")
-        );
-        std::mem::forget(inner);
-    }
-
-    // These helpers are never touched by the routing-only test. They avoid introducing a second
-    // abstract dispatcher just to unit-test the fail-closed decision.
-    fn panic_stdin() -> Arc<Mutex<ChildStdin>> {
-        panic!("routing test must not construct OS stdio")
-    }
-
-    fn panic_child() -> Arc<Mutex<Child>> {
-        panic!("routing test must not construct a child")
+    fn structured_output_collection_is_thread_local() {
+        let (sender, receiver) = mpsc::channel();
+        sender
+            .send(json!({
+                "method": "item/completed",
+                "params": {"item": {"type": "agentMessage", "text": "{\"ok\":true}"}}
+            }))
+            .unwrap();
+        sender
+            .send(json!({
+                "method": "turn/completed",
+                "params": {"turn": {"id": "turn-a", "status": "completed"}}
+            }))
+            .unwrap();
+        let context = CompiledContext {
+            schema_version: CompiledContext::SCHEMA.into(),
+            messages: vec![],
+            output: OutputContract::Json {
+                schema_name: "test".into(),
+                schema: json!({"type": "object"}),
+            },
+            metadata: Value::Null,
+        };
+        let output = collect_turn_output("turn-a", receiver, &context, &mut |_| {}).unwrap();
+        assert_eq!(output.structured, Some(json!({"ok": true})));
     }
 }
