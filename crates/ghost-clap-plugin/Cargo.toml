@@ -11,6 +11,6 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 clack-common.workspace = true
-clack-extensions.workspace = true
+clack-extensions = { workspace = true, features = ["audio-ports", "clack-plugin"] }
 clack-plugin.workspace = true
 ghost-core = { path = "../ghost-core" }
