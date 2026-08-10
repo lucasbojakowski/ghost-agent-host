@@ -25,9 +25,22 @@ function Invoke-RustTool {
     $nativeArgsJson = $ArgsJson.Replace('"', '\"')
     Write-Step "Input JSON for '$Tool' (intentionally scrambled): $ArgsJson"
 
-    $output = & cargo run --quiet -p ghost-fl-native-bridge -- call $Tool --args $nativeArgsJson 2>&1
-    $exitCode = $LASTEXITCODE
-    $text = $output -join [Environment]::NewLine
+    # Rust writes normal diagnostics to stderr. PowerShell 5.1 converts redirected
+    # native stderr into ErrorRecord objects; with ErrorActionPreference=Stop that
+    # can abort a successful cargo command. Relax it only around the native call
+    # and use LASTEXITCODE as the authoritative failure signal.
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        $output = & cargo run --quiet -p ghost-fl-native-bridge -- call $Tool --args $nativeArgsJson 2>&1
+        $exitCode = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+
+    $text = $output | ForEach-Object { $_.ToString() } | Out-String
+    $text = $text.TrimEnd()
     Write-Host $text
 
     if ($exitCode -ne 0) {
