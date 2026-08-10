@@ -5,6 +5,8 @@ use serde_json::{json, Value};
 
 use crate::adapter::GopherNativeAdapter;
 
+const MAX_PARAMETER_SEARCH_MATCHES: usize = 64;
+
 #[derive(Debug, Clone)]
 pub struct FlPluginWriteScope {
     pub target_track: String,
@@ -238,24 +240,53 @@ fn register_processor_tools(
         },
     )?;
 
-    let list_scope = scope.clone();
-    let list_adapter = Arc::clone(&adapter);
+    let search_scope = scope.clone();
+    let search_adapter = Arc::clone(&adapter);
     registry.register(
         ToolDefinition {
-            name: "fl_get_plugin_parameters".into(),
+            name: "fl_find_plugin_parameters".into(),
             description: format!(
-                "Inspect the published parameter list of the plugin on mixer track {}, restricted to processor slots {}..={}.",
-                scope.target_track, scope.slot_start, scope.slot_end
+                "Search the published parameter manifest of the plugin on mixer track {}, restricted to processor slots {}..={}. Returns at most {} matching lines so large third-party parameter surfaces do not flood the agent context. Search for semantic terms such as frequency, gain, Q, threshold, ratio, attack, release, mix, bypass, or output.",
+                scope.target_track,
+                scope.slot_start,
+                scope.slot_end,
+                MAX_PARAMETER_SEARCH_MATCHES
             ),
-            input_schema: slot_schema(&scope),
+            input_schema: json!({
+                "type": "object",
+                "properties": {
+                    "slot_number": {"type": "integer", "minimum": scope.slot_start, "maximum": scope.slot_end},
+                    "query": {"type": "string", "minLength": 1}
+                },
+                "required": ["slot_number", "query"],
+                "additionalProperties": false
+            }),
         },
         move |arguments| {
             let slot = required_u32(&arguments, "slot_number")?;
-            ensure_slot(&list_scope, slot)?;
-            let result = list_adapter
-                .plugin_parameter_list(&list_scope.target_track, slot)
+            ensure_slot(&search_scope, slot)?;
+            let query = required_str(&arguments, "query")?.trim().to_lowercase();
+            let result = search_adapter
+                .plugin_parameter_list(&search_scope.target_track, slot)
                 .map_err(|error| ToolError(error.to_string()))?;
-            Ok(json!({"content": result.content_text}))
+            let text = result.content_text.join("\n");
+            let mut matches = Vec::new();
+            let mut total_matches = 0_usize;
+            for line in text.lines() {
+                if line.to_lowercase().contains(&query) {
+                    total_matches += 1;
+                    if matches.len() < MAX_PARAMETER_SEARCH_MATCHES {
+                        matches.push(line.to_owned());
+                    }
+                }
+            }
+            Ok(json!({
+                "query": query,
+                "matchCount": total_matches,
+                "returned": matches.len(),
+                "truncated": total_matches > matches.len(),
+                "matches": matches
+            }))
         },
     )?;
 
@@ -264,7 +295,7 @@ fn register_processor_tools(
     registry.register(
         ToolDefinition {
             name: "fl_get_plugin_parameter_value".into(),
-            description: "Read one plugin parameter as the FL/Gopher normalized 0..1 value. Use the exact parameter identifier discovered with fl_get_plugin_parameters.".into(),
+            description: "Read one plugin parameter as the FL/Gopher normalized 0..1 value. Use the exact parameter identifier discovered with fl_find_plugin_parameters.".into(),
             input_schema: parameter_schema(&scope, false),
         },
         move |arguments| {
@@ -283,7 +314,7 @@ fn register_processor_tools(
     registry.register(
         ToolDefinition {
             name: "fl_set_plugin_parameter_value".into(),
-            description: "Set one published plugin parameter using a normalized 0..1 value and verify native readback. Only make small, purposeful changes whose parameter meaning is clear from the inspected parameter list.".into(),
+            description: "Set one published plugin parameter using a normalized 0..1 value and verify native readback. Only make small, purposeful changes whose semantic meaning is clear from fl_find_plugin_parameters; do not guess parameter identifiers or opaque normalized mappings.".into(),
             input_schema: parameter_schema(&write_scope, true),
         },
         move |arguments| {
@@ -312,25 +343,19 @@ fn register_processor_tools(
     Ok(())
 }
 
-fn slot_schema(scope: &FlPluginWriteScope) -> Value {
-    json!({
-        "type": "object",
-        "properties": {
-            "slot_number": {"type": "integer", "minimum": scope.slot_start, "maximum": scope.slot_end}
-        },
-        "required": ["slot_number"],
-        "additionalProperties": false
-    })
-}
-
 fn parameter_schema(scope: &FlPluginWriteScope, write: bool) -> Value {
-    let mut properties = serde_json::Map::from_iter([
-        ("slot_number".into(), json!({"type": "integer", "minimum": scope.slot_start, "maximum": scope.slot_end})),
-        ("param_identifier".into(), json!({"type": "string"})),
-    ]);
+    let mut properties = serde_json::Map::<String, Value>::new();
+    properties.insert(
+        "slot_number".into(),
+        json!({"type": "integer", "minimum": scope.slot_start, "maximum": scope.slot_end}),
+    );
+    properties.insert("param_identifier".into(), json!({"type": "string"}));
     let mut required = vec![json!("slot_number"), json!("param_identifier")];
     if write {
-        properties.insert("value".into(), json!({"type": "number", "minimum": 0.0, "maximum": 1.0}));
+        properties.insert(
+            "value".into(),
+            json!({"type": "number", "minimum": 0.0, "maximum": 1.0}),
+        );
         required.push(json!("value"));
     }
     json!({
