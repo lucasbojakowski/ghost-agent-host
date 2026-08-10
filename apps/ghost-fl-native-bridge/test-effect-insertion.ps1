@@ -1,7 +1,7 @@
 param(
     [int]$Track = 1,
     [int]$Slot = 10,
-    [string]$Plugin = 'Fruity Parametric EQ 2',
+    [string]$Plugin = 'Fruity Reeverb 2',
     [int]$Port = 9222,
     [switch]$IHaveConfirmedTheSlotIsEmpty
 )
@@ -54,7 +54,7 @@ $browser = Invoke-GopherTool -Tool 'get_browser_names' -ToolArgs @{
 
 $escaped = [Regex]::Escape($Plugin)
 if ($browser -notmatch $escaped) {
-    throw "Plugin '$Plugin' was not found in the native Plugin database response. No mutation was attempted."
+    throw "Plugin '$Plugin' was not found in this FL Studio Plugin database. No mutation was attempted. Pass -Plugin with an exact base name returned by get_browser_names."
 }
 Write-Step "Plugin database contains '$Plugin'."
 
