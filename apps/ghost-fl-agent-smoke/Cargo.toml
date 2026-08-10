@@ -13,4 +13,5 @@ ghost-codex = { path = "../../crates/ghost-codex" }
 ghost-context = { path = "../../crates/ghost-context" }
 ghost-core = { path = "../../crates/ghost-core" }
 ghost-fl-studio = { path = "../../crates/ghost-fl-studio" }
+serde.workspace = true
 serde_json.workspace = true
