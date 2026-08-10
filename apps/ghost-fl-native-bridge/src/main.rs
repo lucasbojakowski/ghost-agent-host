@@ -377,7 +377,7 @@ fn resolve_fl_executable(explicit: Option<&Path>) -> Result<PathBuf> {
     }
 
     let candidates = [
-        r"C:\Program Files\Image-Line\FL Studio 2026\FL64.exe",
+        r"D:\Image-Line\FL Studio 2026\FL64.exe",
         r"C:\Program Files\Image-Line\FL Studio 2025\FL64.exe",
         r"C:\Program Files\Image-Line\FL Studio 2024\FL64.exe",
     ];

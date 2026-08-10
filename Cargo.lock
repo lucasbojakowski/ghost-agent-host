@@ -1241,6 +1241,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ghost-fl-native-bridge"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "ghost-host"
 version = "0.1.0"
 dependencies = [
