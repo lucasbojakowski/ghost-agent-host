@@ -1,76 +1,72 @@
 # ghost-fl-studio
 
-Experimental FL Studio adapter for Ghost & Guild.
+`ghost-fl-studio` is the transparent FL Studio/Gopher adapter for Ghost & Guild.
+
+Its question is deliberately narrow:
+
+> What does the live FL/Gopher interface expose, and how do we invoke it faithfully and reliably?
+
+It does **not** decide what Ghost or an agent should be allowed to do. Track scopes, slot ranges, plugin allowlists, context selection, agent-facing descriptions, semantic parameter policy, verification strategy, and workflow mutation journals belong above this crate.
 
 ## Boundary
 
-`GopherNativeAdapter` owns the external control path:
+```text
+app / caller policy
+        |
+        v
+GopherNativeAdapter
+- CDP target discovery
+- live MCP catalog + schemas
+- raw tool invocation
+- live-schema argument ordering
+- recursive callback normalization
+- transport/native error distinction
+- single-flight serialization
+- secret-safe target logging
+- faithful raw results
+        |
+        v
+localhost WebView2 CDP
+        |
+        v
+existing Gopher WebView
+        |
+        v
+script_handler / native FL tools
+```
+
+The adapter does not depend on `ghost-codex` and does not construct a Codex `ToolRegistry`. A concrete app may expose every raw FL tool, expose a filtered subset, wrap selected calls with policy, or keep the adapter completely outside an agent tool surface.
+
+## Runtime invariants
+
+The following behavior is integration mechanism, not product policy, and is intentionally preserved here:
+
+- Gopher `tools/call` arguments have been observed to behave positionally despite being represented as named JSON properties. The adapter fetches the live schema and serializes arguments in the schema/signature order.
+- Callback payloads can be JSON-string encoded more than once, so catalog/result normalization peels recursive string layers.
+- A successful transport callback can contain an inner native-tool failure; native errors are surfaced separately from transport failures.
+- Calls remain single-flight because the observed Gopher callback does not provide dependable call correlation.
+- Target URLs are not logged because current Gopher URLs can contain session/token material.
+- FL Studio can change independently while Ghost is running. Adapter and agent observations are snapshots; FL itself remains current truth.
+- Third-party normalized parameter state and human-readable display text are not guaranteed to settle together. Display text may lag or be unavailable.
+
+## Live catalog is authoritative
+
+Do not add a manually curated capability enum that narrows or reinterprets the live API unless it is mechanically faithful and cannot drift from the catalog.
+
+Inspect the live catalog through the repository probe:
 
 ```text
-Ghost application / Codex dynamic tools
-              |
-              v
-      GopherNativeAdapter
-      - live capability manifest
-      - single-flight calls
-      - schema validation
-      - canonical argument ordering
-      - structured native errors
-      - mutation journal
-      - readback verification
-              |
-              v
-       localhost CDP
-              |
-              v
- existing Gopher WebView
-              |
-              v
- script_handler.runJson
-              |
-              v
-    FL Studio native tools
+cargo run -p fl-gopher-probe -- catalog
 ```
 
-This remains an experimental adapter because the Gopher/WebView host bridge is undocumented and version-sensitive. The adapter never replaces the Gopher DOM and does not use DLL/process injection or UI automation.
-
-## Important runtime invariant
-
-FL Studio 26.1.3 Gopher was observed to bind `tools/call.params.arguments` in JSON property order. The adapter therefore fetches the live MCP catalog and rebuilds every call in the schema/signature order before serializing it.
-
-The Gopher callback surface also has no usable correlation ID, so Ghost serializes native calls through one mutex. Do not use Gopher's own agent concurrently with Ghost while this experimental adapter owns the link.
-
-## Codex tool exposure
-
-`register_codex_tools` deliberately exposes a scoped Ghost tool surface instead of passing all native FL tools directly to the model. Current policies include a read-only context/tempo set and a bounded tempo smoke policy.
-
-Mutating wrappers perform native readback and append an in-memory `MutationRecord` containing before/after state and verification status.
-
-## Live Codex smoke test
-
-The `ghost-fl-agent-smoke` app gives Codex exactly two dynamic tools:
-
-- `fl_get_tempo`
-- `fl_set_tempo`
-
-The agent is instructed to read the current tempo and set a requested BPM. `fl_set_tempo` executes through `GopherNativeAdapter`, reads FL Studio back, verifies the native mutation, and records it. The smoke app then restores the original integer BPM unless `--keep-change` is supplied.
-
-Example:
-
-```powershell
-cargo test -p ghost-fl-studio
-cargo run -p ghost-fl-agent-smoke -- --target-bpm 137 --codex-binary codex --model gpt-5.6-terra
-```
-
-Prerequisites:
-
-1. FL Studio is running with the WebView2 CDP debugging port enabled (the existing `ghost-fl-native-bridge --launch probe` flow can establish this).
-2. Gopher is open/available in FL Studio.
-3. The original project tempo is an integer if you want automatic restoration.
-4. Codex App Server is available through the configured binary.
-
-A successful run ends with a `GREEN` line proving this path:
+Invoke an exact tool after inspecting its schema:
 
 ```text
-Codex -> Ghost dynamic tool -> GopherNativeAdapter -> FL Studio mutation -> native readback -> restoration
+cargo run -p fl-gopher-probe -- call <exact-tool-name> --arguments '{}'
 ```
+
+## Experimental status
+
+The Gopher/WebView host interface is undocumented and version-sensitive. This crate attaches to the existing Gopher WebView; it does not inject into FL Studio, replace Gopher's DOM, or automate mouse/keyboard UI.
+
+See `docs/decisions/001-transparent-fl-studio-adapter.md` for the accepted architectural decision and `docs/WINDOWS_FL_LIVE_VALIDATION.md` for the current live regression procedure.
