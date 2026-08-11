@@ -1,5 +1,5 @@
 [package]
-name = "ghost-fl-native-bridge"
+name = "fl-gopher-probe"
 version.workspace = true
 edition.workspace = true
 license-file.workspace = true
@@ -9,6 +9,5 @@ rust-version.workspace = true
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
-indexmap.workspace = true
-serde.workspace = true
+ghost-fl-studio = { path = "../../crates/ghost-fl-studio" }
 serde_json.workspace = true

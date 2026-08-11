@@ -1,5 +1,5 @@
 [package]
-name = "ghost-fl-agent-smoke"
+name = "ghost-workflow"
 version.workspace = true
 edition.workspace = true
 license-file.workspace = true
