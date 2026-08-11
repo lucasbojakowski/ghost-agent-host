@@ -1,23 +1,15 @@
-.PHONY: check test demo fixtures validate package
+.PHONY: check test lint fmt validate
 
 check:
-	cargo fmt --all -- --check
-	cargo clippy --workspace --all-targets --all-features -- -D warnings
+	cargo check --workspace --all-features
 
 test:
 	cargo test --workspace --all-features
 
-fixtures:
-	python3 scripts/generate_fixtures.py
-	python3 scripts/reference_analysis.py
-	python3 scripts/build_examples.py
-	python3 scripts/mock_evaluate.py
+lint:
+	cargo clippy --workspace --all-targets --all-features -- -D warnings
 
-validate:
-	python3 scripts/validate_artifacts.py
+fmt:
+	cargo fmt --all -- --check
 
-demo:
-	cargo run -p ghost-cli -- demo --fixture fixtures/muddy_bass.wav --intent "Tighten the low mids while preserving punch"
-
-package:
-	bash scripts/package.sh
+validate: fmt check test lint

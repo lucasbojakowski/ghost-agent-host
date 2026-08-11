@@ -10,10 +10,9 @@ $ErrorActionPreference = "Stop"
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $rustTarget = "x86_64-pc-windows-msvc"
-$pluginPackage = "ghost-clap-plugin"
-$pluginLibrary = "ghost_clap_plugin.dll"
+$pluginPackage = "ghost-tap"
+$pluginLibrary = "ghost_tap.dll"
 $pluginFileName = "Ghost Tap.clap"
-$legacyPluginFileName = "Ghost Agent.clap"
 
 function Resolve-Cargo {
     $cargoCommand = Get-Command cargo -ErrorAction SilentlyContinue
@@ -55,12 +54,12 @@ function Assert-X64Pe([string]$Path) {
 }
 
 function Assert-ClapEntry([string]$Path) {
-    if ($null -eq ("GhostClapPackaging.NativeMethods" -as [type])) {
+    if ($null -eq ("GhostTapPackaging.NativeMethods" -as [type])) {
         Add-Type -TypeDefinition @"
 using System;
 using System.Runtime.InteropServices;
 
-namespace GhostClapPackaging {
+namespace GhostTapPackaging {
     public static class NativeMethods {
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
         public static extern IntPtr LoadLibraryEx(string fileName, IntPtr reserved, uint flags);
@@ -77,7 +76,7 @@ namespace GhostClapPackaging {
     }
 
     $loadWithAlteredSearchPath = 0x00000008
-    $module = [GhostClapPackaging.NativeMethods]::LoadLibraryEx($Path, [IntPtr]::Zero, $loadWithAlteredSearchPath)
+    $module = [GhostTapPackaging.NativeMethods]::LoadLibraryEx($Path, [IntPtr]::Zero, $loadWithAlteredSearchPath)
     if ($module -eq [IntPtr]::Zero) {
         $errorCode = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
         $message = [ComponentModel.Win32Exception]::new($errorCode).Message
@@ -85,21 +84,19 @@ namespace GhostClapPackaging {
     }
 
     try {
-        $entry = [GhostClapPackaging.NativeMethods]::GetProcAddress($module, "clap_entry")
+        $entry = [GhostTapPackaging.NativeMethods]::GetProcAddress($module, "clap_entry")
         if ($entry -eq [IntPtr]::Zero) {
             throw "Plugin binary does not export the required CLAP symbol 'clap_entry'."
         }
     }
     finally {
-        [void][GhostClapPackaging.NativeMethods]::FreeLibrary($module)
+        [void][GhostTapPackaging.NativeMethods]::FreeLibrary($module)
     }
 }
 
 $cargo = Resolve-Cargo
 Push-Location $repositoryRoot
 try {
-    # Ghost Tap intentionally changes workspace-local dependency edges during the local validation
-    # cycle. Let Cargo refresh Cargo.lock; we commit the settled lockfile after the runtime gate.
     $metadataJson = & $cargo metadata --no-deps --format-version 1
     if ($LASTEXITCODE -ne 0) {
         throw "cargo metadata failed with exit code $LASTEXITCODE."
@@ -147,7 +144,6 @@ try {
     Compress-Archive -LiteralPath $clapPath, $checksumPath -DestinationPath $archivePath -Force
 
     $installedPath = $null
-    $removedLegacyPath = $null
     if ($Install) {
         if ([string]::IsNullOrWhiteSpace($InstallDirectory)) {
             $InstallDirectory = Join-Path $env:CommonProgramFiles "CLAP"
@@ -157,11 +153,6 @@ try {
         }
 
         New-Item -ItemType Directory -Force -Path $InstallDirectory | Out-Null
-        $legacyPath = Join-Path $InstallDirectory $legacyPluginFileName
-        if (Test-Path -LiteralPath $legacyPath -PathType Leaf) {
-            Remove-Item -LiteralPath $legacyPath -Force
-            $removedLegacyPath = $legacyPath
-        }
         $installedPath = Join-Path $InstallDirectory $pluginFileName
         Copy-Item -LiteralPath $clapPath -Destination $installedPath -Force
     }
@@ -169,9 +160,6 @@ try {
     Write-Host "Ghost Tap CLAP: $clapPath"
     Write-Host "SHA-256:       $($hash.Hash.ToLowerInvariant())"
     Write-Host "Archive:       $archivePath"
-    if ($null -ne $removedLegacyPath) {
-        Write-Host "Removed legacy: $removedLegacyPath"
-    }
     if ($null -ne $installedPath) {
         Write-Host "Installed:      $installedPath"
     }
