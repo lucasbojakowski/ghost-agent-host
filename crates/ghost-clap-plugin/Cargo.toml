@@ -10,15 +10,7 @@ rust-version.workspace = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-clack-extensions = { workspace = true, features = ["audio-ports", "clack-plugin", "gui", "latency", "params", "raw-window-handle_06", "state"] }
-clack-plugin.workspace = true
 clack-common.workspace = true
-egui.workspace = true
-egui-baseview.workspace = true
+clack-extensions = { workspace = true, features = ["audio-ports", "clack-plugin"] }
+clack-plugin.workspace = true
 ghost-core = { path = "../ghost-core" }
-ghost-host = { path = "../ghost-host", features = ["clack-runtime"] }
-ghost-ui = { path = "../ghost-ui" }
-serde_json.workspace = true
-
-[target.'cfg(windows)'.dependencies]
-windows-sys.workspace = true

@@ -8,12 +8,14 @@ use thiserror::Error;
 
 mod app_server;
 mod mock;
+mod parallel;
 mod runtime;
 mod tools;
 mod transport;
 
 pub use app_server::*;
 pub use mock::MockMixingAgent;
+pub use parallel::*;
 pub use runtime::*;
 pub use tools::*;
 pub use transport::*;
@@ -83,8 +85,6 @@ impl CodexAppServerAgent {
         self.next_id += 1;
         self.send(json!({ "method": method, "id": id, "params": params }))?;
         loop {
-            // Requests must read fresh wire messages. Reading the pending queue here would
-            // repeatedly pop and requeue the same unrelated notification forever.
             let message = self.read_wire_message()?;
             if message.get("id").and_then(Value::as_u64) == Some(id) {
                 if let Some(error) = message.get("error") {

@@ -542,11 +542,22 @@ fn host_resolver_js() -> &'static str {
 }"#
 }
 
-fn parse_maybe_json_string(value: Value) -> Value {
-    match value {
-        Value::String(text) => serde_json::from_str(&text).unwrap_or(Value::String(text)),
-        other => other,
+fn parse_maybe_json_string(mut value: Value) -> Value {
+    // Gopher/WebView host-object callbacks are not consistent about how many string layers they
+    // wrap around the JSON-RPC payload. Runtime.evaluate already decodes the CDP envelope, but a
+    // callback can still arrive as a JSON string containing another JSON string containing the
+    // actual object. Normalize that at the transport boundary so every adapter/tool sees the same
+    // object shape and native errors/content extraction cannot silently miss a layer.
+    for _ in 0..8 {
+        let Value::String(text) = &value else {
+            break;
+        };
+        let Ok(parsed) = serde_json::from_str::<Value>(text) else {
+            break;
+        };
+        value = parsed;
     }
+    value
 }
 
 #[cfg(test)]
@@ -567,5 +578,19 @@ mod tests {
         assert_eq!(host, "127.0.0.1");
         assert_eq!(port, 9222);
         assert_eq!(path, "/devtools/page/abc");
+    }
+
+    #[test]
+    fn recursively_unwraps_gopher_json_string_layers() {
+        let object = json!({
+            "jsonrpc": "2.0",
+            "result": {
+                "content": [{"type": "text", "text": "{\"tempo_bpm\":140.0}"}],
+                "isError": false
+            }
+        });
+        let once = Value::String(object.to_string());
+        let twice = Value::String(serde_json::to_string(&once).unwrap());
+        assert_eq!(parse_maybe_json_string(twice), object);
     }
 }

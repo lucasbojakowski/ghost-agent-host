@@ -193,7 +193,13 @@ fn main() -> Result<()> {
     register_codex_tools(
         &mut observer_tools,
         Arc::clone(&adapter),
-        FlAgentToolPolicy::tempo_read_only(),
+        FlAgentToolPolicy {
+            inspect_session: false,
+            read_tempo: true,
+            set_tempo: false,
+            transport: false,
+            plugin_write_scope: None,
+        },
     )?;
     let observer = app_server
         .start_thread(
