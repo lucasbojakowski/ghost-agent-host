@@ -1,8 +1,5 @@
-use std::{
-    collections::BTreeSet,
-    sync::{Mutex, MutexGuard},
-    time::Duration,
-};
+use std::sync::{Mutex, MutexGuard};
+use std::time::Duration;
 
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
@@ -43,71 +40,7 @@ impl FlStudioAdapterConfig {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-#[serde(rename_all = "snake_case")]
-pub enum FlCapability {
-    InspectSession,
-    ReadTempo,
-    SetTempo,
-    Play,
-    Stop,
-    InspectChannels,
-    InsertChannel,
-    InspectMixer,
-    SetMixerLevel,
-    SetMixerPan,
-    SetMixerRouting,
-    InsertEffect,
-    RemoveEffect,
-    InspectPluginParameters,
-    SetPluginParameter,
-    PianoRollScript,
-}
-
-impl FlCapability {
-    pub fn required_tool(self) -> &'static str {
-        match self {
-            Self::InspectSession => "get_session_context",
-            Self::ReadTempo => "get_tempo",
-            Self::SetTempo => "set_tempo",
-            Self::Play => "play",
-            Self::Stop => "stop",
-            Self::InspectChannels => "list_channel_names",
-            Self::InsertChannel => "add_channel",
-            Self::InspectMixer => "get_mixer_tracks_volume",
-            Self::SetMixerLevel => "set_mixer_tracks_volume_db",
-            Self::SetMixerPan => "set_mixer_tracks_pan",
-            Self::SetMixerRouting => "set_mixer_routing",
-            Self::InsertEffect => "add_effect",
-            Self::RemoveEffect => "remove_effect",
-            Self::InspectPluginParameters => "get_plugin_parameter_value",
-            Self::SetPluginParameter => "set_plugin_parameter_value",
-            Self::PianoRollScript => "run_piano_roll_script",
-        }
-    }
-
-    fn all() -> &'static [Self] {
-        &[
-            Self::InspectSession,
-            Self::ReadTempo,
-            Self::SetTempo,
-            Self::Play,
-            Self::Stop,
-            Self::InspectChannels,
-            Self::InsertChannel,
-            Self::InspectMixer,
-            Self::SetMixerLevel,
-            Self::SetMixerPan,
-            Self::SetMixerRouting,
-            Self::InsertEffect,
-            Self::RemoveEffect,
-            Self::InspectPluginParameters,
-            Self::SetPluginParameter,
-            Self::PianoRollScript,
-        ]
-    }
-}
-
+/// One tool exactly as advertised by the live Gopher MCP catalog.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NativeToolDefinition {
@@ -116,15 +49,14 @@ pub struct NativeToolDefinition {
     pub input_schema: Value,
 }
 
+/// Snapshot of the currently attached Gopher target and its live tool catalog.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CapabilityManifest {
+pub struct FlStudioManifest {
     pub adapter: String,
-    pub experimental: bool,
     pub target_title: String,
     pub target_kind: String,
     pub target_id: String,
-    pub capabilities: BTreeSet<FlCapability>,
     pub tools: Vec<NativeToolDefinition>,
 }
 
@@ -142,42 +74,16 @@ impl NativeToolResult {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct VerifiedMutation {
-    pub tool: String,
-    pub before: Value,
-    pub requested: Value,
-    pub after: Value,
-    pub verified: bool,
-}
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct MutationRecord {
-    pub sequence: u64,
-    pub tool: String,
-    pub arguments: Value,
-    pub before: Value,
-    pub after: Value,
-    pub verified: bool,
-    pub reversible: bool,
-}
-
 #[derive(Debug, Error)]
 pub enum AdapterError {
-    #[error("FL Studio native adapter transport failed: {0}")]
+    #[error("FL Studio Gopher transport failed: {0}")]
     Transport(String),
-    #[error("FL Studio native capability is unsupported: {0:?}")]
-    UnsupportedCapability(FlCapability),
     #[error("FL Studio native tool `{0}` is unavailable in the live catalog")]
     UnknownTool(String),
     #[error("invalid FL Studio tool arguments: {0}")]
     InvalidArguments(String),
     #[error("FL Studio native tool failed: {0}")]
     NativeTool(String),
-    #[error("FL Studio mutation verification failed: {0}")]
-    Verification(String),
 }
 
 #[derive(Debug, Deserialize)]
@@ -205,22 +111,19 @@ struct CatalogTool {
     input_schema: CatalogInputSchema,
 }
 
-#[derive(Debug, Default, Deserialize)]
+#[derive(Debug, Default, Deserialize, Serialize)]
 struct CatalogInputSchema {
     #[serde(default)]
     properties: IndexMap<String, Value>,
     #[serde(default)]
     required: Vec<String>,
+    #[serde(flatten)]
+    extra: IndexMap<String, Value>,
 }
 
 impl CatalogInputSchema {
     fn as_json(&self) -> Value {
-        json!({
-            "type": "object",
-            "properties": self.properties,
-            "required": self.required,
-            "additionalProperties": false
-        })
+        serde_json::to_value(self).unwrap_or_else(|_| json!({"type": "object"}))
     }
 }
 
@@ -238,14 +141,7 @@ struct CatalogEntry {
 
 impl CatalogSnapshot {
     fn from_callback_payload(payload: Value) -> Result<Self, AdapterError> {
-        let (source, reliable) = match payload {
-            Value::String(text) => (text, true),
-            other => (
-                serde_json::to_string(&other)
-                    .map_err(|error| AdapterError::Transport(error.to_string()))?,
-                false,
-            ),
-        };
+        let (source, reliable) = catalog_source(payload)?;
         let document: CatalogDocument = serde_json::from_str(&source)
             .map_err(|error| AdapterError::Transport(format!("invalid MCP tool catalog: {error}")))?;
         let mut tools = IndexMap::new();
@@ -280,6 +176,23 @@ impl CatalogSnapshot {
     }
 }
 
+fn catalog_source(payload: Value) -> Result<(String, bool), AdapterError> {
+    match payload {
+        Value::String(mut text) => {
+            // Gopher callbacks have been observed to arrive JSON-string encoded more than once.
+            // Peel only string layers so the final catalog text is parsed directly into IndexMap,
+            // preserving the live schema/signature property order used by tools/call.
+            while let Ok(inner) = serde_json::from_str::<String>(&text) {
+                text = inner;
+            }
+            Ok((text, true))
+        }
+        other => serde_json::to_string(&other)
+            .map(|text| (text, false))
+            .map_err(|error| AdapterError::Transport(error.to_string())),
+    }
+}
+
 struct GopherSession {
     connection: GopherConnection,
     catalog: CatalogSnapshot,
@@ -300,10 +213,14 @@ impl GopherSession {
     }
 }
 
+/// Transparent, single-flight mirror of the live FL Studio/Gopher interface.
+///
+/// This adapter owns only behavior imposed by Gopher/CDP: discovery, the live catalog, schema-order
+/// canonicalization, callback normalization, serialized calls, and native-error detection. Product
+/// permissions and agent policy deliberately live above this crate.
 pub struct GopherNativeAdapter {
     config: FlStudioAdapterConfig,
     session: Mutex<GopherSession>,
-    journal: Mutex<Vec<MutationRecord>>,
 }
 
 impl GopherNativeAdapter {
@@ -312,7 +229,6 @@ impl GopherNativeAdapter {
         Ok(Self {
             config,
             session: Mutex::new(session),
-            journal: Mutex::new(Vec::new()),
         })
     }
 
@@ -322,45 +238,26 @@ impl GopherNativeAdapter {
         Ok(())
     }
 
-    pub fn capability_manifest(&self) -> Result<CapabilityManifest, AdapterError> {
+    pub fn manifest(&self) -> Result<FlStudioManifest, AdapterError> {
         let session = self.lock_session()?;
-        let capabilities = FlCapability::all()
-            .iter()
-            .copied()
-            .filter(|capability| session.catalog.tools.contains_key(capability.required_tool()))
-            .collect();
-        Ok(CapabilityManifest {
+        Ok(FlStudioManifest {
             adapter: "gopher_native".into(),
-            experimental: true,
             target_title: session.connection.target_title.clone(),
             target_kind: session.connection.target_kind.clone(),
             target_id: session.connection.target_id.clone(),
-            capabilities,
             tools: session.catalog.manifest_tools(),
         })
     }
 
-    pub fn supports(&self, capability: FlCapability) -> Result<bool, AdapterError> {
-        Ok(self
-            .lock_session()?
-            .catalog
-            .tools
-            .contains_key(capability.required_tool()))
-    }
-
-    pub fn require(&self, capability: FlCapability) -> Result<(), AdapterError> {
-        if self.supports(capability)? {
-            Ok(())
-        } else {
-            Err(AdapterError::UnsupportedCapability(capability))
-        }
-    }
-
-    pub fn journal_snapshot(&self) -> Result<Vec<MutationRecord>, AdapterError> {
-        Ok(self.lock_journal()?.clone())
-    }
-
-    pub fn call_native(&self, tool: &str, arguments: Value) -> Result<NativeToolResult, AdapterError> {
+    /// Invoke one tool from the live Gopher catalog.
+    ///
+    /// The session mutex is intentional: the observed Gopher callback does not carry dependable
+    /// call correlation, so calls remain single-flight even though callers may be concurrent.
+    pub fn call_native(
+        &self,
+        tool: &str,
+        arguments: Value,
+    ) -> Result<NativeToolResult, AdapterError> {
         let mut session = self.lock_session()?;
         let ordered = canonicalize_tool_args(&session.catalog, tool, arguments)?;
         let request = tool_call_request_json(tool, &ordered)?;
@@ -378,222 +275,10 @@ impl GopherNativeAdapter {
         })
     }
 
-    pub fn session_context(&self) -> Result<NativeToolResult, AdapterError> {
-        self.require(FlCapability::InspectSession)?;
-        self.call_native("get_session_context", json!({}))
-    }
-
-    pub fn get_tempo(&self) -> Result<f64, AdapterError> {
-        self.require(FlCapability::ReadTempo)?;
-        let result = self.call_native("get_tempo", json!({}))?;
-        extract_first_number(&result.content_text.join(" ")).ok_or_else(|| {
-            AdapterError::Verification(format!(
-                "could not parse tempo from native response: {}",
-                result.primary_text().unwrap_or("<empty>")
-            ))
-        })
-    }
-
-    pub fn set_tempo_verified(&self, bpm: u32) -> Result<VerifiedMutation, AdapterError> {
-        self.require(FlCapability::SetTempo)?;
-        let before = self.get_tempo()?;
-        self.call_native("set_tempo", json!({"bpm": bpm}))?;
-        let after = self.get_tempo()?;
-        let verified = (after - bpm as f64).abs() <= 0.01;
-        let mutation = VerifiedMutation {
-            tool: "set_tempo".into(),
-            before: json!(before),
-            requested: json!(bpm),
-            after: json!(after),
-            verified,
-        };
-        self.record_mutation(
-            "set_tempo",
-            json!({"bpm": bpm}),
-            mutation.before.clone(),
-            mutation.after.clone(),
-            verified,
-            true,
-        )?;
-        if !verified {
-            return Err(AdapterError::Verification(format!(
-                "requested {bpm} BPM, read back {after} BPM"
-            )));
-        }
-        Ok(mutation)
-    }
-
-    pub fn play(&self) -> Result<NativeToolResult, AdapterError> {
-        self.require(FlCapability::Play)?;
-        self.call_native("play", json!({}))
-    }
-
-    pub fn stop(&self) -> Result<NativeToolResult, AdapterError> {
-        self.require(FlCapability::Stop)?;
-        self.call_native("stop", json!({}))
-    }
-
-    pub fn plugin_parameter_list(
-        &self,
-        target: &str,
-        slot_number: u32,
-    ) -> Result<NativeToolResult, AdapterError> {
-        self.require(FlCapability::InspectPluginParameters)?;
-        self.call_native(
-            "get_plugin_parameter_list",
-            json!({"target": target, "slot_number": slot_number}),
-        )
-    }
-
-    pub fn plugin_parameter_value(
-        &self,
-        target: &str,
-        param_identifier: &str,
-        slot_number: u32,
-    ) -> Result<f64, AdapterError> {
-        self.require(FlCapability::InspectPluginParameters)?;
-        let result = self.call_native(
-            "get_plugin_parameter_value",
-            json!({
-                "target": target,
-                "param_identifier": param_identifier,
-                "slot_number": slot_number
-            }),
-        )?;
-        extract_normalized_value(&result.content_text.join("\n")).ok_or_else(|| {
-            AdapterError::Verification(format!(
-                "could not parse normalized plugin parameter value from native response: {}",
-                result.primary_text().unwrap_or("<empty>")
-            ))
-        })
-    }
-
-    pub fn set_plugin_parameter_verified(
-        &self,
-        target: &str,
-        param_identifier: &str,
-        value: f64,
-        slot_number: u32,
-    ) -> Result<VerifiedMutation, AdapterError> {
-        self.require(FlCapability::SetPluginParameter)?;
-        if !(0.0..=1.0).contains(&value) {
-            return Err(AdapterError::InvalidArguments(
-                "plugin parameter value must be normalized to 0..=1".into(),
-            ));
-        }
-        let before = self.plugin_parameter_value(target, param_identifier, slot_number)?;
-        self.call_native(
-            "set_plugin_parameter_value",
-            json!({
-                "target": target,
-                "param_identifier": param_identifier,
-                "value": value,
-                "slot_number": slot_number
-            }),
-        )?;
-        let after = self.plugin_parameter_value(target, param_identifier, slot_number)?;
-        let verified = (after - value).abs() <= 0.002;
-        let args = json!({
-            "target": target,
-            "param_identifier": param_identifier,
-            "value": value,
-            "slot_number": slot_number
-        });
-        let mutation = VerifiedMutation {
-            tool: "set_plugin_parameter_value".into(),
-            before: json!(before),
-            requested: json!(value),
-            after: json!(after),
-            verified,
-        };
-        self.record_mutation(
-            "set_plugin_parameter_value",
-            args,
-            mutation.before.clone(),
-            mutation.after.clone(),
-            verified,
-            true,
-        )?;
-        if !verified {
-            return Err(AdapterError::Verification(format!(
-                "requested normalized value {value}, read back {after}"
-            )));
-        }
-        Ok(mutation)
-    }
-
-    pub fn add_effect_verified(
-        &self,
-        plugin: &str,
-        target_tracks: &str,
-        slot_number: u32,
-    ) -> Result<VerifiedMutation, AdapterError> {
-        self.require(FlCapability::InsertEffect)?;
-        let args = json!({
-            "plugin": plugin,
-            "target_tracks": target_tracks,
-            "slot_number": slot_number
-        });
-        self.call_native("add_effect", args.clone())?;
-        let inspection = self.plugin_parameter_list(target_tracks, slot_number)?;
-        let joined = inspection.content_text.join("\n");
-        let verified = joined.contains(plugin);
-        let mutation = VerifiedMutation {
-            tool: "add_effect".into(),
-            before: Value::Null,
-            requested: args.clone(),
-            after: json!({"resolvedPlugin": plugin, "parameterListMatched": verified}),
-            verified,
-        };
-        self.record_mutation(
-            "add_effect",
-            args,
-            Value::Null,
-            mutation.after.clone(),
-            verified,
-            false,
-        )?;
-        if !verified {
-            return Err(AdapterError::Verification(format!(
-                "add_effect returned, but `{plugin}` did not resolve at target {target_tracks}, slot {slot_number}"
-            )));
-        }
-        Ok(mutation)
-    }
-
     fn lock_session(&self) -> Result<MutexGuard<'_, GopherSession>, AdapterError> {
         self.session
             .lock()
             .map_err(|_| AdapterError::Transport("Gopher single-flight lock poisoned".into()))
-    }
-
-    fn lock_journal(&self) -> Result<MutexGuard<'_, Vec<MutationRecord>>, AdapterError> {
-        self.journal
-            .lock()
-            .map_err(|_| AdapterError::Transport("mutation journal lock poisoned".into()))
-    }
-
-    fn record_mutation(
-        &self,
-        tool: &str,
-        arguments: Value,
-        before: Value,
-        after: Value,
-        verified: bool,
-        reversible: bool,
-    ) -> Result<(), AdapterError> {
-        let mut journal = self.lock_journal()?;
-        let sequence = journal.len() as u64 + 1;
-        journal.push(MutationRecord {
-            sequence,
-            tool: tool.into(),
-            arguments,
-            before,
-            after,
-            verified,
-            reversible,
-        });
-        Ok(())
     }
 }
 
@@ -714,32 +399,6 @@ fn tool_failure_message(value: &Value) -> Option<String> {
     is_error.then(|| "unknown FL native tool error".into())
 }
 
-fn extract_first_number(text: &str) -> Option<f64> {
-    let mut token = String::new();
-    let mut started = false;
-    for ch in text.chars().chain(std::iter::once(' ')) {
-        if ch.is_ascii_digit() || (ch == '.' && started) || ((ch == '-' || ch == '+') && !started) {
-            token.push(ch);
-            started = true;
-        } else if started {
-            if let Ok(value) = token.parse::<f64>() {
-                if value.is_finite() {
-                    return Some(value);
-                }
-            }
-            token.clear();
-            started = false;
-        }
-    }
-    None
-}
-
-fn extract_normalized_value(text: &str) -> Option<f64> {
-    let marker = "Normalized Value:";
-    let tail = text.split_once(marker)?.1;
-    extract_first_number(tail)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -766,6 +425,18 @@ mod tests {
     }
 
     #[test]
+    fn recursively_unwraps_string_encoded_catalogs_without_losing_order() {
+        let source = r#"{"tools":[{"name":"probe","inputSchema":{"properties":{"z":{},"a":{}},"required":["z","a"]}}]}"#;
+        let twice = Value::String(serde_json::to_string(source).unwrap());
+        let catalog = CatalogSnapshot::from_callback_payload(twice).unwrap();
+        let ordered = canonicalize_tool_args(&catalog, "probe", json!({"a": 1, "z": 2})).unwrap();
+        assert_eq!(
+            ordered.keys().map(String::as_str).collect::<Vec<_>>(),
+            vec!["z", "a"]
+        );
+    }
+
+    #[test]
     fn rejects_unknown_argument() {
         let error = canonicalize_tool_args(
             &catalog(),
@@ -777,11 +448,16 @@ mod tests {
     }
 
     #[test]
-    fn parses_gopher_numeric_text() {
-        assert_eq!(extract_first_number("Current tempo: 140.0 BPM"), Some(140.0));
+    fn distinguishes_native_failures_from_transport_success() {
+        let raw = json!({
+            "result": {
+                "content": [{"type": "text", "text": "Flapi Error: parameter unavailable"}],
+                "isError": true
+            }
+        });
         assert_eq!(
-            extract_normalized_value("Value for 'Output Pan': Normalized Value: 0.5000, String Value: '0.00'"),
-            Some(0.5)
+            tool_failure_message(&raw).as_deref(),
+            Some("Flapi Error: parameter unavailable")
         );
     }
 }

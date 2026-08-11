@@ -46,36 +46,6 @@ impl ToolRegistry {
         if self.tools.contains_key(&definition.name) {
             return Err(ToolError(format!("duplicate tool `{}`", definition.name)));
         }
-        self.insert(definition, handler);
-        Ok(())
-    }
-
-    /// Replace one already-registered dynamic tool while preserving the tool name.
-    ///
-    /// This is deliberately distinct from `register`: callers must first establish the base tool
-    /// surface, then may specialize a known tool for a narrower adapter/workflow. Replacing an
-    /// unknown name fails so accidental typos cannot silently create a new capability.
-    pub fn replace(
-        &mut self,
-        definition: ToolDefinition,
-        handler: impl Fn(Value) -> Result<Value, ToolError> + Send + Sync + 'static,
-    ) -> Result<(), ToolError> {
-        validate_tool_name(&definition.name)?;
-        if !self.tools.contains_key(&definition.name) {
-            return Err(ToolError(format!(
-                "cannot replace unknown tool `{}`",
-                definition.name
-            )));
-        }
-        self.insert(definition, handler);
-        Ok(())
-    }
-
-    fn insert(
-        &mut self,
-        definition: ToolDefinition,
-        handler: impl Fn(Value) -> Result<Value, ToolError> + Send + Sync + 'static,
-    ) {
         self.tools.insert(
             definition.name.clone(),
             RegisteredTool {
@@ -83,6 +53,7 @@ impl ToolRegistry {
                 handler: Arc::new(handler),
             },
         );
+        Ok(())
     }
 
     pub fn is_empty(&self) -> bool {
@@ -138,39 +109,15 @@ mod tests {
     }
 
     #[test]
-    fn registry_explicitly_replaces_known_tool_only() {
+    fn rejects_duplicate_tools() {
+        let definition = ToolDefinition {
+            name: "probe".into(),
+            description: "probe".into(),
+            input_schema: serde_json::json!({"type": "object"}),
+        };
         let mut registry = ToolRegistry::default();
-        registry
-            .register(
-                ToolDefinition {
-                    name: "probe".into(),
-                    description: "old".into(),
-                    input_schema: serde_json::json!({"type": "object"}),
-                },
-                |_| Ok(serde_json::json!({"version": 1})),
-            )
-            .unwrap();
-        registry
-            .replace(
-                ToolDefinition {
-                    name: "probe".into(),
-                    description: "new".into(),
-                    input_schema: serde_json::json!({"type": "object"}),
-                },
-                |_| Ok(serde_json::json!({"version": 2})),
-            )
-            .unwrap();
-        assert_eq!(registry.call("probe", Value::Null), Ok(serde_json::json!({"version": 2})));
-        assert!(registry
-            .replace(
-                ToolDefinition {
-                    name: "missing".into(),
-                    description: "missing".into(),
-                    input_schema: serde_json::json!({"type": "object"}),
-                },
-                |_| Ok(Value::Null),
-            )
-            .is_err());
+        registry.register(definition.clone(), |_| Ok(Value::Null)).unwrap();
+        assert!(registry.register(definition, |_| Ok(Value::Null)).is_err());
     }
 
     #[test]

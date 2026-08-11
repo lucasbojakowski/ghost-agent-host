@@ -1,11 +1,12 @@
 use std::fs;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use anyhow::{bail, Context, Result};
 use clap::Parser;
 use ghost_codex::{
-    AgentEvent, CodexParallelRuntime, ParallelThreadConfig, ToolRegistry, TurnOptions,
+    AgentEvent, CodexParallelRuntime, ParallelThreadConfig, ToolDefinition, ToolError, ToolRegistry,
+    TurnOptions,
 };
 use ghost_context::{CompiledContext, ContextMessage, MessageRole, OutputContract};
 use ghost_core::{
@@ -13,8 +14,7 @@ use ghost_core::{
     TapCaptureCommand,
 };
 use ghost_fl_studio::{
-    register_codex_tools, FlAgentToolPolicy, FlPluginWriteScope, FlStudioAdapterConfig,
-    GopherNativeAdapter,
+    FlStudioAdapterConfig, FlStudioManifest, GopherNativeAdapter, NativeToolDefinition,
 };
 use serde::Serialize;
 use serde_json::{json, Value};
@@ -22,7 +22,7 @@ use serde_json::{json, Value};
 #[derive(Debug, Parser)]
 #[command(
     name = "ghost-fl-workflow",
-    about = "Capture one live FL Studio signal with Ghost Tap, analyze it, and let one Codex App Server thread build a scoped processor chain"
+    about = "Capture live FL Studio audio with Ghost Tap, analyze it, and let one Codex App Server thread operate an app-selected raw Gopher tool surface"
 )]
 struct Cli {
     #[arg(long, default_value_t = 9222)]
@@ -31,26 +31,25 @@ struct Cli {
     #[arg(long, default_value = "gopher")]
     target_match: String,
 
-    /// Process-local Ghost Tap instance number. With one Ghost Tap loaded this is normally 0.
     #[arg(long, default_value_t = 0)]
     tap_instance: u32,
 
     #[arg(long, default_value_t = 4.0)]
     capture_seconds: f64,
 
-    /// FL mixer track number/name passed to Gopher. Master is 0; Insert 1 is 1.
+    /// Target FL mixer track for this workflow policy. Master is 0; Insert 1 is 1.
     #[arg(long, default_value = "1")]
     track: String,
 
-    /// First mixer effect slot the agent may write. Keep Ghost Tap outside this range.
+    /// First mixer effect slot this workflow permits for processor writes.
     #[arg(long, default_value_t = 1)]
     slot_start: u32,
 
-    /// Last mixer effect slot the agent may write.
+    /// Last mixer effect slot this workflow permits for processor writes.
     #[arg(long, default_value_t = 4)]
     slot_end: u32,
 
-    /// Exact installed plugin names the agent may insert. Repeat --plugin to add more.
+    /// Exact installed plugin names this workflow permits for add_effect. Repeat to add more.
     #[arg(long = "plugin")]
     plugins: Vec<String>,
 
@@ -60,8 +59,7 @@ struct Cli {
     )]
     intent: String,
 
-    /// Processing strength requested from the agent. 0 is corrective/subtle, 1 is strongly transformative.
-    /// The default aims for an obvious A/B improvement without turning the workflow into sound design.
+    /// 0 is corrective/subtle; 1 is strongly transformative.
     #[arg(long, default_value_t = 0.70)]
     processing_intensity: f64,
 
@@ -71,24 +69,97 @@ struct Cli {
     #[arg(long, default_value = "gpt-5.6-terra")]
     model: String,
 
-    /// Print the full App Server event stream. By default Ghost logs only turn/tool milestones.
     #[arg(long)]
     verbose_agent_events: bool,
 
-    /// Required safety acknowledgement: position the playhead just before the sample, stop transport,
-    /// and confirm the requested target track/write range. Ghost live-checks slot occupancy before inserts.
+    /// Required acknowledgement before this experimental workflow exposes live FL write tools.
     #[arg(
-        long = "i-have-positioned-playhead-and-accepted-scoped-writes",
-        alias = "i-have-positioned-playhead-and-confirmed-empty-slots"
+        long = "i-accept-live-fl-writes",
+        alias = "i-have-positioned-playhead-and-accepted-scoped-writes"
     )]
-    i_have_positioned_playhead_and_accepted_scoped_writes: bool,
+    i_accept_live_fl_writes: bool,
+}
+
+#[derive(Debug, Clone)]
+struct AppFlPolicy {
+    track: String,
+    slot_start: u32,
+    slot_end: u32,
+    allowed_plugins: Vec<String>,
+}
+
+impl AppFlPolicy {
+    fn authorize(&self, tool: &str, arguments: &Value) -> Result<(), ToolError> {
+        match tool {
+            "add_effect" => {
+                let plugin = string_arg(arguments, "plugin")?;
+                let target = string_arg(arguments, "target_tracks")?;
+                let slot = u32_arg(arguments, "slot_number")?;
+                if target != self.track {
+                    return Err(ToolError(format!(
+                        "workflow permits add_effect only on mixer track {}",
+                        self.track
+                    )));
+                }
+                if !(self.slot_start..=self.slot_end).contains(&slot) {
+                    return Err(ToolError(format!(
+                        "workflow permits effect slots {}..={} only",
+                        self.slot_start, self.slot_end
+                    )));
+                }
+                if !self.allowed_plugins.iter().any(|allowed| allowed == plugin) {
+                    return Err(ToolError(format!(
+                        "workflow does not permit plugin `{plugin}`; allowed: {}",
+                        self.allowed_plugins.join(", ")
+                    )));
+                }
+                Ok(())
+            }
+            "set_plugin_parameter_value" => {
+                let target = string_arg(arguments, "target")?;
+                let slot = u32_arg(arguments, "slot_number")?;
+                let value = arguments
+                    .get("value")
+                    .and_then(Value::as_f64)
+                    .ok_or_else(|| ToolError("`value` must be a number".into()))?;
+                if target != self.track {
+                    return Err(ToolError(format!(
+                        "workflow permits plugin writes only on mixer track {}",
+                        self.track
+                    )));
+                }
+                if !(self.slot_start..=self.slot_end).contains(&slot) {
+                    return Err(ToolError(format!(
+                        "workflow permits effect slots {}..={} only",
+                        self.slot_start, self.slot_end
+                    )));
+                }
+                if !value.is_finite() || !(0.0..=1.0).contains(&value) {
+                    return Err(ToolError(
+                        "workflow requires normalized plugin values in 0..=1".into(),
+                    ));
+                }
+                Ok(())
+            }
+            _ => Err(ToolError(format!(
+                "workflow does not permit mutating FL tool `{tool}`"
+            ))),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct AppMutation {
+    tool: String,
+    arguments: Value,
 }
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
-    if !cli.i_have_positioned_playhead_and_accepted_scoped_writes {
+    if !cli.i_accept_live_fl_writes {
         bail!(
-            "refusing live processor writes: pass --i-have-positioned-playhead-and-accepted-scoped-writes after positioning the playhead, stopping transport, and confirming mixer track {} / slots {}..={}. Ghost will live-check occupancy before every insert",
+            "refusing live FL writes: pass --i-accept-live-fl-writes after positioning the playhead, stopping transport, and confirming target mixer track {} / slots {}..={} are appropriate for this test",
             cli.track,
             cli.slot_start,
             cli.slot_end
@@ -106,6 +177,12 @@ fn main() -> Result<()> {
     } else {
         cli.plugins.clone()
     };
+    let policy = AppFlPolicy {
+        track: cli.track.clone(),
+        slot_start: cli.slot_start,
+        slot_end: cli.slot_end,
+        allowed_plugins: allowed_plugins.clone(),
+    };
 
     let adapter = Arc::new(
         GopherNativeAdapter::connect(FlStudioAdapterConfig {
@@ -113,17 +190,17 @@ fn main() -> Result<()> {
             target_match: cli.target_match.clone(),
             ..Default::default()
         })
-        .context("failed to connect Ghost to the FL Studio Gopher native adapter")?,
+        .context("failed to connect Ghost to the FL Studio Gopher adapter")?,
     );
-    let manifest = adapter.capability_manifest()?;
+    let manifest = adapter.manifest()?;
     println!(
-        "[ghost-workflow] FL adapter connected with {} live native tools.",
+        "[ghost-workflow] FL/Gopher target connected with {} live native tools.",
         manifest.tools.len()
     );
 
     let tap = find_live_tap(cli.tap_instance).with_context(|| {
         format!(
-            "Ghost Tap instance {} is not publishing a fresh status. Load the new Ghost Tap CLAP on the target mixer track and let FL activate it.",
+            "Ghost Tap instance {} is not publishing a fresh status. Load Ghost Tap on the target mixer track and let FL activate it.",
             cli.tap_instance
         )
     })?;
@@ -139,13 +216,15 @@ fn main() -> Result<()> {
         command.request_id, command.duration_seconds
     );
 
-    adapter.play().context("failed to start FL playback for Ghost Tap capture")?;
+    adapter
+        .call_native("play", json!({}))
+        .context("failed to start FL playback for Ghost Tap capture")?;
     let capture = wait_for_capture(
         &tap,
         command.request_id,
         Duration::from_secs_f64(cli.capture_seconds + 12.0),
     );
-    let stop_result = adapter.stop();
+    let stop_result = adapter.call_native("stop", json!({}));
     let artifact = capture.context("Ghost Tap did not complete the requested capture")?;
     stop_result.context("capture completed, but FL transport could not be stopped")?;
 
@@ -172,35 +251,24 @@ fn main() -> Result<()> {
         analysis_path.display()
     );
 
-    let scope = FlPluginWriteScope::new(
-        cli.track.clone(),
-        cli.slot_start,
-        cli.slot_end,
-        allowed_plugins.clone(),
+    let mutations = Arc::new(Mutex::new(Vec::<AppMutation>::new()));
+    let registry = build_agent_registry(&manifest, Arc::clone(&adapter), &policy, Arc::clone(&mutations))?;
+    println!(
+        "[ghost-workflow] App selected {} dynamic FL tools from the live catalog.",
+        registry.definitions().len()
     );
-    let mut registry = ToolRegistry::default();
-    register_codex_tools(
-        &mut registry,
-        Arc::clone(&adapter),
-        FlAgentToolPolicy::single_track_processor(scope),
-    )?;
 
-    // Product code uses the parallel-capable dispatcher even though this first real workflow owns
-    // exactly one agent thread. Parallel experiments can add threads without changing this boundary.
     let runtime = CodexParallelRuntime::spawn(&cli.codex_binary)
         .context("failed to launch the persistent Codex App Server runtime")?;
     let thread = runtime.start_thread(
-        ParallelThreadConfig::new(cli.model.clone()).service_name("ghost_fl_processor"),
+        ParallelThreadConfig::new(cli.model.clone()).service_name("ghost_workflow"),
         registry,
     )?;
     println!(
-        "[ghost-workflow] Started processor thread {} on one persistent Codex App Server.",
+        "[ghost-workflow] Started workflow thread {} on one persistent Codex App Server.",
         thread.id
     );
 
-    // Preserve the complete analysis artifact on disk, but expose a deliberately compact evidence
-    // object to the agent. Dense frame-series data is useful for downstream DSP inspection, not for
-    // every reasoning turn, and previously diluted the high-value measurements in the prompt.
     let agent_evidence = compact_agent_evidence(&analysis)?;
     let analysis_json = serde_json::to_string(&agent_evidence)?;
     let allowed = allowed_plugins.join(", ");
@@ -210,7 +278,7 @@ fn main() -> Result<()> {
             ContextMessage {
                 role: MessageRole::System,
                 content: format!(
-                    "You are Ghost's mixing/processor agent operating a controlled live FL Studio workflow. The measured audio evidence below describes the captured signal; interpret features jointly and do not treat any single metric as a command.\n\nYour live write boundary is mixer track {track}, slots {slot_start}..={slot_end}. The only insertable plugin names are: {allowed}. The slot range is a permission boundary, NOT a claim that every slot is empty. Start with fl_get_target_track_context. Preserve existing processors unless changing one is musically justified; fl_add_effect will fail closed rather than overwrite an occupied slot. Never remove/reset effects or touch another track.\n\nPROCESSING_INTENSITY={intensity:.2} on a 0..1 scale. At this setting, aim for a clearly audible A/B improvement while remaining musical. Do not make ceremonial or token parameter movements merely because a tool exists. If a processor is justified, set it far enough to matter for the measured problem. Conversely, do not accumulate processors or changes without evidence. One or two processors and a handful of purposeful settings is usually preferable to a long chain.\n\nTool strategy: fl_find_plugin_parameters treats space-separated terms as OR, so search groups such as `threshold ratio attack release knee range mix output` or `freq gain q used enabled`. Read exact controls with fl_get_plugin_parameter_value; it exposes the plugin's human display value when available. For continuous numeric controls, strongly prefer fl_set_plugin_parameter_display_value and specify musical targets in real units such as dB, Hz, ms, ratio, Q, or percent. Ghost will calibrate the normalized mapping while transport is stopped and verify the displayed result. Use fl_set_plugin_parameter_value only for a discrete/boolean/enum mapping you actually understand.\n\nFor dynamics, reason about threshold together with ratio, timing, range/knee and wet/dry when exposed; a tiny threshold nudge alone is not automatically useful. For EQ, use the measured spectral balance/resonances to justify specific bands and make frequency/gain/Q changes in display units when the controls are exposed. Existing defaults are not sacred, but preserve the sample's identity.\n\nThis is an action workflow: make at least one justified verified mutation. If a suitable processor already exists in the scoped slots, tuning it can satisfy that requirement; otherwise insert the smallest processor chain that serves the intent. Summarize only changes you actually verified.\n\nANALYSIS_EVIDENCE_JSON:\n{analysis_json}",
+                    "You are Ghost's audio-processing agent in a live FL Studio experiment. Treat FL Studio itself as current truth: the human may edit the DAW at any time, so inspect current state again before relying on an earlier observation. The measured audio evidence is a snapshot of the captured signal; interpret features jointly.\n\nThis executable selected a live Gopher tool surface from the adapter's raw catalog. Read tools remain raw. The only mutation tools exposed for this workflow are add_effect and set_plugin_parameter_value, wrapped here by app policy: target mixer track {track}, slots {slot_start}..={slot_end}, insertable plugins {allowed}. Do not infer that a permitted slot is empty; inspect before inserting.\n\nGopher argument names are JSON properties but the adapter emits them in the live schema/signature order. Use the tool schemas as authoritative. Plugin parameter writes are normalized 0..1. Read current normalized parameter state before changing it and read it again after changing it. Human display text may lag normalized state or be unavailable for third-party plugins, so do not treat missing/stale display text as proof that a normalized write failed.\n\nPROCESSING_INTENSITY={intensity:.2}. Prefer the smallest purposeful chain that addresses measured spectral/dynamic problems. One or two processors and a few meaningful parameter changes are preferable to ceremonial adjustments. This is an action workflow: make at least one justified processor mutation, then summarize only calls and observations you actually made.\n\nANALYSIS_EVIDENCE_JSON:\n{analysis_json}",
                     track = cli.track,
                     slot_start = cli.slot_start,
                     slot_end = cli.slot_end,
@@ -220,15 +288,14 @@ fn main() -> Result<()> {
             ContextMessage {
                 role: MessageRole::User,
                 content: format!(
-                    "Intent: {}\nApply a musically meaningful processor result at intensity {:.2}, then summarize what you actually changed, the displayed settings you verified, and why those changes follow from the evidence.",
-                    cli.intent,
-                    cli.processing_intensity
+                    "Intent: {}\nApply a musically meaningful result at intensity {:.2}, then summarize what you changed and why it follows from the evidence and current FL observations.",
+                    cli.intent, cli.processing_intensity
                 ),
             },
         ],
         output: OutputContract::Text,
         metadata: json!({
-            "workflow": "ghost.fl.tap-process/2",
+            "workflow": "ghost.workflow.tap-process/3",
             "captureRequestId": artifact.request_id,
             "capturePath": artifact.wav_path,
             "analysisPath": analysis_path,
@@ -239,29 +306,117 @@ fn main() -> Result<()> {
         }),
     };
 
-    let journal_before = adapter.journal_snapshot()?.len();
     let output = runtime.run_turn(
         &thread,
         &context,
         &TurnOptions::default(),
         &mut |event| print_agent_event(&event, cli.verbose_agent_events),
     )?;
-    let journal = adapter.journal_snapshot()?;
-    let workflow_mutations = &journal[journal_before..];
-    let mutated = workflow_mutations.iter().any(|record| record.verified);
-    if !mutated {
-        bail!("agent turn completed without a verified FL Studio mutation");
+    let workflow_mutations = mutations
+        .lock()
+        .map_err(|_| anyhow::anyhow!("app mutation journal lock poisoned"))?
+        .clone();
+    if workflow_mutations.is_empty() {
+        bail!("agent turn completed without an app-authorized FL processor mutation");
     }
 
     println!("[ghost-workflow] Agent: {}", output.text);
     println!(
-        "[ghost-workflow] Verified workflow mutations:\n{}",
-        serde_json::to_string_pretty(workflow_mutations)?
+        "[ghost-workflow] Successful app-authorized mutation calls:\n{}",
+        serde_json::to_string_pretty(&workflow_mutations)?
     );
     println!(
-        "[ghost-workflow] GREEN: Ghost Tap captured live audio -> Rust analysis -> one Codex App Server processor thread -> scoped FL Studio processor mutation with native verification."
+        "[ghost-workflow] GREEN: Ghost Tap capture -> Rust analysis -> Codex App Server thread -> app-selected raw FL/Gopher calls."
     );
     Ok(())
+}
+
+fn build_agent_registry(
+    manifest: &FlStudioManifest,
+    adapter: Arc<GopherNativeAdapter>,
+    policy: &AppFlPolicy,
+    mutations: Arc<Mutex<Vec<AppMutation>>>,
+) -> Result<ToolRegistry> {
+    let mut registry = ToolRegistry::default();
+    for tool in &manifest.tools {
+        if is_mutating_tool(&tool.name) && !is_workflow_write(&tool.name) {
+            continue;
+        }
+        register_raw_tool(
+            &mut registry,
+            tool,
+            Arc::clone(&adapter),
+            policy.clone(),
+            Arc::clone(&mutations),
+        )?;
+    }
+    Ok(registry)
+}
+
+fn register_raw_tool(
+    registry: &mut ToolRegistry,
+    tool: &NativeToolDefinition,
+    adapter: Arc<GopherNativeAdapter>,
+    policy: AppFlPolicy,
+    mutations: Arc<Mutex<Vec<AppMutation>>>,
+) -> Result<()> {
+    let tool_name = tool.name.clone();
+    let handler_name = tool_name.clone();
+    let definition = ToolDefinition {
+        name: tool_name,
+        description: tool.description.clone(),
+        input_schema: tool.input_schema.clone(),
+    };
+    registry.register(definition, move |arguments| {
+        let is_write = is_workflow_write(&handler_name);
+        if is_write {
+            policy.authorize(&handler_name, &arguments)?;
+        }
+        let result = adapter
+            .call_native(&handler_name, arguments.clone())
+            .map_err(|error| ToolError(error.to_string()))?;
+        if is_write {
+            mutations
+                .lock()
+                .map_err(|_| ToolError("app mutation journal lock poisoned".into()))?
+                .push(AppMutation {
+                    tool: handler_name.clone(),
+                    arguments,
+                });
+        }
+        Ok(result.raw)
+    })?;
+    Ok(())
+}
+
+fn is_workflow_write(tool: &str) -> bool {
+    matches!(tool, "add_effect" | "set_plugin_parameter_value")
+}
+
+fn is_mutating_tool(tool: &str) -> bool {
+    matches!(tool, "play" | "stop")
+        || tool.starts_with("set_")
+        || tool.starts_with("add_")
+        || tool.starts_with("remove_")
+        || tool.starts_with("delete_")
+        || tool.starts_with("create_")
+        || tool.starts_with("insert_")
+        || tool.starts_with("run_")
+}
+
+fn string_arg<'a>(arguments: &'a Value, name: &str) -> Result<&'a str, ToolError> {
+    arguments
+        .get(name)
+        .and_then(Value::as_str)
+        .ok_or_else(|| ToolError(format!("`{name}` must be a string")))
+}
+
+fn u32_arg(arguments: &Value, name: &str) -> Result<u32, ToolError> {
+    let value = arguments
+        .get(name)
+        .and_then(Value::as_u64)
+        .ok_or_else(|| ToolError(format!("`{name}` must be a non-negative integer")))?;
+    u32::try_from(value).map_err(|_| ToolError(format!("`{name}` is out of range")))
 }
 
 fn compact_agent_evidence<T: Serialize>(analysis: &T) -> Result<Value> {
@@ -297,7 +452,7 @@ fn print_agent_event(event: &AgentEvent, verbose: bool) {
     }
     match event {
         AgentEvent::TurnStarted { turn_id } => {
-            println!("[ghost-workflow] agent turn started: {:?}", turn_id);
+            println!("[ghost-workflow] agent turn started: {turn_id:?}");
         }
         AgentEvent::ItemStarted { item }
             if item.get("type").and_then(Value::as_str) == Some("dynamicToolCall") =>
@@ -314,25 +469,7 @@ fn print_agent_event(event: &AgentEvent, verbose: bool) {
             let tool = item.get("tool").and_then(Value::as_str).unwrap_or("<unknown>");
             let success = item.get("success").and_then(Value::as_bool).unwrap_or(false);
             let duration = item.get("durationMs").and_then(Value::as_u64).unwrap_or(0);
-            println!(
-                "[ghost-workflow] tool <- {tool} success={success} duration_ms={duration}"
-            );
-            if !success {
-                let details = item
-                    .get("contentItems")
-                    .and_then(Value::as_array)
-                    .into_iter()
-                    .flatten()
-                    .filter_map(|content| content.get("text").and_then(Value::as_str))
-                    .collect::<Vec<_>>();
-                if details.is_empty() {
-                    println!("[ghost-workflow] tool !! {tool}: no error detail returned");
-                } else {
-                    for detail in details {
-                        println!("[ghost-workflow] tool !! {tool}: {detail}");
-                    }
-                }
-            }
+            println!("[ghost-workflow] tool <- {tool} success={success} duration_ms={duration}");
         }
         AgentEvent::TurnCompleted { status } => {
             println!("[ghost-workflow] agent turn completed: {status}");
