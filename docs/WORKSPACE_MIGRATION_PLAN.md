@@ -6,7 +6,10 @@ Date: 2026-08-11
 
 Starting baseline: `8fa7d5f0d17c7019767f5e7b4fa6a084c191cb70`
 
-Companion: `TECHNICAL_RETROSPECTIVE.md`
+Companions:
+
+- `TECHNICAL_RETROSPECTIVE.md`
+- `decisions/001-transparent-fl-studio-adapter.md`
 
 ## 1. Goal
 
@@ -16,37 +19,79 @@ Transform the repository from an accumulation of several explored Ghost architec
 capture → analysis → agent → DAW
 ```
 
-The reset is intentionally aggressive. The current machine state is being backed up separately and Git history already preserves the implementation archaeology. We therefore do **not** need to keep abandoned systems in HEAD merely because they once required substantial work.
+The reset is intentionally aggressive. Git history and the user's local backup preserve the implementation archaeology, so abandoned systems do not need to remain in HEAD.
 
 The success criterion is cognitive as much as technical:
 
-> A new engineer or agent entering the repository should infer the current product from the default workspace without first learning the nested-host, egui, mock-mix, daemon, old plan-application, or generic `ghost-core` catch-all architectures.
+> A new engineer or agent entering the repository should infer the current product and current boundaries directly from the default workspace.
 
-The cleanup should remove obsolete concepts from active code search, Cargo dependency resolution, CI, examples, docs, and agent retrieval—not only mark them deprecated.
+The cleanup must remove obsolete concepts from active code search, Cargo dependency resolution, CI, examples, docs, and agent retrieval—not merely mark them deprecated.
 
-The end of this migration should leave a repository whose package boundaries themselves communicate the product:
+The final package layout should make the product legible:
 
 ```text
 capture          analysis          agent                 DAW
    │                │                │                    │
-ghost-tap ───► ghost-audio ───► ghost-context ───► ghost-fl-studio
+ghost-tap ───► ghost-audio ───► ghost-context       ghost-fl-studio
                                   ghost-codex
                     \                |                   /
                      \────── ghost-application ─────────/
+                                  ▲
+                                  │
+                         apps/ghost-workflow
 ```
 
-The diagram is semantic, not a promise of exact Cargo dependency direction. The later target-architecture document will formalize dependency rules after the reset is complete.
+This diagram is semantic. The later target-architecture document will formalize exact dependency direction.
 
-## 2. What this migration does and does not decide
+## 2. Decisions already made for this migration
 
-This phase has two jobs:
+This reset is not only deletion. Two structural decisions are already sufficiently supported by the working vertical slice and should be completed before migration exit.
 
-1. remove historical responsibilities and code paths;
-2. make one small structural split that is already justified by the proven vertical slice: retire `ghost-core` into `ghost-audio` and `ghost-tap`.
+### 2.1 Retire `ghost-core`
 
-The split is deliberately **not the first cleanup step**. We first subtract historical code while `ghost-core` still exists, re-establish the green slice, and only then move the surviving code across the now-visible boundary. This prevents us from carefully relocating abstractions that should simply be deleted.
+`ghost-core` is a transitional catch-all. After historical code is removed and the surviving boundary is visible, it will be split into:
 
-This migration does **not** yet define:
+```text
+ghost-audio
+  raw audio representation / I/O
+  deterministic analysis
+
+ghost-tap
+  realtime sensing
+  transport publication
+  Tap protocol/control
+  minimal CLAP plugin
+```
+
+There should be no `ghost-core` package in the final workspace.
+
+### 2.2 Make `ghost-fl-studio` a transparent FL/Gopher adapter
+
+ADR 001 is accepted and governs this migration.
+
+`ghost-fl-studio` will answer:
+
+> What does FL Studio expose, and how do we invoke it reliably?
+
+It will **not** answer:
+
+> What should this Ghost app allow an agent to do?
+
+The adapter keeps real integration invariants and raw/typed mirrors of FL operations. Policy, context selection, capability filtering, slot/plugin scope, verification strategy, semantic calibration, and agent tool composition move upward.
+
+A useful rule for every FL-related line of code is:
+
+```text
+Exists because FL/Gopher behaves this way?
+    → ghost-fl-studio
+
+Exists because Ghost wants to behave this way?
+    → app / application / context
+```
+
+## 3. What this migration does not decide
+
+This migration does **not** define:
 
 - the final cross-DAW trait/interface;
 - the final database schema;
@@ -55,50 +100,24 @@ This migration does **not** yet define:
 - closed-loop before/after evaluation;
 - multi-agent coordination policy;
 - Convex integration;
-- the final form of every application-layer port or trait.
+- the final shared application policy model;
+- a general middleware/callback framework for workspace tools.
 
-Those belong to the target architecture and next-phase documents written from the cleaned workspace.
+Those should emerge from the cleaned workspace and later real applications.
 
-## 3. Preserve the proven baseline before destructive cleanup
+## 4. Preserve the proven baseline before destructive cleanup
 
-Before deleting code from the canonical line:
+Before destructive changes become canonical:
 
-1. preserve the successful head (`8fa7d5f...`) with a milestone tag or equivalent immutable Git reference;
-2. keep the existing PR history (#1–#16) as the narrative/implementation archive;
-3. record the final successful live FL semantic-control run in PR #16 or milestone notes;
-4. perform destructive cleanup on the dedicated reset branch;
-5. do not create an `archive/legacy-*` source tree in HEAD unless a file is genuinely required by current tests.
+1. preserve the successful `8fa7d5f...` state with an immutable Git reference;
+2. keep PR history (#1–#16) as the implementation narrative/archive;
+3. preserve the final successful live FL semantic-control run in milestone notes or PR history;
+4. perform the reset on `phase/vertical-slice-reset`;
+5. do not create a legacy source tree in HEAD.
 
-Git is the archive. A legacy source directory would continue to pollute code search and future-agent retrieval.
+Git is the archive. Legacy source in HEAD would continue to pollute search and future-agent retrieval.
 
-The current `phase/vertical-slice-reset` branch is the planning/execution line for this transformation.
-
-## 4. Two checkpoints: cleanup state and final migration state
-
-A major sequencing rule is that the repository passes through a temporary cleanup checkpoint before the final package split.
-
-### 4.1 Intermediate cleanup checkpoint
-
-After historical removal but before the `ghost-core` split, the workspace may temporarily look like:
-
-```text
-crates/
-  ghost-core/            # temporary survivor: trimmed to live audio/tap primitives only
-  ghost-context/
-  ghost-codex/
-  ghost-fl-studio/
-  ghost-application/
-  ghost-clap-plugin/     # temporary name; already minimal Ghost Tap behavior
-
-apps/
-  ghost-fl-agent-smoke/  # temporary home of the proven workflow until promotion
-```
-
-This state is useful only as a regression checkpoint. It is **not** the end state of the migration.
-
-Gate: the reduced historical-free workspace builds/tests, and preferably the known-good live workflow is re-run before structural relocation begins.
-
-### 4.2 Final migration target
+## 5. Final repository target
 
 The migration is complete only when the repository is approximately:
 
@@ -109,51 +128,44 @@ README.md
 
 crates/
   ghost-audio/           # audio representation, I/O, deterministic analysis
-  ghost-tap/             # realtime sensing, Tap protocol, minimal CLAP plugin
-  ghost-context/         # task-specific context/evidence compilation
-  ghost-codex/           # Codex App Server runtime, tools, thread dispatcher
-  ghost-fl-studio/       # FL native adapter + scoped semantic tool surface
-  ghost-application/     # product use cases / orchestration boundary
+  ghost-tap/             # realtime sensing + Tap protocol + minimal CLAP plugin
+  ghost-context/         # reusable evidence/context representation transforms
+  ghost-codex/           # domain-neutral Codex App Server runtime
+  ghost-fl-studio/       # transparent FL Studio/Gopher API adapter
+  ghost-application/     # reusable Ghost use-case orchestration
 
 apps/
-  ghost-workflow/        # first-class capture→analysis→agent→DAW executable
+  ghost-workflow/        # current concrete product composition and policy
 
 tools/
-  fl-gopher-probe/       # compatibility/diagnostic tool, not product runtime
+  fl-gopher-probe/       # raw integration/compatibility diagnostics
 
 docs/
   TECHNICAL_RETROSPECTIVE.md
   WORKSPACE_MIGRATION_PLAN.md
-  # follow-up phase adds target architecture, invariants, roadmap
+  decisions/
+    001-transparent-fl-studio-adapter.md
 
 scripts/
   package_ghost_tap.ps1  # only if still needed
 
 tests/ or crate-local tests
-  # small deterministic fixtures only
+  # focused deterministic fixtures only
 ```
 
-There should be **no `ghost-core` package in the final workspace**. Its retirement is part of the migration, not deferred future architecture work.
+The app is intentionally the highest-policy layer. Shared behavior is promoted downward only after repeated real use demonstrates that it is genuinely reusable.
 
-## 5. Top-level cleanup
+## 6. Top-level cleanup
 
-### 5.1 Delete `agent-ops/`
+### 6.1 Delete `agent-ops/`
 
 Disposition: **delete from HEAD**.
 
-The directory contains planning, memory, journal, report, progress, configuration, and many numbered tasks for prior architectural phases. It includes assumptions about egui, editor providers, daemon migration, nested host responsibilities, older application ports, and other concepts that are no longer authoritative.
+It contains planning/memory/task material for prior architectures and is particularly dangerous in an agentic repository because retrieval can mistake historical prose for current intent.
 
-Keeping it is especially harmful for agentic development because retrieval treats prose as intent. A future agent can easily give an obsolete design document more weight than recently evolved code.
+### 6.2 Rewrite README
 
-Historical value is already preserved in Git.
-
-### 5.2 Replace the stale README
-
-Disposition: **rewrite during cleanup**.
-
-The current README still calls the project “Ghost Agent Host,” describes a vendor-neutral CLAP child graph, and points at old validation flows.
-
-The reset README should be deliberately short. Until the target architecture document exists, it should say only what is already proven:
+The reset README should be short and describe only the proven current system:
 
 ```text
 Ghost & Guild
@@ -161,52 +173,32 @@ Ghost & Guild
 capture → analysis → agent → DAW
 
 Current reference environment:
-- Ghost Tap for audio capture
+- Ghost Tap
 - Rust audio analysis
 - Codex App Server
-- FL Studio native/Gopher adapter
+- FL Studio/Gopher adapter
 ```
 
-It should link only to documents and commands that exist after the reset.
+### 6.3 Delete the historical architecture document
 
-### 5.3 Retire the existing `docs/ARCHITECTURE.md`
+Delete the current host-era `docs/ARCHITECTURE.md` rather than editing it into the new system.
 
-Disposition: **delete during cleanup; replace in the next documentation phase**.
+The technical retrospective is the historical bridge. A fresh target architecture will be written after the reset.
 
-The current file is an architecture decision for the revisioned nested-CLAP host. It describes `ProjectDocument`, egui sessions, `NativeClapAudio`, child GUI ownership, detached Windows shells, graph revisions, child parameter patch transactions, and other abandoned product responsibilities.
+### 6.4 Delete stale generated/historical files
 
-Do not edit this document into the new architecture line by line. Delete it and write the target architecture fresh after cleanup.
+Remove generated `artifacts/`, obsolete checksums, old reports, old visualizers, obsolete schemas, one-off experiment outputs, and files not used by the surviving build/tests/current docs.
 
-The technical retrospective is the historical bridge.
+## 7. CI, config, scripts, fixtures
 
-### 5.4 Delete checked-in generated `artifacts/`
+### CI
 
-Disposition: **delete**.
-
-Current generated analysis, mock-evaluation, plots, first-agent-response output, and sandbox-validation artifacts belong to historical validation workflows.
-
-Runtime artifacts should live in user-local storage, test temp directories, or deliberately curated fixtures. Generated product output should not make HEAD look like the old experiment pipeline is current.
-
-### 5.5 Delete obsolete top-level reports/checksums/visualizers
-
-Disposition: **delete anything not referenced by the surviving build or current docs**.
-
-This includes `SHA256SUMS.txt`, old reports, old visualizers, obsolete schemas, and one-off experiment files unless a current build/test explicitly consumes them.
-
-## 6. CI cleanup
-
-### 6.1 Delete host-era workflows
-
-Delete:
+Delete host-era workflows such as:
 
 - `host-hardening-validation.yml`;
 - `windows-child-integration.yml`.
 
-They target `ghost-host`, `ghost-ui`, child integration, and historical fix branches.
-
-### 6.2 Rewrite main CI after workspace reduction
-
-Initial CI should be small and truthful:
+Initial reduced CI should be truthful and small:
 
 ```text
 cargo fmt --all -- --check
@@ -214,32 +206,17 @@ cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo test --workspace --all-features
 ```
 
-Add platform matrices only where surviving crates require them.
+Live FL/FabFilter validation remains a local proprietary-runtime gate.
 
-Live FL Studio/FabFilter interoperability remains a local/manual integration gate. CI should validate everything it can without pretending to validate proprietary DAW behavior.
+### Config
 
-## 7. Config and script cleanup
+Delete/reset the old `config/default.toml` rather than migrating mock-agent, MixPlan, host-role, plugin-hosting, or smoothing vocabulary into the new phase.
 
-### 7.1 Delete/reset `config/default.toml`
+### Scripts
 
-Disposition: **delete first; reintroduce configuration from actual application needs later**.
+Delete historical mock/reference/artifact-pipeline scripts when no current test consumes them.
 
-The current config declares mock agent backends, structured MixPlan output, nested-host roles, plugin discovery, and host parameter smoothing. Migrating those keys would preserve abandoned architecture through configuration vocabulary.
-
-### 7.2 Delete historical pipeline scripts
-
-Delete scripts whose primary purpose was the old mock/reference/artifact pipeline, including where no surviving test needs them:
-
-- `build_examples.py`;
-- `generate_fixtures.py` if its consumers disappear;
-- `mock_evaluate.py`;
-- `reference_analysis.py`;
-- `run_sandbox_validation.sh`;
-- `send_agentd_request.py`;
-- `validate_artifacts.py`;
-- old generic `package.sh` / `package_clap.py` if superseded.
-
-### 7.3 Keep and rename the proven Tap packager
+Keep the proven Tap packager and rename it:
 
 ```text
 scripts/package_clap.ps1
@@ -247,378 +224,424 @@ scripts/package_clap.ps1
 scripts/package_ghost_tap.ps1
 ```
 
-Remove nested-host packaging branches/comments from it.
+### Fixtures
 
-## 8. Fixture cleanup
+Remove large checked-in WAV corpora unless a focused deterministic test truly needs them. Prefer tiny generated fixtures for unit/integration tests and keep larger research/evaluation audio outside a normal source checkout.
 
-Remove multi-megabyte fixture binaries from the default repository unless a surviving deterministic test genuinely requires them.
+## 8. Crate disposition
 
-Preferred rule:
+### 8.1 `ghost-core`: transitional only
 
-```text
-unit/integration test needs audio
-  → generate a tiny deterministic fixture in test code/build step
+Disposition: **trim in place, prove the reduced slice, then retire the package**.
 
-research/evaluation needs representative audio
-  → external/local fixture set, not normal source checkout
-```
+Delete/audit out first:
 
-Preserve focused analysis tests and capture trigger/pre-roll tests without carrying the historical evaluation corpus.
-
-## 9. Crate disposition
-
-### 9.1 `ghost-core`: transitional only, then retire
-
-Disposition: **trim in place during cleanup, then split and delete the package before migration exit**.
-
-The current crate mixes several semantic domains:
-
-```text
-analysis
-raw audio/I/O
-realtime capture
-transport sensing
-Tap protocol
-generic processor abstractions
-generic task abstractions
-old daemon protocol
-validation/user-intent leftovers
-```
-
-The first cleanup pass should make the live/dead boundary obvious without moving code yet.
-
-Delete or audit out first:
-
-- `AtomicGraphControl` and graph-specific state;
-- `processor.rs` generic hosted-processor/parameter structures if no surviving path needs them;
-- `task.rs` / `TaskPlan` / `TaskOperation` / `ExpectedOutcome`;
-- old request/response `protocol.rs` used only by deleted daemon/CLI paths;
+- graph/host-specific state such as `AtomicGraphControl`;
+- generic hosted-processor/parameter abstractions;
+- `TaskPlan` / `TaskOperation` / `ExpectedOutcome`;
+- old daemon request/response protocol;
 - old plan/task validation;
-- user-intent/model types whose only consumers are the removed MixPlan pipeline.
+- old MixPlan-oriented user-intent/model leftovers.
 
 Keep temporarily:
 
-- raw audio buffer/I/O used by current analysis and Tap artifact handling;
-- `analysis/` and its validated feature extraction;
-- realtime capture state/buffer and trigger/pre-roll logic;
-- transport/audio configuration publication needed by Ghost Tap;
+- audio buffer/I/O;
+- deterministic analysis;
+- realtime capture state/buffer;
+- transport/audio publication required by Tap;
 - Tap discovery/control/artifact protocol.
 
-After this reduced state is green, perform the structural split described below. Do not keep `ghost-core` as a generic domain bucket after the migration.
+Do not relocate dead abstractions merely to preserve them.
 
-### 9.2 New `ghost-audio`
+### 8.2 `ghost-audio`
 
-Disposition: **create from the surviving audio/analysis half of `ghost-core` after cleanup**.
+Create from the surviving audio/analysis half of `ghost-core`.
 
 Responsibility:
 
 > Represent audio and deterministically derive evidence from it.
 
-Expected contents:
-
-```text
-ghost-audio/
-  audio/
-    buffer / decode / wav I/O
-  analysis/
-    levels
-    spectrum
-    dynamics
-    transients
-    stereo
-    ...
-  analysis models/configuration
-```
-
-Keep this crate free of:
+Keep free of:
 
 - Codex/App Server concepts;
 - FL/Gopher concepts;
+- application policy;
 - plugin hosting;
-- application workflow sequencing;
-- generic DAW actions.
+- DAW mutation semantics.
 
-Ghost Tap may depend on small audio primitives/WAV helpers from `ghost-audio`; that does not make analysis responsible for capture orchestration.
+Do not over-split into many micro-crates yet.
 
-Do not split this immediately into `ghost-analysis`, `ghost-audio-io`, etc. The current codebase does not justify that package granularity.
+### 8.3 `ghost-tap`
 
-### 9.3 `ghost-clap-plugin` + Tap half of `ghost-core` → `ghost-tap`
+Merge/rename the current minimal CLAP plugin plus the Tap/capture/transport half of `ghost-core`.
 
-Disposition: **merge/rename into one product-accurate sensing crate after the trim checkpoint**.
-
-The current CLAP crate is already behaviorally close to the target: one stereo input/output, transparent passthrough, transport publication, bounded capture, and a non-realtime worker.
-
-The final `ghost-tap` crate should own the complete capture-side responsibility:
+Own:
 
 ```text
-ghost-tap/
-  realtime capture buffer/state
-  transport sensing/publication
-  Tap status/command/artifact protocol
-  live Tap discovery/control helpers
-  minimal CLAP plugin implementation
+realtime capture buffer/state
+transport sensing/publication
+Tap status/command/artifact protocol
+Tap discovery/control helpers
+minimal CLAP plugin
 ```
 
-Actions:
+Preserve:
 
-- move the surviving Tap/capture/transport code out of `ghost-core`;
-- rename `ghost-clap-plugin` package/directory to `ghost-tap`;
-- keep plugin identity `ai.konko.ghost-tap`;
-- preserve realtime callback constraints;
-- preserve the non-realtime filesystem worker/control plane;
-- remove comments/build rules/dependencies implying nested child hosting;
-- keep the crate independent of Codex and FL control adapters.
+- plugin identity `ai.konko.ghost-tap`;
+- transparent passthrough;
+- realtime safety;
+- non-realtime filesystem worker.
 
-Do not add the Ghost product UI to this crate. Ghost Tap is sensing infrastructure loaded into the DAW.
+Keep independent of Codex and FL control.
 
-### 9.4 `ghost-context`
+### 8.4 `ghost-context`
 
-Disposition: **keep with minimal cleanup**.
+Keep as reusable representation/transformation for evidence supplied to agents.
 
-Keep the compiled context/message/output structures and reusable context composition used by App Server turns. Remove recipes/components only when unreferenced after the old mix pipeline disappears.
+Important ownership rule after ADR 001:
 
-Do not add FL-specific or plugin-host-specific concepts here during cleanup.
+- the crate may provide reusable context building blocks;
+- the **app chooses which observations/evidence are selected**;
+- FL-specific “compact target-track context” is not an FL adapter primitive.
 
-This crate is likely to become the semantic transition from deterministic evidence to agent-visible context; the target architecture document will formalize that role.
+Do not turn `ghost-context` into another policy bucket during cleanup.
 
-### 9.5 `ghost-codex`
+### 8.5 `ghost-codex`
 
-Disposition: **keep the App Server runtime; delete the old mixing-agent layer**.
+Keep the App Server runtime and remove audio/mixing-domain coupling.
 
 Keep:
 
-- stdio transport and Windows shim handling;
-- App Server initialization/protocol helpers;
-- `ToolRegistry` and dynamic tool definitions;
-- persistent thread support;
-- `CodexParallelRuntime` dispatcher;
-- request-ID routing;
+- stdio transport + Windows shim handling;
+- initialization/protocol helpers;
+- `ToolRegistry` / tool definitions;
+- persistent threads;
+- `CodexParallelRuntime`;
+- request/turn routing;
 - per-thread tool registries;
-- `AgentEvent`, `AgentOutput`, `TurnOptions`;
-- protocol/routing/ambiguity tests.
+- event/output/turn options;
+- routing/ambiguity tests.
 
-Delete or migrate out:
+Remove:
 
+- `MixingAgent`;
 - `MockMixingAgent`;
-- old `MixingAgent` trait;
-- old one-agent wrapper if no current path requires it;
-- `PromptBundle`/`MixPlan` coupling;
+- `MixPlan` / `PromptBundle` coupling;
 - `ghost-mix` dependency;
-- tests that exist only for old structured mock mixing.
+- obsolete one-agent wrapper if unused.
 
-The result should be a domain-neutral Codex App Server runtime.
+Target direction: a domain-neutral Rust Codex App Server runtime that other workspaces could consume.
 
-### 9.6 `ghost-fl-studio`
+### 8.6 `ghost-fl-studio`: transparent adapter
 
-Disposition: **keep and consolidate**.
+Disposition: **keep, but simplify more aggressively than the earlier plan**.
 
-Preserve the hard-won runtime knowledge:
+Preserve only the FL/Gopher-facing mechanics and stable raw interface.
 
-- Gopher target discovery/transport;
-- live capability catalog;
-- live-schema argument ordering;
-- recursive/nested JSON normalization;
-- inner native-tool error detection;
-- typed FL operations;
-- mutation journal/readback;
-- scoped processor tools;
-- direct effect-slot probing;
-- semantic parameter discovery;
-- display-domain tuning/calibration.
+#### Keep in the adapter
 
-Current cleanup priority is deduplication. `codex_tools.rs` and `processor_tools.rs` contain evolution layers from the session-context approach to direct slot probing.
+- Gopher target discovery/connection;
+- live tool catalog/schema retrieval;
+- schema-order argument canonicalization;
+- CDP/native transport framing;
+- recursive JSON normalization;
+- native result preservation;
+- transport error vs inner FL tool error distinction;
+- secret-safe target logging;
+- native single-flight serialization;
+- raw `call(tool, args)` / catalog access;
+- thin typed wrappers that map one-to-one onto actual FL operations.
 
-Actions:
-
-1. establish one product-facing registration path;
-2. move resilient direct-slot behavior into it;
-3. delete superseded session-context safety logic;
-4. retain raw `get_session_context` only as diagnostic/read capability if useful;
-5. keep one semantic parameter implementation;
-6. keep raw native tools internal while exposing scoped semantic tools to agents.
-
-Do **not** extract a theoretical universal `DawAdapter` during this migration. First make the FL implementation coherent; generalize later from demonstrated workflows.
-
-### 9.7 `ghost-application`
-
-Disposition: **keep and rewrite as the use-case/orchestration boundary**.
-
-The current crate contains a good architectural idea but old generic ports (`RenderPort`, repository abstractions, standalone agent execution) from the previous application design.
-
-Its reason to exist after the reset is:
-
-> This is where Ghost turns capabilities into product operations.
-
-In practical terms, it should become the home of the semantic sequencing around:
+Examples of acceptable typed wrappers:
 
 ```text
-CaptureArtifact
-    ↓
-AnalysisArtifact / evidence
-    ↓
-Agent context / turn
-    ↓
-verified workspace outcome
+get_tempo
+set_tempo
+play / stop
+add_effect
+remove_effect
+get_plugin_parameter_list
+get_plugin_parameter_value
+set_plugin_parameter_value
+routing/channel operations that directly mirror real tools
 ```
+
+#### Move out of the adapter
+
+Remove/move upward:
+
+- `FlAgentToolPolicy`;
+- `FlPluginWriteScope`;
+- Codex `ToolRegistry` registration from the FL crate;
+- slot/plugin allowlists;
+- fixed target-track policy;
+- `fl_get_target_track_context` as a Ghost-composed agent projection;
+- “slot must be empty” / “never replace” policy;
+- requirement to make at least one mutation;
+- semantic parameter relevance filtering for one workflow;
+- MIDI-CC filtering policy;
+- boolean-only normalized-write restrictions;
+- numeric-identifier policy;
+- display-domain calibration as a mandatory FL mutation abstraction;
+- automatic restore/journal behavior tied to calibration;
+- workflow mutation journals;
+- application-specific readback/verification policy.
+
+The current `codex_tools.rs` / `processor_tools.rs` evolution should not be consolidated into one bigger FL-owned policy layer. Instead, separate raw adapter mechanics from Ghost workflow composition and delete the adapter-side agent-policy surface.
+
+#### Raw access requirement
+
+The crate must keep a raw escape hatch based on the live Gopher catalog so callers are not blocked by the typed wrapper subset.
+
+An app may choose to expose none, some, or nearly all suitable raw FL tools to an agent. That decision is outside the adapter.
+
+#### No premature middleware
+
+Do not add callback/middleware hooks inside `ghost-fl-studio` during this reset. The app can wrap raw calls while constructing its own tools. Introduce reusable middleware only after multiple apps demonstrate the same requirement.
+
+#### Dependency direction
+
+Target: `ghost-fl-studio` should not depend on `ghost-codex` simply to create agent tools.
+
+```text
+ghost-fl-studio  = knows FL
+
+ghost-codex      = knows Codex App Server
+
+apps/*            = decides how/why to combine them
+```
+
+### 8.7 `ghost-application`
+
+Keep and rewrite as reusable use-case/orchestration semantics.
+
+Its reason to exist:
+
+> Turn capabilities into reusable Ghost operations.
+
+It may own sequencing such as:
+
+```text
+capture artifact
+    ↓
+analysis/evidence
+    ↓
+agent turn
+    ↓
+workspace outcome
+```
+
+But policy should initially remain higher when it is specific to one app.
 
 During migration:
 
-- remove ports with no current consumer;
-- retain/rehome deterministic analysis-use-case helpers only if they simplify current call sites;
-- move compact evidence projection and other workflow semantics out of the executable when this can be done mechanically;
-- define product-facing request/result types only when they are supported by the working slice;
-- keep the binary thin where possible;
-- do not invent a large “clean architecture” framework;
-- do not force a final cross-DAW `WorkspacePort` abstraction yet merely to satisfy layering aesthetics.
+- remove unused historical ports;
+- keep explicit request/result/use-case vocabulary;
+- move logic here only when it is already reusable across the working product flow;
+- do not automatically absorb slot/plugin/context/capability policy from `ghost-workflow`;
+- do not invent a universal DAW abstraction yet.
 
-The migration should make `ghost-application` read as **verbs/use cases**, while `ghost-audio`, `ghost-tap`, `ghost-codex`, and `ghost-fl-studio` provide capabilities.
-
-### 9.8 `ghost-mix`
-
-Disposition: **delete from HEAD**.
-
-It encodes the old plan-first model: `MixPlan`, typed EQ/compressor plan operations, conversion to `TaskPlan`, plugin capability summaries, structured prompt bundles, and precompiled host plan validation.
-
-The live workflow now operates through scoped semantic DAW tools and independently verified native mutations. If typed proposals/evaluations return later, design them from this real workflow rather than preserving this historical schema.
-
-### 9.9 `ghost-host`
-
-Disposition: **delete from HEAD**.
-
-It owns abandoned responsibilities: child CLAP discovery, hosted chains, native child instances, GUI hosting, graph topology, parameter queues/smoothing, child state, and Windows window integration.
-
-Git/PR history is the archive.
-
-### 9.10 `ghost-ui`
-
-Disposition: **delete from HEAD**.
-
-The egui UI is coupled to the nested-host/MixPlan architecture. Future Ghost product UI will be designed separately as the external application; Ghost Tap remains UI-free.
-
-### 9.11 `ghost-fakes`
-
-Disposition: **delete**.
-
-It primarily fakes nested child/plugin hosting. Future fakes should be narrow and attached to current seams: scripted App Server transport, scripted FL transport, capture fixtures, analysis fixtures, and mutation/readback fixtures.
-
-### 9.12 `ghost-db`
-
-Disposition: **remove from active workspace and delete current migrations for this reset**.
-
-The existing schema encodes old plugin-hosting and MixPlan concepts. There is no production migration obligation yet, so schema compatibility would preserve abandoned architecture.
-
-Reintroduce SQLite from the cleaned domain model later. Likely persistence candidates include captures, analysis results, App Server thread associations, DAW resource bindings, verified mutations, semantic plugin profiles, and evaluation/user feedback.
-
-## 10. Application/tool disposition
-
-### 10.1 Promote the real workflow to `apps/ghost-workflow`
-
-The actual product prototype currently lives as `src/bin/ghost-fl-workflow.rs` under `apps/ghost-fl-agent-smoke`.
-
-Promote it to:
+Promotion rule:
 
 ```text
-apps/ghost-workflow/
+apps/*
+  ↓ repeated real requirement
+
+ghost-application / ghost-context
+  ↓ only if truly infrastructure-level
+
+lower infrastructure
 ```
 
-Current responsibilities already express the reference slice:
+### 8.8 Delete historical crates
 
-1. connect FL adapter;
-2. discover Ghost Tap;
-3. request capture;
-4. start/stop FL transport;
-5. analyze captured audio;
-6. build compact agent evidence;
-7. register scoped semantic DAW tools;
-8. start one thread on `CodexParallelRuntime`;
-9. run the task;
-10. require verified mutation;
-11. report resulting mutations.
+Delete from HEAD/workspace:
 
-Extract reusable orchestration toward `ghost-application` while keeping behavior unchanged. Do not redesign the workflow during the move.
+```text
+ghost-mix
+ghost-host
+ghost-ui
+ghost-fakes
+ghost-db
+```
 
-### 10.2 Tempo/App Server smoke
+Rationale remains unchanged: each encodes responsibilities from the abandoned nested-host/MixPlan architecture or persistence model.
 
-Disposition: **move to diagnostic/integration tooling or delete once equivalent coverage exists**.
+Reintroduce persistence later from the cleaned domain model rather than migrating the old schema.
 
-It was crucial for proving dynamic tools and persistent threads; it is not the product app.
+## 9. Application and tool disposition
 
-### 10.3 `ghost-fl-native-bridge` → `tools/fl-gopher-probe`
+### 9.1 `apps/ghost-workflow`
 
-Keep it as a compatibility/diagnostic probe. Prefer consuming `ghost-fl-studio` rather than maintaining duplicate transport/catalog logic, but do not create a large rewrite merely for the move.
+Promote the real workflow out of the smoke-test package and make it the concrete reference application.
 
-### 10.4 Delete `ghost-agentd`
+After ADR 001, this app initially owns the policy that was previously embedded in the FL crate.
 
-It is built around the old TCP JSONL protocol, old agent/mix pipeline, old DB, and old host responsibilities. Do not modernize it during cleanup.
+Expected responsibilities include:
 
-### 10.5 Delete `ghost-cli`
+```text
+choose target mixer/resource
+choose capture behavior
+choose analysis profile
+choose context projection
+choose which FL capabilities become Codex tools
+choose slot/plugin constraints if desired
+choose raw vs semantic parameter tools
+choose mutation preconditions
+choose verification/journaling behavior
+run one Codex thread
+report outcome
+```
 
-It mixes useful analysis commands with obsolete host discovery, child smokes, mock demos, old DB/schema operations, and daemon health. Rebuild tiny current-purpose diagnostics later where needed.
+The current safe vertical-slice behavior should be preserved by **moving** these choices upward before deleting them from `ghost-fl-studio`.
 
-### 10.6 Delete `ghost-lab`
+This app is also the experimental surface for comparing:
 
-It depends on the old egui UI. Any future analysis visualizer should be built against the cleaned audio boundary.
+- raw FL tools vs composed semantic tools;
+- broad vs compact context;
+- permissive vs constrained capability sets;
+- direct normalized access vs semantic calibration;
+- different verification strategies.
 
-## 11. Cargo/dependency cleanup
+Do not treat one successful experiment as infrastructure law.
 
-After deleting old crates/apps, rewrite root workspace membership so the intended survivor set is explicit.
+### 9.2 `tools/fl-gopher-probe`
 
-Expected removals include most/all of:
+Move/rename the raw bridge into a diagnostic tool.
 
-- `clack-host`;
-- egui/eframe/egui-baseview;
-- UI-specific Windows APIs;
-- dependencies used only by old host/DB/mock pipeline;
-- Python artifact-generation assumptions.
+It should be the easiest place to inspect:
+
+- live catalog;
+- live schemas;
+- raw calls/results;
+- transport behavior;
+- adapter compatibility.
+
+Prefer consuming `ghost-fl-studio` so raw diagnostics exercise the same adapter used by the app.
+
+### 9.3 Other historical apps
+
+Delete:
+
+```text
+ghost-agentd
+ghost-cli
+ghost-lab
+```
+
+Move/delete tempo/App Server smokes after equivalent focused integration coverage exists.
+
+## 10. Live workspace semantics
+
+The migration should encode one important assumption in app/use-case design, not in FL adapter state:
+
+> The user may change the DAW independently of Ghost at any time.
+
+Therefore:
+
+```text
+observation = snapshot
+DAW/native response = truth
+model context != authoritative workspace state
+```
+
+If an app needs optimistic concurrency or safety, it may compose:
+
+```text
+observe current state
+    ↓
+check app precondition
+    ↓
+invoke raw FL mutation
+    ↓
+optional readback verification
+    ↓
+re-observe/reason if precondition failed
+```
+
+Examples of app-owned preconditions:
+
+```text
+SlotMustBeEmpty
+SlotMustContain("Pro-Q 4")
+NeverReplace
+AskBeforeReplace
+```
+
+These must not become hidden semantics of the raw FL operation.
+
+## 11. Verification, calibration, and journaling migration
+
+The successful slice relied on strong verification and display-domain calibration. We should preserve the capability without confusing it with the FL API itself.
+
+During migration:
+
+1. keep raw parameter read/write primitives in `ghost-fl-studio`;
+2. move display-value parsing/probing/settle/calibration into the reference app initially;
+3. keep temporary calibration probes out of durable app mutation history;
+4. move readback verification and mutation journaling upward;
+5. preserve tests for the observed plugin/display behavior;
+6. only promote a shared verifier/calibrator into `ghost-application` or another reusable crate after repeated real use demonstrates the abstraction.
+
+The adapter may expose all native fields necessary for these higher-level behaviors, including normalized values and available display strings.
+
+## 12. Cargo/dependency cleanup
+
+After deleting old crates/apps, rewrite root workspace membership and prune dependencies from actual compiler/reference evidence.
+
+Expected removals include most/all host/UI/database/mock-only dependencies.
 
 Expected survivors include:
 
 - plugin-side CLAP crates needed by `ghost-tap`;
-- DSP/audio-analysis dependencies used by `ghost-audio`;
-- serde/schema utilities actually used by surviving models;
-- Codex App Server transport/runtime dependencies;
+- audio/DSP dependencies needed by `ghost-audio`;
+- serde/schema utilities;
+- Codex App Server runtime dependencies;
 - FL/Gopher transport dependencies.
 
-Do not prune dependencies by guess. After workspace/code pruning, let compiler/reference search reveal the actual survivors.
+Important target dependency removal:
 
-## 12. Branch cleanup
+```text
+ghost-fl-studio -X-> ghost-codex
+```
+
+Agent tool composition belongs in the app.
+
+## 13. Branch cleanup
 
 After the reset is safely established:
 
-- delete merged historical `fix/*` remote branches;
-- delete merged experimental bridge branches;
-- land/close the stacked #15/#16 line coherently before making the reset canonical;
-- keep only active product/research branches with a clear purpose.
+- delete merged historical `fix/*` branches;
+- delete merged bridge/experiment branches;
+- land/close the stacked #15/#16 line coherently;
+- keep only active product/research branches with clear purpose.
 
-Do not delete remote branches before the milestone reference and reset branch are safe.
+Do not remove references before the milestone/reset line is safe.
 
-## 13. Migration execution sequence
-
-Execute in dependency order so compiler errors reveal real coupling rather than expected breakage.
+## 14. Migration execution sequence
 
 ### Phase A — freeze and document
 
-- preserve proven head with immutable milestone reference;
-- add technical retrospective and migration plan;
-- record successful semantic-control run;
-- no behavior changes.
+- preserve proven milestone;
+- add technical retrospective;
+- add this migration plan;
+- add ADR 001;
+- preserve final successful semantic-control evidence.
 
-Gate: baseline agreed.
+Gate: baseline and decisions agreed.
 
 ### Phase B — remove obvious historical surface
 
 - delete `agent-ops/`;
 - delete generated artifacts;
-- delete obsolete host/child workflows;
-- delete stale config/historical validation scripts;
-- remove stale docs/visualizers/reports;
+- delete host-era CI/config/scripts/docs;
 - simplify fixtures.
 
-Gate: repository top level visibly reflects the current phase.
+Gate: repository top level reflects the current phase.
 
-### Phase C — remove legacy applications and crates
+### Phase C — remove historical apps/crates
 
-Remove from workspace and then delete:
+Remove from workspace and delete:
 
 ```text
 ghost-host
@@ -631,19 +654,16 @@ ghost-cli
 ghost-lab
 ```
 
-Delete old migrations and dead supporting files.
-
-Gate: surviving dependency graph no longer reaches nested-host or old MixPlan code.
+Gate: surviving graph no longer reaches nested-host/MixPlan architecture.
 
 ### Phase D — trim survivors in place
 
-At this stage **do not split `ghost-core` yet**.
+Do not split `ghost-core` yet.
 
-- trim `ghost-core` to only live audio/analysis/Tap primitives;
-- remove old mixing/mock API from `ghost-codex`;
-- consolidate FL processor tool registration;
-- remove stale ports from `ghost-application`;
-- keep `ghost-clap-plugin` behavior unchanged while historical dependencies disappear.
+- trim `ghost-core` to live audio/analysis/Tap code;
+- remove mixing/mock coupling from `ghost-codex`;
+- remove stale application ports;
+- identify raw FL adapter mechanics vs Ghost-specific policy without changing reference behavior yet.
 
 Static gate:
 
@@ -653,28 +673,47 @@ cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ```
 
-### Phase E — checkpoint the proven slice before structural relocation
+### Phase E — move FL policy upward while preserving behavior
 
-Promote/move only enough tooling to run the current known-good flow, then run:
+This is a dedicated migration phase because the previous vertical slice mixed adapter correctness and app policy.
+
+1. establish raw catalog/call + one-to-one typed FL operations as the `ghost-fl-studio` public surface;
+2. move Codex tool construction out of `ghost-fl-studio`;
+3. move target track, slots, plugin allowlist, context projection, parameter safety policy, semantic calibration, verification, and journaling into `apps/ghost-workflow` initially;
+4. remove `FlAgentToolPolicy` / `FlPluginWriteScope` from the FL adapter;
+5. remove `ghost-codex` dependency from `ghost-fl-studio` where practical;
+6. preserve native integration invariants and their tests;
+7. preserve a raw catalog/call escape hatch.
+
+Gate: the reference app behaves the same even though the FL crate is now policy-free.
+
+### Phase F — checkpoint the proven live slice
+
+Run the known-good workflow after policy relocation:
 
 ```text
-Ghost Tap → capture → Rust analysis → Codex thread → scoped FL mutation → native verification
+Ghost Tap → capture → analysis → Codex → app-composed FL calls → native outcome
 ```
 
-This checkpoint separates cleanup regressions from later crate-move regressions.
+Confirm that moving policy upward did not regress:
 
-If the live gate is inconvenient at this exact point, at minimum preserve a compile/test checkpoint and do not proceed through multiple structural phases without one known-good state.
+- capture;
+- App Server turns/tools;
+- effect insertion;
+- parameter reads/writes;
+- semantic behavior currently required by the app;
+- optional readback/journaling behavior.
 
-### Phase F — retire `ghost-core`
+This checkpoint separates architectural relocation regressions from the later `ghost-core` split.
 
-With historical code gone and the remaining boundary visible:
+### Phase G — retire `ghost-core`
 
-1. create `ghost-audio` from raw audio/I/O + analysis code;
-2. move realtime capture/transport/Tap protocol code into the minimal CLAP crate;
-3. rename that crate/package to `ghost-tap`;
-4. update imports/dependencies/tests mechanically;
-5. delete `ghost-core` from workspace and HEAD;
-6. verify no generic “core” dependency remains.
+1. create `ghost-audio` from audio/I/O + analysis;
+2. move capture/transport/Tap protocol into the minimal CLAP package;
+3. rename package/directory to `ghost-tap`;
+4. update imports/tests mechanically;
+5. delete `ghost-core`;
+6. verify no catch-all dependency remains.
 
 Gate:
 
@@ -684,211 +723,168 @@ cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ```
 
-Do not opportunistically rewrite DSP algorithms or Tap behavior during this phase. This is a semantic package split, not a new feature pass.
+Do not rewrite DSP/Tap behavior during this package split.
 
-### Phase G — promote the vertical slice and application boundary
+### Phase H — promote the vertical slice cleanly
 
-- create/finalize `apps/ghost-workflow`;
-- make `ghost-application` own the reusable use-case semantics we can extract without changing behavior;
+- finalize `apps/ghost-workflow`;
+- extract only demonstrably reusable sequencing into `ghost-application`;
+- keep app-specific policy in the app;
 - move raw bridge to `tools/fl-gopher-probe`;
-- retain tempo/App Server smoke only if unique integration coverage remains;
-- rename packaging script to Ghost Tap terminology.
+- rename Tap packaging script.
 
-Gate: product flow compiles using only the final package names.
+Gate: final package names compile and the app owns its explicit capability/context policy.
 
-### Phase H — rewrite repository entry points
+### Phase I — rewrite repository entry points
 
-- replace README;
-- rewrite main CI for reduced workspace;
-- remove stale links;
-- ensure `cargo metadata` exposes only current crates/tools;
-- ensure active code search for `ghost-host`, `MixPlan`, old egui architecture, `MockMixingAgent`, and `ghost-core` returns no product source.
+- rewrite README;
+- rewrite CI;
+- clean `cargo metadata`;
+- remove stale references;
+- ensure active source search no longer finds obsolete host/MixPlan/core/FL-agent-policy architecture.
 
-Gate: fresh clone communicates the present product directly.
+Gate: fresh clone communicates the current system directly.
 
-### Phase I — final live regression gate
+### Phase J — final live regression
 
 On Windows/FL:
 
 1. package/install `ghost-tap`;
-2. launch/connect FL Gopher path;
-3. run the known-good capture→analysis→agent→DAW workflow;
-4. confirm semantic parameter discovery;
-5. confirm display-domain writes;
-6. confirm native verification/mutation journal;
-7. confirm no regression in capture or App Server thread execution.
+2. connect through the transparent FL adapter;
+3. run `capture → analysis → agent → DAW`;
+4. confirm raw FL calls remain stable;
+5. confirm the app's current semantic/policy layer still produces the expected processing flow;
+6. confirm user/manual DAW changes are handled as live state, not stale adapter assumptions.
 
-Only after this gate should the reset become the new canonical baseline.
+Only after this gate should the reset become canonical.
 
-### Phase J — write the next documents
+### Phase K — next documents
 
-With the cleaned/split workspace in front of us, create separately:
+From the cleaned workspace write:
 
 - target architecture;
-- invariants / lessons for future agents;
+- invariants / lessons;
 - next-phase roadmap.
 
-These documents should describe the code that survived the reset.
-
-## 14. Survivor-specific trim checklist
+## 15. Survivor-specific trim checklist
 
 ### Transitional `ghost-core`
 
-Before splitting, remove dead references to:
-
-```text
-TaskPlan
-TaskOperation
-ExpectedOutcome
-ProcessorDescriptor
-ParameterDescriptor
-ParameterChange
-AtomicGraphControl
-RequestEnvelope / ResponseEnvelope
-old MixPlan validation support
-```
-
-Keep a type only if the current vertical slice or a focused deterministic test requires it.
-
-Final condition: **the package itself is deleted after its live code is moved to `ghost-audio` and `ghost-tap`.**
+Remove dead task/processor/protocol/graph abstractions before splitting. Final condition: package deleted.
 
 ### `ghost-audio`
 
-After extraction verify it contains only audio representation/I/O, deterministic analysis, and analysis models/configuration.
-
-Search for and reject accidental dependencies/concepts involving:
-
-```text
-Codex
-Gopher
-FL Studio
-child plugin hosting
-MixPlan
-TaskPlan
-DAW mutation
-```
+Reject dependencies/concepts involving Codex, Gopher, FL, host graphs, MixPlan, or DAW mutation.
 
 ### `ghost-tap`
 
-Verify no source/dependency includes product responsibilities such as:
-
-```text
-child plugin hosting
-GUI/editor
-agent runtime
-FL/Gopher control
-network/database
-processor parameter graph
-```
-
-Preserve realtime safety and keep filesystem work on the non-realtime worker.
+Reject child hosting, GUI/editor, agent runtime, FL control, DB/network, and processor-graph responsibilities. Preserve realtime safety.
 
 ### `ghost-codex`
 
-Remove:
-
-```text
-MixingAgent
-MockMixingAgent
-MixPlan
-PromptBundle
-old one-agent wrappers superseded by persistent runtime
-```
-
-Keep it domain-neutral around App Server threads, turns, events, and dynamic tools.
+Remove mixing-domain types and keep App Server runtime/tool/thread/event semantics general.
 
 ### `ghost-fl-studio`
 
-Deduplicate:
+Final checklist:
 
 ```text
-scoped track context
-fl_add_effect registration
-session-context slot occupancy
-parameter display tuning
-native response normalization
+[ ] raw live catalog available
+[ ] raw call path available
+[ ] typed wrappers mirror real FL operations one-to-one
+[ ] live-schema argument ordering preserved
+[ ] recursive response normalization preserved
+[ ] inner native errors preserved/distinguished
+[ ] native single-flight preserved
+[ ] no FlAgentToolPolicy
+[ ] no FlPluginWriteScope
+[ ] no Codex ToolRegistry construction
+[ ] no fixed track/slot/plugin policy
+[ ] no compact agent context projection
+[ ] no workflow mutation requirement
+[ ] no mandatory semantic calibration/normalized-write policy
+[ ] no app mutation journal ownership
 ```
-
-There should be one authoritative product behavior per operation.
 
 ### `ghost-application`
 
-Remove unused historical ports. Prefer explicit use-case/request/result vocabulary over generic framework abstractions.
+Keep reusable verbs/use cases. Do not absorb app policy without repeated evidence.
 
-A useful mental rule:
+### `apps/ghost-workflow`
 
-```text
-ghost-audio / ghost-tap / ghost-codex / ghost-fl-studio
-    = capabilities and domain mechanics
+Make context/tool/capability policy explicit and easy to change. It should be possible to experiment with a broader/raw FL surface without modifying `ghost-fl-studio`.
 
-ghost-application
-    = verbs and product use cases
-```
+## 16. Knowledge that must survive cleanup
 
-Do not force the final cross-DAW interface during this migration.
+### Infrastructure/runtime invariants
 
-## 15. Runtime knowledge that must survive cleanup
-
-Aggressive cleanup must preserve the experimentally discovered contracts embedded in current code/tests:
+These belong in the relevant low-level crates/tests:
 
 - live-schema argument ordering for Gopher;
 - recursive JSON callback normalization;
-- inner native-tool error detection;
-- secret-safe Gopher target logging;
-- Windows Codex `.cmd`/shim spawning;
-- App Server thread/dynamic-tool handling;
-- parallel dispatcher ambiguity safeguards;
-- FL adapter single-flight serialization;
-- direct effect-slot probes;
-- semantic parameter OR search;
-- filtering irrelevant MIDI-CC parameter noise;
-- display-domain parsing/calibration;
-- normalized convergence + display settle polling;
-- unjournaled temporary probes;
-- durable native readback verification;
-- restrictions on arbitrary continuous normalized writes;
-- Ghost Tap realtime capture/trigger/pre-roll behavior;
-- compact analysis evidence projection.
+- transport failure vs inner FL tool failure;
+- secret-safe Gopher logging;
+- Windows Codex `.cmd`/shim handling;
+- App Server thread/dynamic-tool routing;
+- parallel routing ambiguity safeguards;
+- FL/Gopher single-flight serialization;
+- Ghost Tap realtime capture/trigger/pre-roll behavior.
 
-The reset removes obsolete **responsibilities**, not hard-won runtime contracts.
+### Product/application discoveries
 
-## 16. Verification philosophy
+These must not be lost, but they should live above the raw FL adapter:
 
-Three levels of truth remain explicit.
+- compact evidence/context can outperform huge session dumps;
+- semantic parameter search is useful;
+- MIDI parameter noise may need filtering for mixing tasks;
+- plugin display strings may settle later than normalized values;
+- semantic display calibration can work when value strings are usable;
+- temporary probes should not be recorded as durable mutations;
+- readback verification is useful for trustworthy agent execution;
+- unrestricted normalized fallback can produce poor agent behavior;
+- a live DAW can change independently of the agent;
+- app/tool affordances materially influence model reasoning.
+
+The reset preserves knowledge while correcting ownership.
+
+## 17. Verification philosophy
+
+Three truths remain separate.
 
 ### Static/build truth
 
-Rust/Cargo proves ownership, type, feature, and dependency coherence.
+Rust/Cargo proves type/dependency/ownership coherence.
 
 ### Deterministic integration truth
 
-Scripted transports and small fixtures prove App Server routing, Gopher serialization rules, capture state machines, analysis behavior, tool policy, and journal semantics.
+Scripted transports and small fixtures prove protocol routing, response normalization, capture state machines, app policy wrappers, and context/tool composition.
 
 ### Proprietary runtime truth
 
-Only the real Windows + FL Studio + third-party plugin stack proves final integration behavior.
+Only Windows + FL Studio + real third-party plugins prove final native behavior.
 
-A migration phase should not be considered complete merely because it compiles, but live FL should also not be used to discover ordinary Rust compile regressions.
+Live FL should validate the proprietary boundary, not discover ordinary Rust compile errors.
 
-## 17. Exit criteria
+## 18. Exit criteria
 
-The workspace reset/migration is complete when all of the following are true:
+The migration is complete when:
 
-- the default Cargo workspace contains only components used by or immediately supporting the vertical slice;
-- `ghost-host`, old egui UI, MixPlan pipeline, fake child host, old daemon, and old validation CLI are absent from HEAD;
-- **`ghost-core` is absent from HEAD and workspace membership**;
-- `ghost-audio` owns the surviving raw-audio/I/O + deterministic analysis responsibility;
-- `ghost-tap` owns realtime sensing, Tap protocol/control, and the minimal CLAP plugin;
-- the old `ghost-clap-plugin` package name is gone;
-- the actual workflow is a first-class app rather than a smoke-test sub-binary;
-- `ghost-application` contains current use-case semantics rather than old render/repository framework vocabulary;
-- `ghost-codex` no longer depends on the old mix domain;
-- `ghost-fl-studio` has one authoritative processor tool path;
-- old generated artifacts and stale planning docs are gone;
-- CI validates the reduced workspace rather than historical subsystems;
-- README describes `capture → analysis → agent → DAW` and nothing contradictory;
+- only current vertical-slice/supporting components remain in the workspace;
+- old nested host, egui UI, MixPlan, fake host, DB schema, daemon, and legacy CLI are absent;
+- `ghost-core` is absent;
+- `ghost-audio` owns deterministic audio understanding;
+- `ghost-tap` owns realtime sensing/Tap protocol/minimal CLAP plugin;
+- `ghost-codex` is free of the old mix domain;
+- `ghost-fl-studio` is a transparent FL/Gopher adapter with raw access and no Ghost agent policy;
+- `ghost-fl-studio` no longer owns `FlAgentToolPolicy`, `FlPluginWriteScope`, compact agent context, or fixed processor scope;
+- app/Codex tool composition occurs outside `ghost-fl-studio`;
+- `apps/ghost-workflow` explicitly owns the current experiment's context/capability/policy choices;
+- reusable use-case sequencing lives in `ghost-application` only where justified;
+- the raw FL diagnostic probe consumes the same adapter where practical;
+- CI validates the reduced workspace;
+- README describes `capture → analysis → agent → DAW` without contradictory architecture;
 - a fresh clone builds/tests cleanly;
-- the known-good live FL workflow remains green using the **final package layout**.
+- the known-good live workflow remains green after both policy relocation and package split.
 
 At that point the repository itself becomes a trustworthy input to the target-architecture pass and to future agents.
 
