@@ -1,5 +1,3 @@
-extern crate self as ghost_core;
-
 mod audio {
     pub use ghost_audio::AudioBuffer;
 }

@@ -59,9 +59,7 @@ impl GopherConnection {
             .and_then(Value::as_bool)
             .unwrap_or(false)
         {
-            bail!(
-                "Gopher target was found, but script_handler is not visible in its page context"
-            );
+            bail!("Gopher target was found, but script_handler is not visible in its page context");
         }
         Ok(Self {
             cdp,
@@ -234,7 +232,9 @@ impl RawWebSocket {
                         bail!("unexpected WebSocket continuation frame");
                     }
                     if assembled.len() + payload.len() > MAX_MESSAGE_BYTES {
-                        bail!("fragmented CDP WebSocket message exceeded {MAX_MESSAGE_BYTES} bytes");
+                        bail!(
+                            "fragmented CDP WebSocket message exceeded {MAX_MESSAGE_BYTES} bytes"
+                        );
                     }
                     assembled.extend_from_slice(&payload);
                     if fin {
@@ -284,7 +284,10 @@ impl CdpClient {
             .send_text(&request.to_string())
             .with_context(|| format!("failed to send CDP request {method}"))?;
         loop {
-            let message = self.socket.read_text().context("failed to read CDP response")?;
+            let message = self
+                .socket
+                .read_text()
+                .context("failed to read CDP response")?;
             let payload: Value =
                 serde_json::from_str(&message).context("CDP returned malformed JSON")?;
             if payload.get("id").and_then(Value::as_u64) != Some(id) {
@@ -377,7 +380,10 @@ fn cdp_targets(port: u16) -> Result<Vec<CdpTarget>> {
             Err(error) => errors.push(format!("{path}: {error}")),
         }
     }
-    bail!("failed to read Chrome DevTools target list ({})", errors.join("; "))
+    bail!(
+        "failed to read Chrome DevTools target list ({})",
+        errors.join("; ")
+    )
 }
 
 fn http_get(port: u16, path: &str) -> Result<String> {

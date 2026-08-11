@@ -142,8 +142,9 @@ struct CatalogEntry {
 impl CatalogSnapshot {
     fn from_callback_payload(payload: Value) -> Result<Self, AdapterError> {
         let (source, reliable) = catalog_source(payload)?;
-        let document: CatalogDocument = serde_json::from_str(&source)
-            .map_err(|error| AdapterError::Transport(format!("invalid MCP tool catalog: {error}")))?;
+        let document: CatalogDocument = serde_json::from_str(&source).map_err(|error| {
+            AdapterError::Transport(format!("invalid MCP tool catalog: {error}"))
+        })?;
         let mut tools = IndexMap::new();
         for tool in document.into_tools() {
             tools.insert(

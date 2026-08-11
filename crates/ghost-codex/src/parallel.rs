@@ -12,13 +12,12 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{mpsc, Arc, Mutex, Weak};
 use std::thread;
 
-use ghost_context::{CompiledContext, OutputContract};
 use serde_json::{json, Value};
 
 use crate::transport::{read_stdio_message, write_stdio_message, SplitStdioTransport};
 use crate::{
-    normalize_output_schema, resolve_codex_binary, AgentError, AgentEvent, AgentOutput, ToolRegistry,
-    TurnOptions,
+    normalize_output_schema, resolve_codex_binary, AgentError, AgentEvent, AgentOutput,
+    ToolRegistry, TurnInput, TurnOptions,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -39,7 +38,7 @@ impl ParallelThreadConfig {
         Self {
             model: model.into(),
             cwd: None,
-            service_name: Some("ghost_agent_host".into()),
+            service_name: None,
         }
     }
 
@@ -107,8 +106,8 @@ impl CodexParallelRuntime {
             "initialize",
             json!({
                 "clientInfo": {
-                    "name": "ghost_agent_host",
-                    "title": "Ghost Agent Host",
+                    "name": "ghost_codex",
+                    "title": "Ghost Codex Runtime",
                     "version": env!("CARGO_PKG_VERSION")
                 },
                 "capabilities": {
@@ -199,16 +198,15 @@ impl CodexParallelRuntime {
     pub fn run_turn(
         &self,
         thread: &ParallelCodexThread,
-        context: &CompiledContext,
+        input: &TurnInput,
         options: &TurnOptions,
         events: &mut dyn FnMut(AgentEvent),
     ) -> Result<AgentOutput, AgentError> {
         {
-            let mut active = self
-                .inner
-                .active_threads
-                .lock()
-                .map_err(|_| AgentError::Protocol("parallel active-thread lock poisoned".into()))?;
+            let mut active =
+                self.inner.active_threads.lock().map_err(|_| {
+                    AgentError::Protocol("parallel active-thread lock poisoned".into())
+                })?;
             if !active.insert(thread.id.clone()) {
                 return Err(AgentError::Protocol(format!(
                     "thread `{}` already has an in-flight turn",
@@ -223,14 +221,14 @@ impl CodexParallelRuntime {
 
         let mut params = json!({
             "threadId": thread.id,
-            "input": [{"type": "text", "text": context.text()}],
+            "input": [{"type": "text", "text": input.text.clone()}],
             "model": thread.model,
             "effort": options.effort,
             "summary": options.summary,
             "approvalPolicy": options.approval_policy,
             "sandboxPolicy": options.sandbox_policy
         });
-        if let OutputContract::Json { schema, .. } = &context.output {
+        if let Some(schema) = &input.output_schema {
             let mut schema = schema.clone();
             normalize_output_schema(&mut schema);
             params["outputSchema"] = schema;
@@ -270,7 +268,7 @@ impl CodexParallelRuntime {
             turn_id: turn_id.clone(),
         };
 
-        collect_turn_output(&turn_id, receiver, context, events)
+        collect_turn_output(&turn_id, receiver, input, events)
     }
 
     fn set_thread_tools(&self, thread_id: &str, tools: ToolRegistry) -> Result<(), AgentError> {
@@ -284,7 +282,9 @@ impl CodexParallelRuntime {
 
     fn request(&self, method: &str, params: Value) -> Result<Value, AgentError> {
         if self.inner.closed.load(Ordering::Acquire) {
-            return Err(AgentError::Protocol("Codex App Server runtime is closed".into()));
+            return Err(AgentError::Protocol(
+                "Codex App Server runtime is closed".into(),
+            ));
         }
         let id = self.inner.next_id.fetch_add(1, Ordering::Relaxed);
         let (sender, receiver) = mpsc::channel();
@@ -301,7 +301,9 @@ impl CodexParallelRuntime {
         }
         let message = receiver
             .recv()
-            .map_err(|_| AgentError::Protocol(format!("App Server request `{method}` was abandoned")))?
+            .map_err(|_| {
+                AgentError::Protocol(format!("App Server request `{method}` was abandoned"))
+            })?
             .map_err(AgentError::Protocol)?;
         if let Some(error) = message.get("error") {
             return Err(AgentError::Protocol(error.to_string()));
@@ -317,7 +319,7 @@ impl CodexParallelRuntime {
 fn collect_turn_output(
     turn_id: &str,
     receiver: mpsc::Receiver<Value>,
-    context: &CompiledContext,
+    input: &TurnInput,
     events: &mut dyn FnMut(AgentEvent),
 ) -> Result<AgentOutput, AgentError> {
     let mut final_text = None;
@@ -372,9 +374,10 @@ fn collect_turn_output(
     let text = final_text.ok_or_else(|| {
         AgentError::Protocol("Codex completed without a final agentMessage".into())
     })?;
-    let structured = match &context.output {
-        OutputContract::Text => None,
-        OutputContract::Json { .. } => Some(serde_json::from_str(&text)?),
+    let structured = if input.output_schema.is_some() {
+        Some(serde_json::from_str(&text)?)
+    } else {
+        None
     };
     Ok(AgentOutput { text, structured })
 }
@@ -468,7 +471,10 @@ fn dispatch_message(inner: &Arc<ParallelInner>, message: Value) {
 }
 
 fn dispatch_tool_call(inner: &Arc<ParallelInner>, message: Value) {
-    let id = message.get("id").and_then(Value::as_u64).unwrap_or_default();
+    let id = message
+        .get("id")
+        .and_then(Value::as_u64)
+        .unwrap_or_default();
     let tool = message
         .pointer("/params/tool")
         .and_then(Value::as_str)
@@ -682,16 +688,11 @@ mod tests {
                 "params": {"turn": {"id": "turn-a", "status": "completed"}}
             }))
             .unwrap();
-        let context = CompiledContext {
-            schema_version: CompiledContext::SCHEMA.into(),
-            messages: vec![],
-            output: OutputContract::Json {
-                schema_name: "test".into(),
-                schema: json!({"type": "object"}),
-            },
-            metadata: Value::Null,
+        let input = TurnInput {
+            text: String::new(),
+            output_schema: Some(json!({"type": "object"})),
         };
-        let output = collect_turn_output("turn-a", receiver, &context, &mut |_| {}).unwrap();
+        let output = collect_turn_output("turn-a", receiver, &input, &mut |_| {}).unwrap();
         assert_eq!(output.structured, Some(json!({"ok": true})));
     }
 }

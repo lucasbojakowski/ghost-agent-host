@@ -1,7 +1,7 @@
 //! Minimal DAW-loadable Ghost Tap CLAP plugin.
 //!
 //! Ghost Tap is deliberately boring: one stereo input, one stereo output, transparent passthrough,
-//! transport publication, and bounded capture into [`ghost_core::RealtimeCaptureBuffer`]. It does
+//! transport publication, and bounded capture into [`crate::RealtimeCaptureBuffer`]. It does
 //! not host child plugins, expose a GUI, publish parameters, or perform filesystem work on the audio
 //! callback. A small non-realtime worker consumes capture commands from the Ghost Tap filesystem
 //! protocol and commits completed WAV files for the external Ghost application.
@@ -12,6 +12,11 @@ use std::sync::Arc;
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
+use crate::{
+    publish_capture_artifact, publish_tap_status, read_capture_command, unix_ms, write_wav_f32,
+    AtomicDawState, CaptureTriggerConfig, DawTransportSnapshot, RealtimeCaptureBuffer,
+    RealtimeCaptureState, TapCaptureArtifact, TapPaths, TapStatus, TAP_PLUGIN_ID, TAP_PROTOCOL,
+};
 use clack_common::events::event_types::{TransportEvent, TransportFlags};
 use clack_common::utils::ClapId;
 use clack_extensions::audio_ports::{
@@ -20,11 +25,6 @@ use clack_extensions::audio_ports::{
 };
 use clack_plugin::plugin::features::{ANALYZER, AUDIO_EFFECT, STEREO};
 use clack_plugin::prelude::*;
-use ghost_core::{
-    publish_capture_artifact, publish_tap_status, read_capture_command, unix_ms, write_wav_f32,
-    AtomicDawState, CaptureTriggerConfig, DawTransportSnapshot, RealtimeCaptureBuffer,
-    RealtimeCaptureState, TapCaptureArtifact, TapPaths, TapStatus, TAP_PLUGIN_ID, TAP_PROTOCOL,
-};
 
 pub struct GhostTapPlugin;
 pub struct TapMainThread;
@@ -286,14 +286,18 @@ fn capture_worker_loop(
                         } else if !capture.configure_trigger(trigger) {
                             last_error = Some("capture trigger configuration was rejected".into());
                         } else if !capture.arm_tap(frames, rate.round() as u32, "output") {
-                            last_error = Some("capture could not be armed while another capture is recording".into());
+                            last_error = Some(
+                                "capture could not be armed while another capture is recording"
+                                    .into(),
+                            );
                         } else {
                             active_request_id = Some(command.request_id);
                             last_error = None;
                         }
                     }
                     _ => {
-                        last_error = Some("Ghost Tap is not currently audio-active in the DAW".into());
+                        last_error =
+                            Some("Ghost Tap is not currently audio-active in the DAW".into());
                     }
                 }
             }

@@ -116,7 +116,9 @@ mod tests {
             input_schema: serde_json::json!({"type": "object"}),
         };
         let mut registry = ToolRegistry::default();
-        registry.register(definition.clone(), |_| Ok(Value::Null)).unwrap();
+        registry
+            .register(definition.clone(), |_| Ok(Value::Null))
+            .unwrap();
         assert!(registry.register(definition, |_| Ok(Value::Null)).is_err());
     }
 

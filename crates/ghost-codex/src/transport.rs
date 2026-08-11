@@ -9,44 +9,6 @@ use serde_json::Value;
 
 use crate::AgentError;
 
-/// Replaceable app-server wire boundary. Tests use deterministic scripted transports.
-pub trait RpcTransport: Send {
-    fn send(&mut self, message: &Value) -> Result<(), AgentError>;
-    fn receive(&mut self) -> Result<Value, AgentError>;
-    fn shutdown(&mut self);
-}
-
-pub struct StdioTransport {
-    child: Child,
-    stdin: ChildStdin,
-    stdout: BufReader<ChildStdout>,
-}
-
-impl StdioTransport {
-    pub fn spawn(binary: &Path) -> Result<Self, AgentError> {
-        let mut command = codex_command(binary);
-        let mut child = command
-            .args(["app-server", "--listen", "stdio://"])
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::inherit())
-            .spawn()?;
-        let stdin = child
-            .stdin
-            .take()
-            .ok_or_else(|| AgentError::Protocol("Codex stdin unavailable".into()))?;
-        let stdout = child
-            .stdout
-            .take()
-            .ok_or_else(|| AgentError::Protocol("Codex stdout unavailable".into()))?;
-        Ok(Self {
-            child,
-            stdin,
-            stdout: BufReader::new(stdout),
-        })
-    }
-}
-
 /// Split stdio ownership for the concurrent App Server runtime. Exactly one reader thread owns
 /// stdout while any number of caller threads may serialize writes through `stdin`.
 pub(crate) struct SplitStdioTransport {
@@ -93,9 +55,7 @@ pub(crate) fn write_stdio_message(
     Ok(())
 }
 
-pub(crate) fn read_stdio_message(
-    stdout: &mut BufReader<ChildStdout>,
-) -> Result<Value, AgentError> {
+pub(crate) fn read_stdio_message(stdout: &mut BufReader<ChildStdout>) -> Result<Value, AgentError> {
     let mut line = String::new();
     let read = stdout.read_line(&mut line)?;
     if read == 0 {
@@ -132,24 +92,6 @@ fn is_windows_command_shim(path: &Path) -> bool {
     path.extension().is_some_and(|extension| {
         extension.eq_ignore_ascii_case("cmd") || extension.eq_ignore_ascii_case("bat")
     })
-}
-
-impl RpcTransport for StdioTransport {
-    fn send(&mut self, message: &Value) -> Result<(), AgentError> {
-        serde_json::to_writer(&mut self.stdin, message)?;
-        self.stdin.write_all(b"\n")?;
-        self.stdin.flush()?;
-        Ok(())
-    }
-
-    fn receive(&mut self) -> Result<Value, AgentError> {
-        read_stdio_message(&mut self.stdout)
-    }
-
-    fn shutdown(&mut self) {
-        let _ = self.child.kill();
-        let _ = self.child.wait();
-    }
 }
 
 #[cfg(all(test, target_os = "windows"))]

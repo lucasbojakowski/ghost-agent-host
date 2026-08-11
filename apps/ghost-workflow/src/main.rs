@@ -6,8 +6,8 @@ use anyhow::{bail, Context, Result};
 use clap::Parser;
 use ghost_audio::{analyze_audio, read_audio, AnalysisConfig};
 use ghost_codex::{
-    AgentEvent, CodexParallelRuntime, ParallelThreadConfig, ToolDefinition, ToolError, ToolRegistry,
-    TurnOptions,
+    AgentEvent, CodexParallelRuntime, ParallelThreadConfig, ToolDefinition, ToolError,
+    ToolRegistry, TurnInput, TurnOptions,
 };
 use ghost_context::{CompiledContext, ContextMessage, MessageRole, OutputContract};
 use ghost_fl_studio::{
@@ -19,7 +19,7 @@ use serde_json::{json, Value};
 
 #[derive(Debug, Parser)]
 #[command(
-    name = "ghost-fl-workflow",
+    name = "ghost-workflow",
     about = "Capture live FL Studio audio with Ghost Tap, analyze it, and let one Codex App Server thread operate an app-selected raw Gopher tool surface"
 )]
 struct Cli {
@@ -288,9 +288,16 @@ fn main() -> Result<()> {
         }),
     };
 
+    let turn_input = TurnInput {
+        text: context.text(),
+        output_schema: match &context.output {
+            OutputContract::Text => None,
+            OutputContract::Json { schema, .. } => Some(schema.clone()),
+        },
+    };
     let output = runtime.run_turn(
         &thread,
-        &context,
+        &turn_input,
         &TurnOptions::default(),
         &mut |event| print_agent_event(&event, cli.verbose_agent_events),
     )?;
@@ -417,10 +424,7 @@ fn compact_agent_evidence<T: Serialize>(analysis: &T) -> Result<Value> {
         .and_then(Value::as_object_mut)
     {
         spectrum.remove("frame_centroid_hz");
-        if let Some(resonances) = spectrum
-            .get_mut("resonances")
-            .and_then(Value::as_array_mut)
-        {
+        if let Some(resonances) = spectrum.get_mut("resonances").and_then(Value::as_array_mut) {
             resonances.truncate(10);
         }
     }
@@ -441,15 +445,23 @@ fn print_agent_event(event: &AgentEvent, verbose: bool) {
         {
             println!(
                 "[ghost-workflow] tool -> {} {}",
-                item.get("tool").and_then(Value::as_str).unwrap_or("<unknown>"),
+                item.get("tool")
+                    .and_then(Value::as_str)
+                    .unwrap_or("<unknown>"),
                 item.get("arguments").cloned().unwrap_or(Value::Null)
             );
         }
         AgentEvent::ItemCompleted { item }
             if item.get("type").and_then(Value::as_str) == Some("dynamicToolCall") =>
         {
-            let tool = item.get("tool").and_then(Value::as_str).unwrap_or("<unknown>");
-            let success = item.get("success").and_then(Value::as_bool).unwrap_or(false);
+            let tool = item
+                .get("tool")
+                .and_then(Value::as_str)
+                .unwrap_or("<unknown>");
+            let success = item
+                .get("success")
+                .and_then(Value::as_bool)
+                .unwrap_or(false);
             let duration = item.get("durationMs").and_then(Value::as_u64).unwrap_or(0);
             println!("[ghost-workflow] tool <- {tool} success={success} duration_ms={duration}");
         }

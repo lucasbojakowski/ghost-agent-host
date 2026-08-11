@@ -77,21 +77,6 @@ pub struct AtomicDawState {
     loop_end_seconds: AtomicU64,
 }
 
-#[derive(Default)]
-pub struct AtomicGraphControl {
-    bypass_mask: AtomicU64,
-}
-
-impl AtomicGraphControl {
-    pub fn set_bypass_mask(&self, mask: u64) {
-        self.bypass_mask.store(mask, Ordering::Release);
-    }
-
-    pub fn is_bypassed(&self, bit: u64) -> bool {
-        self.bypass_mask.load(Ordering::Acquire) & bit != 0
-    }
-}
-
 impl Default for AtomicDawState {
     fn default() -> Self {
         Self {
@@ -674,11 +659,6 @@ impl RealtimeCaptureBuffer {
 /// Stable allocation-free key used to match a selected graph edge on the audio thread.
 pub fn capture_tap_key(value: &str) -> u64 {
     capture_key_bytes(0xcbf29ce484222325, value.bytes())
-}
-
-pub fn capture_post_tap_key(node_id: &str) -> u64 {
-    let hash = capture_key_bytes(0xcbf29ce484222325, "post:".bytes());
-    capture_key_bytes(hash, node_id.bytes())
 }
 
 fn capture_key_bytes(mut hash: u64, bytes: impl Iterator<Item = u8>) -> u64 {

@@ -169,7 +169,9 @@ pub fn discover_live_taps() -> Result<Vec<TapStatus>, TapProtocolError> {
             Ok(status) => status,
             Err(_) => continue,
         };
-        if status.protocol == TAP_PROTOCOL && status.plugin_id == TAP_PLUGIN_ID && status.is_fresh(now)
+        if status.protocol == TAP_PROTOCOL
+            && status.plugin_id == TAP_PLUGIN_ID
+            && status.is_fresh(now)
         {
             taps.push(status);
         }
@@ -213,7 +215,10 @@ pub fn read_capture_command(path: impl AsRef<Path>) -> Result<TapCaptureCommand,
     read_json(path)
 }
 
-pub fn publish_tap_status(path: impl AsRef<Path>, status: &TapStatus) -> Result<(), TapProtocolError> {
+pub fn publish_tap_status(
+    path: impl AsRef<Path>,
+    status: &TapStatus,
+) -> Result<(), TapProtocolError> {
     write_json_atomic(path.as_ref(), status)
 }
 

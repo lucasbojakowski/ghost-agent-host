@@ -1,7 +1,10 @@
-use ghost_context::CompiledContext;
 use serde_json::Value;
 
-use crate::AgentError;
+#[derive(Debug, Clone, PartialEq)]
+pub struct TurnInput {
+    pub text: String,
+    pub output_schema: Option<Value>,
+}
 
 #[derive(Debug, Clone)]
 pub struct TurnOptions {
@@ -86,15 +89,4 @@ impl AgentEvent {
 pub struct AgentOutput {
     pub text: String,
     pub structured: Option<Value>,
-}
-
-pub trait AgentRuntime: Send {
-    fn backend_name(&self) -> &'static str;
-    fn thread_id(&self) -> Option<&str>;
-    fn run_turn(
-        &mut self,
-        context: &CompiledContext,
-        options: &TurnOptions,
-        events: &mut dyn FnMut(AgentEvent),
-    ) -> Result<AgentOutput, AgentError>;
 }
