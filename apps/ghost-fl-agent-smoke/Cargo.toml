@@ -9,9 +9,10 @@ rust-version.workspace = true
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
+ghost-audio = { path = "../../crates/ghost-audio" }
 ghost-codex = { path = "../../crates/ghost-codex" }
 ghost-context = { path = "../../crates/ghost-context" }
-ghost-core = { path = "../../crates/ghost-core" }
 ghost-fl-studio = { path = "../../crates/ghost-fl-studio" }
+ghost-tap = { path = "../../crates/ghost-tap" }
 serde.workspace = true
 serde_json.workspace = true

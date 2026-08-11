@@ -1,5 +1,7 @@
 use std::io::{BufRead, BufReader, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
+#[cfg(target_os = "windows")]
+use std::path::PathBuf;
 use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::{Arc, Mutex};
 
@@ -106,10 +108,6 @@ fn codex_command(binary: &Path) -> Command {
     #[cfg(target_os = "windows")]
     {
         if let Some(shim) = windows_command_shim(binary) {
-            // npm/global Windows installs commonly expose `codex.cmd` (and an extensionless
-            // POSIX shim) rather than a native PE executable. CreateProcess cannot execute a
-            // .cmd file directly and reports ERROR_BAD_EXE_FORMAT / os error 193, so run the
-            // command shim through the user's command processor while preserving stdio.
             let shell = std::env::var_os("COMSPEC").unwrap_or_else(|| "cmd.exe".into());
             let mut command = Command::new(shell);
             command.arg("/D").arg("/C").arg(shim);
@@ -125,10 +123,6 @@ fn windows_command_shim(binary: &Path) -> Option<PathBuf> {
     if is_windows_command_shim(binary) {
         return Some(binary.to_path_buf());
     }
-
-    // `where codex` can return the extensionless npm POSIX shim before `codex.cmd`.
-    // Prefer the sibling .cmd file when it exists instead of handing the shell script to
-    // CreateProcess and getting os error 193.
     let cmd = binary.with_extension("cmd");
     cmd.is_file().then_some(cmd)
 }

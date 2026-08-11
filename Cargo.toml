@@ -1,10 +1,10 @@
 [workspace]
 members = [
-  "crates/ghost-core",
+  "crates/ghost-audio",
+  "crates/ghost-tap",
   "crates/ghost-context",
   "crates/ghost-application",
   "crates/ghost-codex",
-  "crates/ghost-clap-plugin",
   "crates/ghost-fl-studio",
   "apps/ghost-fl-native-bridge",
   "apps/ghost-fl-agent-smoke",
@@ -23,7 +23,6 @@ rust-version = "1.92"
 anyhow = "1"
 blake3 = "1"
 clap = { version = "4", features = ["derive"] }
-crossbeam-queue = "0.3"
 clack-plugin = "0.1.1"
 clack-extensions = "0.1.1"
 clack-common = "0.1.1"
@@ -36,11 +35,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 symphonia = { version = "0.5", features = ["all-codecs", "all-formats"] }
 thiserror = "2"
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 uuid = { version = "1", features = ["v4", "serde"] }
-windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_System_Threading", "Win32_UI_Input_KeyboardAndMouse", "Win32_UI_WindowsAndMessaging"] }
-zstd = "0.13"
 
 [profile.release]
 lto = "thin"

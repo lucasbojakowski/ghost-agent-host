@@ -1,0 +1,29 @@
+[package]
+name = "ghost-audio"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+
+[features]
+default = ["analysis"]
+analysis = [
+  "dep:blake3",
+  "dep:ebur128",
+  "dep:realfft",
+  "dep:schemars",
+  "dep:serde",
+  "dep:uuid",
+]
+
+[dependencies]
+hound.workspace = true
+symphonia.workspace = true
+thiserror.workspace = true
+blake3 = { workspace = true, optional = true }
+ebur128 = { workspace = true, optional = true }
+realfft = { workspace = true, optional = true }
+schemars = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+uuid = { workspace = true, optional = true }

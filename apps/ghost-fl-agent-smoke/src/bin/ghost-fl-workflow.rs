@@ -4,18 +4,16 @@ use std::time::Duration;
 
 use anyhow::{bail, Context, Result};
 use clap::Parser;
+use ghost_audio::{analyze_audio, read_audio, AnalysisConfig};
 use ghost_codex::{
     AgentEvent, CodexParallelRuntime, ParallelThreadConfig, ToolDefinition, ToolError, ToolRegistry,
     TurnOptions,
 };
 use ghost_context::{CompiledContext, ContextMessage, MessageRole, OutputContract};
-use ghost_core::{
-    analyze_audio, find_live_tap, read_audio, request_capture, wait_for_capture, AnalysisConfig,
-    TapCaptureCommand,
-};
 use ghost_fl_studio::{
     FlStudioAdapterConfig, FlStudioManifest, GopherNativeAdapter, NativeToolDefinition,
 };
+use ghost_tap::{find_live_tap, request_capture, wait_for_capture, TapCaptureCommand};
 use serde::Serialize;
 use serde_json::{json, Value};
 
@@ -27,52 +25,33 @@ use serde_json::{json, Value};
 struct Cli {
     #[arg(long, default_value_t = 9222)]
     debug_port: u16,
-
     #[arg(long, default_value = "gopher")]
     target_match: String,
-
     #[arg(long, default_value_t = 0)]
     tap_instance: u32,
-
     #[arg(long, default_value_t = 4.0)]
     capture_seconds: f64,
-
-    /// Target FL mixer track for this workflow policy. Master is 0; Insert 1 is 1.
     #[arg(long, default_value = "1")]
     track: String,
-
-    /// First mixer effect slot this workflow permits for processor writes.
     #[arg(long, default_value_t = 1)]
     slot_start: u32,
-
-    /// Last mixer effect slot this workflow permits for processor writes.
     #[arg(long, default_value_t = 4)]
     slot_end: u32,
-
-    /// Exact installed plugin names this workflow permits for add_effect. Repeat to add more.
     #[arg(long = "plugin")]
     plugins: Vec<String>,
-
     #[arg(
         long,
         default_value = "Build a clearly audible but musical processor chain for this sample from the measured evidence. Improve clarity, balance, dynamics, and usefulness in a mix while preserving the sample's identity."
     )]
     intent: String,
-
-    /// 0 is corrective/subtle; 1 is strongly transformative.
     #[arg(long, default_value_t = 0.70)]
     processing_intensity: f64,
-
     #[arg(long, default_value = "codex")]
     codex_binary: String,
-
     #[arg(long, default_value = "gpt-5.6-terra")]
     model: String,
-
     #[arg(long)]
     verbose_agent_events: bool,
-
-    /// Required acknowledgement before this experimental workflow exposes live FL write tools.
     #[arg(
         long = "i-accept-live-fl-writes",
         alias = "i-have-positioned-playhead-and-accepted-scoped-writes"
@@ -215,7 +194,6 @@ fn main() -> Result<()> {
         "[ghost-workflow] Armed request {} for {:.2}s. Starting FL playback; capture waits for real signal.",
         command.request_id, command.duration_seconds
     );
-
     adapter
         .call_native("play", json!({}))
         .context("failed to start FL playback for Ghost Tap capture")?;
@@ -235,7 +213,6 @@ fn main() -> Result<()> {
         artifact.duration_seconds,
         artifact.wav_path.display()
     );
-
     let audio = read_audio(&artifact.wav_path)
         .with_context(|| format!("failed to decode {}", artifact.wav_path.display()))?;
     let analysis = analyze_audio(
@@ -252,7 +229,12 @@ fn main() -> Result<()> {
     );
 
     let mutations = Arc::new(Mutex::new(Vec::<AppMutation>::new()));
-    let registry = build_agent_registry(&manifest, Arc::clone(&adapter), &policy, Arc::clone(&mutations))?;
+    let registry = build_agent_registry(
+        &manifest,
+        Arc::clone(&adapter),
+        &policy,
+        Arc::clone(&mutations),
+    )?;
     println!(
         "[ghost-workflow] App selected {} dynamic FL tools from the live catalog.",
         registry.definitions().len()

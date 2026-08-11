@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+#[cfg(target_os = "windows")]
 use std::process::Command;
 
 use serde_json::Value;
