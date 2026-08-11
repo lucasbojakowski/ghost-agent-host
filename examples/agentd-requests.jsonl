@@ -1,4 +1,0 @@
-{"method":"health"}
-{"method":"analyze","path":"fixtures/muddy_bass.wav"}
-{"method":"propose","path":"fixtures/muddy_bass.wav","intent":{"mode":"freeform","prompt":"Tighten the low mids while preserving punch."}}
-{"method":"stats"}
