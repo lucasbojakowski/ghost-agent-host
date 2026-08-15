@@ -224,7 +224,15 @@ impl ScriptingBridge {
             bail!("FL scripting device is not connected");
         };
 
-        match perform_call(connection, status, id, &frame, module, function, self.timeout) {
+        match perform_call(
+            connection,
+            status,
+            id,
+            &frame,
+            module,
+            function,
+            self.timeout,
+        ) {
             Ok(value) => Ok(value),
             Err(failure) => {
                 if failure.disconnect {
@@ -425,10 +433,13 @@ fn perform_call(
     function: &str,
     timeout: Duration,
 ) -> std::result::Result<Value, CallFailure> {
-    connection.stream.write_all(frame).map_err(|error| CallFailure {
-        message: format!("FL scripting write failed: {error}"),
-        disconnect: true,
-    })?;
+    connection
+        .stream
+        .write_all(frame)
+        .map_err(|error| CallFailure {
+            message: format!("FL scripting write failed: {error}"),
+            disconnect: true,
+        })?;
     let deadline = Instant::now() + timeout;
     loop {
         match connection.read_frame() {
@@ -703,7 +714,9 @@ fn is_safe_identifier(value: &str) -> bool {
 }
 
 fn lock_state(state: &Arc<Mutex<BridgeState>>) -> MutexGuard<'_, BridgeState> {
-    state.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+    state
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
 fn append_error(existing: Option<String>, next: String) -> String {
@@ -736,8 +749,8 @@ mod tests {
 
     #[test]
     fn request_id_mismatch_is_detectable() {
-        let message = parse_incoming(br#"{"type":"result","id":18,"ok":true,"value":"x"}"#)
-            .unwrap();
+        let message =
+            parse_incoming(br#"{"type":"result","id":18,"ok":true,"value":"x"}"#).unwrap();
         let IncomingMessage::Result(result) = message else {
             panic!("expected result");
         };
