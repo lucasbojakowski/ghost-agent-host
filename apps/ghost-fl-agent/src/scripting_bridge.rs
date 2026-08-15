@@ -164,6 +164,7 @@ struct WireError {
     message: String,
 }
 
+#[derive(Debug)]
 enum IncomingMessage {
     Hello(HelloMessage),
     Result(ResultMessage),
