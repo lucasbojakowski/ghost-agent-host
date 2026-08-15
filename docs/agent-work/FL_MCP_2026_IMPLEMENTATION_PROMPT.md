@@ -232,6 +232,7 @@ Add deterministic tests for:
 
 Use official MCP conformance tooling for the `2026-07-28` server where practical. If it cannot be run against the live/dynamic server in CI, create the smallest fixture mode needed to exercise protocol conformance without reimplementing the production server. Document what was and was not validated.
 
+[HUMAN_ONLY DO NOT EXECUTE]
 ## Live studio acceptance test
 
 The key runtime test is deliberately ambitious because the same surface already passed directly through Codex:
