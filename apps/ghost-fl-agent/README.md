@@ -16,6 +16,19 @@ The experiment asks a narrower question:
 
 > How far can a frontier agent get in real FL Studio work when it receives the faithful live Gopher tool catalog with only minimal harness instructions?
 
+## Branch experiment: FL scripting bridge
+
+`feat/fl-scripting-bridge` preserves the proven Gopher baseline and adds a second, app-local experiment for FL Studio MIDI Scripting.
+
+Read these branch documents before implementing or modifying that work:
+
+- [`docs/agent-work/FL_SCRIPTING_BRIDGE.md`](../../docs/agent-work/FL_SCRIPTING_BRIDGE.md)
+- [`docs/agent-work/FL_SCRIPTING_BRIDGE_IMPLEMENTATION_PROMPT.md`](../../docs/agent-work/FL_SCRIPTING_BRIDGE_IMPLEMENTATION_PROMPT.md)
+
+The intended topology is **virtual MIDI for FL auto-load only** plus an outbound, nonblocking localhost socket from the FL controller script back to the Rust app. The first runtime proof uses the user's existing loopMIDI endpoint `Ghost Midi`; native Windows MIDI Services/CoreMIDI endpoint creation is explicitly later work.
+
+Do not redesign or "improve" the Gopher tool surface while doing the scripting bridge experiment.
+
 ## Run
 
 Prerequisites:
