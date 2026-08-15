@@ -1,0 +1,325 @@
+MCPTOOLS PUBLIC API
+Tools: 48
+
+get_session_context()
+  Return a snapshot of the current FL Studio session.
+  Parameters:
+    (none)
+  Returns: not annotated
+
+get_browser_names(name: str = '', fullRecursive: int = 0)
+  Collect browser contents, especially from the Plugin database path.
+  Parameters:
+    name: POSITIONAL_OR_KEYWORD, optional, type=str, default=''
+    fullRecursive: POSITIONAL_OR_KEYWORD, optional, type=int, default=0
+  Returns: not annotated
+
+show_or_hide_window(window_name: str, state: str)
+  Show or hide an FL Studio window.
+  Parameters:
+    window_name: POSITIONAL_OR_KEYWORD, required, type=str
+    state: POSITIONAL_OR_KEYWORD, required, type=str
+  Returns: not annotated
+
+get_highlight_names()
+  Return all currently valid UI highlight targets.
+  Parameters:
+    (none)
+  Returns: not annotated
+
+show_highlight(item: str, tutorialName: str, tutorialCaption: str)
+  Highlight a toolbar icon or UI element.
+  Parameters:
+    item: POSITIONAL_OR_KEYWORD, required, type=str
+    tutorialName: POSITIONAL_OR_KEYWORD, required, type=str
+    tutorialCaption: POSITIONAL_OR_KEYWORD, required, type=str
+  Returns: not annotated
+
+play()
+  Start playback in FL Studio.
+  Parameters:
+    (none)
+  Returns: not annotated
+
+stop()
+  Stop playback in FL Studio.
+  Parameters:
+    (none)
+  Returns: not annotated
+
+get_tempo()
+  Get the current project tempo in BPM.
+  Parameters:
+    (none)
+  Returns: not annotated
+
+set_tempo(bpm: Annotated[int, 'Tempo in BPM, clamped between 10 and 522.'])
+  Set the project tempo.
+  Parameters:
+    bpm: POSITIONAL_OR_KEYWORD, required, type=Annotated[int, 'Tempo in BPM, clamped between 10 and 522.']
+  Returns: not annotated
+
+list_channel_names()
+  List Channel Rack channels with their display and plugin names.
+  Parameters:
+    (none)
+  Returns: not annotated
+
+select_channels(target_channels: str, selected: int)
+  Select, deselect, or toggle Channel Rack channels.
+  Parameters:
+    target_channels: POSITIONAL_OR_KEYWORD, required, type=str
+    selected: POSITIONAL_OR_KEYWORD, required, type=int
+  Returns: not annotated
+
+rename_channels(channel_mapping)
+  Rename one or more channels in a single call.
+  Parameters:
+    channel_mapping: POSITIONAL_OR_KEYWORD, required
+  Returns: not annotated
+
+add_channel(plugin: str)
+  Add an instrument or generator to the Channel Rack.
+  Parameters:
+    plugin: POSITIONAL_OR_KEYWORD, required, type=str
+  Returns: not annotated
+
+remove_channels(target_channels: str)
+  Remove one or more channels from the Channel Rack.
+  Parameters:
+    target_channels: POSITIONAL_OR_KEYWORD, required, type=str
+  Returns: not annotated
+
+route_channels_to_mixer(target_channels: str, mixer_track_target: str)
+  Route one or more channels to one mixer track.
+  Parameters:
+    target_channels: POSITIONAL_OR_KEYWORD, required, type=str
+    mixer_track_target: POSITIONAL_OR_KEYWORD, required, type=str
+  Returns: not annotated
+
+get_channel_volumes(target_channels: str)
+  Return channel volumes in normalized, percentage, and dB forms.
+  Parameters:
+    target_channels: POSITIONAL_OR_KEYWORD, required, type=str
+  Returns: not annotated
+
+set_channels_volume_db(target_channels: str, volume_db)
+  Set absolute Channel Rack volume in decibels.
+  Parameters:
+    target_channels: POSITIONAL_OR_KEYWORD, required, type=str
+    volume_db: POSITIONAL_OR_KEYWORD, required
+  Returns: not annotated
+
+set_channels_volume(target_channels: str, volume)
+  Set absolute Channel Rack volume as a normalized value.
+  Parameters:
+    target_channels: POSITIONAL_OR_KEYWORD, required, type=str
+    volume: POSITIONAL_OR_KEYWORD, required
+  Returns: not annotated
+
+set_channels_pan(target_channels: str, pan: float)
+  Set stereo pan for one or more channels.
+  Parameters:
+    target_channels: POSITIONAL_OR_KEYWORD, required, type=str
+    pan: POSITIONAL_OR_KEYWORD, required, type=float
+  Returns: not annotated
+
+set_channels_colour(target_channels: str, colour: str)
+  Set the color of one or more Channel Rack channels.
+  Parameters:
+    target_channels: POSITIONAL_OR_KEYWORD, required, type=str
+    colour: POSITIONAL_OR_KEYWORD, required, type=str
+  Returns: not annotated
+
+mute_channels(target_channels: str, muted: int)
+  Mute, unmute, or toggle one or more channels.
+  Parameters:
+    target_channels: POSITIONAL_OR_KEYWORD, required, type=str
+    muted: POSITIONAL_OR_KEYWORD, required, type=int
+  Returns: not annotated
+
+solo_channels(target_channels: str, value: int)
+  Solo, unsolo, or toggle one or more channels.
+  Parameters:
+    target_channels: POSITIONAL_OR_KEYWORD, required, type=str
+    value: POSITIONAL_OR_KEYWORD, required, type=int
+  Returns: not annotated
+
+set_step_sequencer_step(target_channels: str, step_number: int, value: int)
+  Set one step for one or more step-sequencer channels.
+  Parameters:
+    target_channels: POSITIONAL_OR_KEYWORD, required, type=str
+    step_number: POSITIONAL_OR_KEYWORD, required, type=int
+    value: POSITIONAL_OR_KEYWORD, required, type=int
+  Returns: not annotated
+
+set_step_sequencer_pattern(target_channels: str, pattern: str)
+  Set a complete 16-step binary pattern on one or more channels.
+  Parameters:
+    target_channels: POSITIONAL_OR_KEYWORD, required, type=str
+    pattern: POSITIONAL_OR_KEYWORD, required, type=str
+  Returns: not annotated
+
+set_mixer_tracks_pan(target_tracks: str, pan_value: float)
+  Set stereo pan for one or more mixer tracks.
+  Parameters:
+    target_tracks: POSITIONAL_OR_KEYWORD, required, type=str
+    pan_value: POSITIONAL_OR_KEYWORD, required, type=float
+  Returns: not annotated
+
+get_mixer_tracks_volume(target_tracks: str)
+  Return mixer-track volumes in normalized, percentage, and dB forms.
+  Parameters:
+    target_tracks: POSITIONAL_OR_KEYWORD, required, type=str
+  Returns: not annotated
+
+set_mixer_tracks_volume_db(target_tracks: str, volume_db)
+  Set absolute mixer-track volume in decibels.
+  Parameters:
+    target_tracks: POSITIONAL_OR_KEYWORD, required, type=str
+    volume_db: POSITIONAL_OR_KEYWORD, required
+  Returns: not annotated
+
+set_mixer_tracks_volume_percent(target_tracks: str, percent)
+  Set absolute mixer-track volume as a fader percentage from 0 to 125.
+  Parameters:
+    target_tracks: POSITIONAL_OR_KEYWORD, required, type=str
+    percent: POSITIONAL_OR_KEYWORD, required
+  Returns: not annotated
+
+rename_mixer_tracks(track_mapping)
+  Rename one or more mixer tracks in a single call.
+  Parameters:
+    track_mapping: POSITIONAL_OR_KEYWORD, required
+  Returns: not annotated
+
+add_effect(plugin: str, target_tracks: str, slot_number: int)
+  Add an effect plugin to mixer-track slots.
+  Parameters:
+    plugin: POSITIONAL_OR_KEYWORD, required, type=str
+    target_tracks: POSITIONAL_OR_KEYWORD, required, type=str
+    slot_number: POSITIONAL_OR_KEYWORD, required, type=int
+  Returns: not annotated
+
+remove_effect(target_tracks: str, slot_numbers)
+  Remove effects from one or more mixer-track slots.
+  Parameters:
+    target_tracks: POSITIONAL_OR_KEYWORD, required, type=str
+    slot_numbers: POSITIONAL_OR_KEYWORD, required
+  Returns: not annotated
+
+set_mixer_tracks_colour(target_tracks: str, colour: str)
+  Set the color of one or more mixer tracks.
+  Parameters:
+    target_tracks: POSITIONAL_OR_KEYWORD, required, type=str
+    colour: POSITIONAL_OR_KEYWORD, required, type=str
+  Returns: not annotated
+
+mute_mixer_tracks(target_tracks: str, muted: int)
+  Mute, unmute, or toggle one or more mixer tracks.
+  Parameters:
+    target_tracks: POSITIONAL_OR_KEYWORD, required, type=str
+    muted: POSITIONAL_OR_KEYWORD, required, type=int
+  Returns: not annotated
+
+solo_mixer_tracks(target_tracks: str, value: int)
+  Solo, unsolo, or toggle one or more mixer tracks.
+  Parameters:
+    target_tracks: POSITIONAL_OR_KEYWORD, required, type=str
+    value: POSITIONAL_OR_KEYWORD, required, type=int
+  Returns: not annotated
+
+reset_mixer_tracks(target_tracks: str)
+  Reset mixer tracks to their default volume, routing, plugins, name, and color.
+  Parameters:
+    target_tracks: POSITIONAL_OR_KEYWORD, required, type=str
+  Returns: not annotated
+
+get_mixer_routing()
+  Return active sends for all mixer tracks.
+  Parameters:
+    (none)
+  Returns: not annotated
+
+set_mixer_routing(source_track: str, dest_track: str, active: int, level: float = 1.0)
+  Create, update, or remove a send between two mixer tracks.
+  Parameters:
+    source_track: POSITIONAL_OR_KEYWORD, required, type=str
+    dest_track: POSITIONAL_OR_KEYWORD, required, type=str
+    active: POSITIONAL_OR_KEYWORD, required, type=int
+    level: POSITIONAL_OR_KEYWORD, optional, type=float, default=1.0
+  Returns: not annotated
+
+reset_mixer_routing(target_tracks: str)
+  Remove all sends from mixer tracks and restore their Master sends.
+  Parameters:
+    target_tracks: POSITIONAL_OR_KEYWORD, required, type=str
+  Returns: not annotated
+
+open_piano_roll_for_channel(target_channel: str)
+  Open the Piano Roll with exactly one requested channel selected.
+  Parameters:
+    target_channel: POSITIONAL_OR_KEYWORD, required, type=str
+  Returns: not annotated
+
+quantize_channel(channel_number: int)
+  Quickly quantize notes in one channel.
+  Parameters:
+    channel_number: POSITIONAL_OR_KEYWORD, required, type=int
+  Returns: not annotated
+
+get_playlist_track_names()
+  Return a numbered list of named Playlist tracks.
+  Parameters:
+    (none)
+  Returns: not annotated
+
+rename_playlist_tracks(track_mapping)
+  Rename one or more Playlist tracks in a single call.
+  Parameters:
+    track_mapping: POSITIONAL_OR_KEYWORD, required
+  Returns: not annotated
+
+set_playlist_tracks_colour(track_number: int, colour: str)
+  Set the color of one Playlist track.
+  Parameters:
+    track_number: POSITIONAL_OR_KEYWORD, required, type=int
+    colour: POSITIONAL_OR_KEYWORD, required, type=str
+  Returns: not annotated
+
+get_plugin_parameter_list(target: str, slot_number: int = -1)
+  List all parameters for a channel generator or mixer effect.
+  Parameters:
+    target: POSITIONAL_OR_KEYWORD, required, type=str
+    slot_number: POSITIONAL_OR_KEYWORD, optional, type=int, default=-1
+  Returns: not annotated
+
+get_plugin_parameter_value(target: str, param_identifier: str, slot_number: int = -1)
+  Get the normalized and display value of a plugin parameter.
+  Parameters:
+    target: POSITIONAL_OR_KEYWORD, required, type=str
+    param_identifier: POSITIONAL_OR_KEYWORD, required, type=str
+    slot_number: POSITIONAL_OR_KEYWORD, optional, type=int, default=-1
+  Returns: not annotated
+
+set_plugin_parameter_value(target: str, param_identifier: str, value: float, slot_number: int = -1)
+  Set a normalized plugin-parameter value.
+  Parameters:
+    target: POSITIONAL_OR_KEYWORD, required, type=str
+    param_identifier: POSITIONAL_OR_KEYWORD, required, type=str
+    value: POSITIONAL_OR_KEYWORD, required, type=float
+    slot_number: POSITIONAL_OR_KEYWORD, optional, type=int, default=-1
+  Returns: not annotated
+
+save_piano_roll_script(script_name: str, source: str)
+  Save a Piano Roll script.
+  Parameters:
+    script_name: POSITIONAL_OR_KEYWORD, required, type=str
+    source: POSITIONAL_OR_KEYWORD, required, type=str
+  Returns: not annotated
+
+run_piano_roll_script(source: str)
+  Open the Piano Roll and run a Piano Roll script.
+  Parameters:
+    source: POSITIONAL_OR_KEYWORD, required, type=str
+  Returns: not annotated

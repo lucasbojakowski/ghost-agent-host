@@ -1,0 +1,830 @@
+{
+  "name": "MCPTools",
+  "tool_count": 48,
+  "tools": [
+    {
+      "name": "get_session_context",
+      "description": "Return a snapshot of the current FL Studio session.",
+      "signature": "get_session_context()",
+      "parameters": [],
+      "returns": null
+    },
+    {
+      "name": "get_browser_names",
+      "description": "Collect browser contents, especially from the Plugin database path.",
+      "signature": "get_browser_names(name: str = '', fullRecursive: int = 0)",
+      "parameters": [
+        {
+          "name": "name",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": false,
+          "type": "str",
+          "default": ""
+        },
+        {
+          "name": "fullRecursive",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": false,
+          "type": "int",
+          "default": 0
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "show_or_hide_window",
+      "description": "Show or hide an FL Studio window.",
+      "signature": "show_or_hide_window(window_name: str, state: str)",
+      "parameters": [
+        {
+          "name": "window_name",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "state",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "get_highlight_names",
+      "description": "Return all currently valid UI highlight targets.",
+      "signature": "get_highlight_names()",
+      "parameters": [],
+      "returns": null
+    },
+    {
+      "name": "show_highlight",
+      "description": "Highlight a toolbar icon or UI element.",
+      "signature": "show_highlight(item: str, tutorialName: str, tutorialCaption: str)",
+      "parameters": [
+        {
+          "name": "item",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "tutorialName",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "tutorialCaption",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "play",
+      "description": "Start playback in FL Studio.",
+      "signature": "play()",
+      "parameters": [],
+      "returns": null
+    },
+    {
+      "name": "stop",
+      "description": "Stop playback in FL Studio.",
+      "signature": "stop()",
+      "parameters": [],
+      "returns": null
+    },
+    {
+      "name": "get_tempo",
+      "description": "Get the current project tempo in BPM.",
+      "signature": "get_tempo()",
+      "parameters": [],
+      "returns": null
+    },
+    {
+      "name": "set_tempo",
+      "description": "Set the project tempo.",
+      "signature": "set_tempo(bpm: Annotated[int, 'Tempo in BPM, clamped between 10 and 522.'])",
+      "parameters": [
+        {
+          "name": "bpm",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "Annotated[int, 'Tempo in BPM, clamped between 10 and 522.']"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "list_channel_names",
+      "description": "List Channel Rack channels with their display and plugin names.",
+      "signature": "list_channel_names()",
+      "parameters": [],
+      "returns": null
+    },
+    {
+      "name": "select_channels",
+      "description": "Select, deselect, or toggle Channel Rack channels.",
+      "signature": "select_channels(target_channels: str, selected: int)",
+      "parameters": [
+        {
+          "name": "target_channels",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "selected",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "int"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "rename_channels",
+      "description": "Rename one or more channels in a single call.",
+      "signature": "rename_channels(channel_mapping)",
+      "parameters": [
+        {
+          "name": "channel_mapping",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "add_channel",
+      "description": "Add an instrument or generator to the Channel Rack.",
+      "signature": "add_channel(plugin: str)",
+      "parameters": [
+        {
+          "name": "plugin",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "remove_channels",
+      "description": "Remove one or more channels from the Channel Rack.",
+      "signature": "remove_channels(target_channels: str)",
+      "parameters": [
+        {
+          "name": "target_channels",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "route_channels_to_mixer",
+      "description": "Route one or more channels to one mixer track.",
+      "signature": "route_channels_to_mixer(target_channels: str, mixer_track_target: str)",
+      "parameters": [
+        {
+          "name": "target_channels",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "mixer_track_target",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "get_channel_volumes",
+      "description": "Return channel volumes in normalized, percentage, and dB forms.",
+      "signature": "get_channel_volumes(target_channels: str)",
+      "parameters": [
+        {
+          "name": "target_channels",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "set_channels_volume_db",
+      "description": "Set absolute Channel Rack volume in decibels.",
+      "signature": "set_channels_volume_db(target_channels: str, volume_db)",
+      "parameters": [
+        {
+          "name": "target_channels",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "volume_db",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "set_channels_volume",
+      "description": "Set absolute Channel Rack volume as a normalized value.",
+      "signature": "set_channels_volume(target_channels: str, volume)",
+      "parameters": [
+        {
+          "name": "target_channels",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "volume",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "set_channels_pan",
+      "description": "Set stereo pan for one or more channels.",
+      "signature": "set_channels_pan(target_channels: str, pan: float)",
+      "parameters": [
+        {
+          "name": "target_channels",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "pan",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "float"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "set_channels_colour",
+      "description": "Set the color of one or more Channel Rack channels.",
+      "signature": "set_channels_colour(target_channels: str, colour: str)",
+      "parameters": [
+        {
+          "name": "target_channels",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "colour",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "mute_channels",
+      "description": "Mute, unmute, or toggle one or more channels.",
+      "signature": "mute_channels(target_channels: str, muted: int)",
+      "parameters": [
+        {
+          "name": "target_channels",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "muted",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "int"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "solo_channels",
+      "description": "Solo, unsolo, or toggle one or more channels.",
+      "signature": "solo_channels(target_channels: str, value: int)",
+      "parameters": [
+        {
+          "name": "target_channels",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "value",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "int"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "set_step_sequencer_step",
+      "description": "Set one step for one or more step-sequencer channels.",
+      "signature": "set_step_sequencer_step(target_channels: str, step_number: int, value: int)",
+      "parameters": [
+        {
+          "name": "target_channels",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "step_number",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "int"
+        },
+        {
+          "name": "value",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "int"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "set_step_sequencer_pattern",
+      "description": "Set a complete 16-step binary pattern on one or more channels.",
+      "signature": "set_step_sequencer_pattern(target_channels: str, pattern: str)",
+      "parameters": [
+        {
+          "name": "target_channels",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "pattern",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "set_mixer_tracks_pan",
+      "description": "Set stereo pan for one or more mixer tracks.",
+      "signature": "set_mixer_tracks_pan(target_tracks: str, pan_value: float)",
+      "parameters": [
+        {
+          "name": "target_tracks",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "pan_value",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "float"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "get_mixer_tracks_volume",
+      "description": "Return mixer-track volumes in normalized, percentage, and dB forms.",
+      "signature": "get_mixer_tracks_volume(target_tracks: str)",
+      "parameters": [
+        {
+          "name": "target_tracks",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "set_mixer_tracks_volume_db",
+      "description": "Set absolute mixer-track volume in decibels.",
+      "signature": "set_mixer_tracks_volume_db(target_tracks: str, volume_db)",
+      "parameters": [
+        {
+          "name": "target_tracks",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "volume_db",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "set_mixer_tracks_volume_percent",
+      "description": "Set absolute mixer-track volume as a fader percentage from 0 to 125.",
+      "signature": "set_mixer_tracks_volume_percent(target_tracks: str, percent)",
+      "parameters": [
+        {
+          "name": "target_tracks",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "percent",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "rename_mixer_tracks",
+      "description": "Rename one or more mixer tracks in a single call.",
+      "signature": "rename_mixer_tracks(track_mapping)",
+      "parameters": [
+        {
+          "name": "track_mapping",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "add_effect",
+      "description": "Add an effect plugin to mixer-track slots.",
+      "signature": "add_effect(plugin: str, target_tracks: str, slot_number: int)",
+      "parameters": [
+        {
+          "name": "plugin",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "target_tracks",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "slot_number",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "int"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "remove_effect",
+      "description": "Remove effects from one or more mixer-track slots.",
+      "signature": "remove_effect(target_tracks: str, slot_numbers)",
+      "parameters": [
+        {
+          "name": "target_tracks",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "slot_numbers",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "set_mixer_tracks_colour",
+      "description": "Set the color of one or more mixer tracks.",
+      "signature": "set_mixer_tracks_colour(target_tracks: str, colour: str)",
+      "parameters": [
+        {
+          "name": "target_tracks",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "colour",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "mute_mixer_tracks",
+      "description": "Mute, unmute, or toggle one or more mixer tracks.",
+      "signature": "mute_mixer_tracks(target_tracks: str, muted: int)",
+      "parameters": [
+        {
+          "name": "target_tracks",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "muted",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "int"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "solo_mixer_tracks",
+      "description": "Solo, unsolo, or toggle one or more mixer tracks.",
+      "signature": "solo_mixer_tracks(target_tracks: str, value: int)",
+      "parameters": [
+        {
+          "name": "target_tracks",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "value",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "int"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "reset_mixer_tracks",
+      "description": "Reset mixer tracks to their default volume, routing, plugins, name, and color.",
+      "signature": "reset_mixer_tracks(target_tracks: str)",
+      "parameters": [
+        {
+          "name": "target_tracks",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "get_mixer_routing",
+      "description": "Return active sends for all mixer tracks.",
+      "signature": "get_mixer_routing()",
+      "parameters": [],
+      "returns": null
+    },
+    {
+      "name": "set_mixer_routing",
+      "description": "Create, update, or remove a send between two mixer tracks.",
+      "signature": "set_mixer_routing(source_track: str, dest_track: str, active: int, level: float = 1.0)",
+      "parameters": [
+        {
+          "name": "source_track",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "dest_track",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "active",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "int"
+        },
+        {
+          "name": "level",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": false,
+          "type": "float",
+          "default": 1.0
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "reset_mixer_routing",
+      "description": "Remove all sends from mixer tracks and restore their Master sends.",
+      "signature": "reset_mixer_routing(target_tracks: str)",
+      "parameters": [
+        {
+          "name": "target_tracks",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "open_piano_roll_for_channel",
+      "description": "Open the Piano Roll with exactly one requested channel selected.",
+      "signature": "open_piano_roll_for_channel(target_channel: str)",
+      "parameters": [
+        {
+          "name": "target_channel",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "quantize_channel",
+      "description": "Quickly quantize notes in one channel.",
+      "signature": "quantize_channel(channel_number: int)",
+      "parameters": [
+        {
+          "name": "channel_number",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "int"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "get_playlist_track_names",
+      "description": "Return a numbered list of named Playlist tracks.",
+      "signature": "get_playlist_track_names()",
+      "parameters": [],
+      "returns": null
+    },
+    {
+      "name": "rename_playlist_tracks",
+      "description": "Rename one or more Playlist tracks in a single call.",
+      "signature": "rename_playlist_tracks(track_mapping)",
+      "parameters": [
+        {
+          "name": "track_mapping",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "set_playlist_tracks_colour",
+      "description": "Set the color of one Playlist track.",
+      "signature": "set_playlist_tracks_colour(track_number: int, colour: str)",
+      "parameters": [
+        {
+          "name": "track_number",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "int"
+        },
+        {
+          "name": "colour",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "get_plugin_parameter_list",
+      "description": "List all parameters for a channel generator or mixer effect.",
+      "signature": "get_plugin_parameter_list(target: str, slot_number: int = -1)",
+      "parameters": [
+        {
+          "name": "target",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "slot_number",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": false,
+          "type": "int",
+          "default": -1
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "get_plugin_parameter_value",
+      "description": "Get the normalized and display value of a plugin parameter.",
+      "signature": "get_plugin_parameter_value(target: str, param_identifier: str, slot_number: int = -1)",
+      "parameters": [
+        {
+          "name": "target",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "param_identifier",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "slot_number",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": false,
+          "type": "int",
+          "default": -1
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "set_plugin_parameter_value",
+      "description": "Set a normalized plugin-parameter value.",
+      "signature": "set_plugin_parameter_value(target: str, param_identifier: str, value: float, slot_number: int = -1)",
+      "parameters": [
+        {
+          "name": "target",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "param_identifier",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "value",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "float"
+        },
+        {
+          "name": "slot_number",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": false,
+          "type": "int",
+          "default": -1
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "save_piano_roll_script",
+      "description": "Save a Piano Roll script.",
+      "signature": "save_piano_roll_script(script_name: str, source: str)",
+      "parameters": [
+        {
+          "name": "script_name",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        },
+        {
+          "name": "source",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        }
+      ],
+      "returns": null
+    },
+    {
+      "name": "run_piano_roll_script",
+      "description": "Open the Piano Roll and run a Piano Roll script.",
+      "signature": "run_piano_roll_script(source: str)",
+      "parameters": [
+        {
+          "name": "source",
+          "kind": "POSITIONAL_OR_KEYWORD",
+          "required": true,
+          "type": "str"
+        }
+      ],
+      "returns": null
+    }
+  ]
+}
