@@ -1,10 +1,10 @@
 # name=Ghost Bridge
 # supportedDevices=Ghost Midi
 
+import _socket as raw_socket
 import errno
 import json
 import os
-import socket
 import time
 
 import arrangement
@@ -30,6 +30,7 @@ MAX_WRITES_PER_IDLE = 4
 IO_CHUNK_BYTES = 4096
 MIN_RECONNECT_SECONDS = 0.25
 MAX_RECONNECT_SECONDS = 5.0
+ERROR_REPEAT_SECONDS = 15.0
 
 ALLOWED_MODULES = {
     "arrangement": arrangement,
@@ -59,6 +60,8 @@ _receive_buffer = bytearray()
 _send_buffer = bytearray()
 _next_connect_at = 0.0
 _reconnect_delay = MIN_RECONNECT_SECONDS
+_last_transport_error = None
+_last_transport_error_at = 0.0
 
 
 def OnInit():
@@ -86,9 +89,24 @@ def _try_connect():
     if _sock is not None or time.monotonic() < _next_connect_at:
         return
 
-    candidate = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    candidate.setblocking(False)
-    result = candidate.connect_ex((BRIDGE_HOST, BRIDGE_PORT))
+    candidate = None
+    try:
+        # FL Studio's embedded Python can load Lib/socket.py while its Python-level
+        # socket.socket subclass fails inside _socket.socket.__init__. Construct the
+        # native socket type directly so we bypass that wrapper entirely.
+        candidate = raw_socket.socket(raw_socket.AF_INET, raw_socket.SOCK_STREAM, 0)
+        candidate.setblocking(False)
+        result = candidate.connect_ex((BRIDGE_HOST, BRIDGE_PORT))
+    except Exception as error:
+        if candidate is not None:
+            try:
+                candidate.close()
+            except Exception:
+                pass
+        _report_transport_error("socket setup/connect failed", error)
+        _schedule_reconnect()
+        return
+
     if result == 0:
         _sock = candidate
         _mark_connected()
@@ -99,6 +117,7 @@ def _try_connect():
         return
 
     candidate.close()
+    _report_transport_error("connect_ex failed", OSError(result, "connect_ex"))
     _schedule_reconnect()
 
 
@@ -108,8 +127,9 @@ def _finish_connect_if_ready():
         return
 
     try:
-        error = _sock.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
-    except OSError:
+        error = _sock.getsockopt(raw_socket.SOL_SOCKET, raw_socket.SO_ERROR)
+    except Exception as error:
+        _report_transport_error("connect completion failed", error)
         _reset_transport(schedule_reconnect=True)
         return
 
@@ -117,14 +137,18 @@ def _finish_connect_if_ready():
         _connecting = False
         _mark_connected()
     elif error not in _IN_PROGRESS:
+        _report_transport_error("connect completion failed", OSError(error, "SO_ERROR"))
         _reset_transport(schedule_reconnect=True)
 
 
 def _mark_connected():
     global _connected, _connecting, _reconnect_delay
+    global _last_transport_error, _last_transport_error_at
     _connected = True
     _connecting = False
     _reconnect_delay = MIN_RECONNECT_SECONDS
+    _last_transport_error = None
+    _last_transport_error_at = 0.0
     _queue_message(
         {
             "type": "hello",
@@ -163,11 +187,13 @@ def _read_bounded():
             chunk = _sock.recv(IO_CHUNK_BYTES)
         except BlockingIOError:
             return
-        except OSError:
+        except Exception as error:
+            _report_transport_error("socket read failed", error)
             _reset_transport(schedule_reconnect=True)
             return
 
         if not chunk:
+            _report_transport_error("socket read failed", EOFError("bridge closed the connection"))
             _reset_transport(schedule_reconnect=True)
             return
 
@@ -301,13 +327,25 @@ def _write_bounded():
             count = _sock.send(chunk)
         except BlockingIOError:
             return
-        except OSError:
+        except Exception as error:
+            _report_transport_error("socket write failed", error)
             _reset_transport(schedule_reconnect=True)
             return
         if count <= 0:
+            _report_transport_error("socket write failed", OSError("send returned zero bytes"))
             _reset_transport(schedule_reconnect=True)
             return
         del _send_buffer[:count]
+
+
+def _report_transport_error(context, error):
+    global _last_transport_error, _last_transport_error_at
+    now = time.monotonic()
+    message = context + ": " + repr(error)
+    if message != _last_transport_error or now - _last_transport_error_at >= ERROR_REPEAT_SECONDS:
+        print("[Ghost Bridge] " + message)
+        _last_transport_error = message
+        _last_transport_error_at = now
 
 
 def _reset_transport(schedule_reconnect):
