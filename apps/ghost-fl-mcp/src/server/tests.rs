@@ -40,11 +40,7 @@ struct RecordingCaller {
 }
 
 impl NativeToolCaller for RecordingCaller {
-    fn call_native(
-        &self,
-        tool: &str,
-        arguments: Value,
-    ) -> Result<NativeToolResult, AdapterError> {
+    fn call_native(&self, tool: &str, arguments: Value) -> Result<NativeToolResult, AdapterError> {
         self.calls
             .lock()
             .expect("recording caller lock")
@@ -108,7 +104,10 @@ async fn dispatches_exact_tool_name_and_arguments() {
         .unwrap();
 
     let calls = calls.lock().unwrap();
-    assert_eq!(calls.as_slice(), &[("alpha_tool".into(), json!({"target": "Kick"}))]);
+    assert_eq!(
+        calls.as_slice(),
+        &[("alpha_tool".into(), json!({"target": "Kick"}))]
+    );
 }
 
 #[tokio::test]

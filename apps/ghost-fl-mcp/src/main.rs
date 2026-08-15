@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
-use anyhow::{Context, Result, bail};
+use anyhow::{bail, Context, Result};
 use clap::Parser;
 use ghost_fl_mcp::{FlMcpServer, MCP_PROTOCOL_VERSION};
 use ghost_fl_studio::{FlStudioAdapterConfig, GopherNativeAdapter, DEFAULT_DEBUG_PORT};
-use rmcp::{ServiceExt, transport::stdio};
+use rmcp::{transport::stdio, ServiceExt};
 
 #[derive(Debug, Parser)]
 #[command(
@@ -47,9 +47,7 @@ async fn main() -> Result<()> {
     let server = FlMcpServer::from_gopher(&manifest, adapter)
         .context("failed to convert the live Gopher manifest into MCP tools")?;
 
-    eprintln!(
-        "[ghost-fl-mcp] connected to '{target_title}' with {tool_count} raw Gopher tools"
-    );
+    eprintln!("[ghost-fl-mcp] connected to '{target_title}' with {tool_count} raw Gopher tools");
     eprintln!(
         "[ghost-fl-mcp] serving MCP {MCP_PROTOCOL_VERSION} over stdio; stdout is reserved for protocol traffic"
     );
