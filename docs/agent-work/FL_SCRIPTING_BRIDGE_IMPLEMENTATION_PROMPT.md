@@ -30,6 +30,7 @@ Before changing code, read these files in full from this branch:
 - `docs/agent-work/FL_SCRIPTING_BRIDGE.md`
 
 Also locate and inspect these artifacts if the user has added them to the repository:
+(docs/daw-apis/fl-studio)
 
 - `fl_studio_api_dump.enriched.signatures.txt`
 - `MCPTools.api.txt`
