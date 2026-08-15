@@ -1,6 +1,9 @@
+mod scripting_bridge;
+
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::{bail, Context, Result};
 use clap::Parser;
@@ -11,6 +14,7 @@ use ghost_codex::{
 use ghost_fl_studio::{
     FlStudioAdapterConfig, FlStudioManifest, GopherNativeAdapter, NativeToolDefinition,
 };
+use scripting_bridge::ScriptingBridge;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -44,6 +48,12 @@ struct Cli {
 
     #[arg(long, default_value = "127.0.0.1:48765")]
     bind: String,
+
+    #[arg(long, default_value = "127.0.0.1:48766")]
+    scripting_bind: String,
+
+    #[arg(long, default_value_t = 1500)]
+    scripting_timeout_ms: u64,
 
     #[arg(long, default_value = "codex")]
     codex_binary: String,
@@ -151,6 +161,15 @@ fn main() -> Result<()> {
         thread.id, thread.model
     );
 
+    let scripting = ScriptingBridge::start(
+        &cli.scripting_bind,
+        Duration::from_millis(cli.scripting_timeout_ms),
+    )?;
+    println!(
+        "[ghost-fl-agent] FL scripting listener: {}",
+        scripting.status().bind
+    );
+
     let mut session = AgentSession {
         runtime,
         thread,
@@ -159,7 +178,7 @@ fn main() -> Result<()> {
         verbose_agent_events: cli.verbose_agent_events,
     };
 
-    serve(&cli.bind, &mut session)
+    serve(&cli.bind, &mut session, &scripting)
 }
 
 fn build_raw_registry(
@@ -305,7 +324,7 @@ fn trace_event(event: &AgentEvent) -> Option<TraceEvent> {
     }
 }
 
-fn serve(bind: &str, session: &mut AgentSession) -> Result<()> {
+fn serve(bind: &str, session: &mut AgentSession, scripting: &ScriptingBridge) -> Result<()> {
     let listener = TcpListener::bind(bind)
         .with_context(|| format!("failed to bind ghost-fl-agent web UI at {bind}"))?;
     let address = listener.local_addr()?;
@@ -320,7 +339,7 @@ fn serve(bind: &str, session: &mut AgentSession) -> Result<()> {
                 continue;
             }
         };
-        if let Err(error) = handle_connection(&mut stream, session) {
+        if let Err(error) = handle_connection(&mut stream, session, scripting) {
             eprintln!("[ghost-fl-agent] HTTP request failed: {error:#}");
             let _ = send_json(
                 &mut stream,
@@ -334,7 +353,11 @@ fn serve(bind: &str, session: &mut AgentSession) -> Result<()> {
     Ok(())
 }
 
-fn handle_connection(stream: &mut TcpStream, session: &mut AgentSession) -> Result<()> {
+fn handle_connection(
+    stream: &mut TcpStream,
+    session: &mut AgentSession,
+    scripting: &ScriptingBridge,
+) -> Result<()> {
     let Some(request) = read_request(stream)? else {
         return Ok(());
     };
@@ -347,6 +370,9 @@ fn handle_connection(stream: &mut TcpStream, session: &mut AgentSession) -> Resu
             INDEX_HTML.as_bytes(),
         ),
         ("GET", "/api/info") => send_json(stream, "200 OK", &session.info()),
+        ("GET", "/api/scripting/status") => {
+            send_json(stream, "200 OK", &scripting.status())
+        }
         ("GET", "/api/benchmark-prompt") => send_response(
             stream,
             "200 OK",
@@ -361,6 +387,10 @@ fn handle_connection(stream: &mut TcpStream, session: &mut AgentSession) -> Resu
         }
         ("POST", "/api/setup-benchmark") => {
             let response = session.run_user_turn(BENCHMARK_SETUP_PROMPT)?;
+            send_json(stream, "200 OK", &response)
+        }
+        ("POST", "/api/scripting/probe") => {
+            let response = scripting.run_probe()?;
             send_json(stream, "200 OK", &response)
         }
         _ => send_json(
