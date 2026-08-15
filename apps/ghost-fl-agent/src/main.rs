@@ -310,9 +310,7 @@ fn serve(bind: &str, session: &mut AgentSession) -> Result<()> {
         .with_context(|| format!("failed to bind ghost-fl-agent web UI at {bind}"))?;
     let address = listener.local_addr()?;
     println!("[ghost-fl-agent] chat UI: http://{address}");
-    println!(
-        "[ghost-fl-agent] WARNING: raw profile exposes every live Gopher tool to the agent"
-    );
+    println!("[ghost-fl-agent] WARNING: raw profile exposes every live Gopher tool to the agent");
 
     for incoming in listener.incoming() {
         let mut stream = match incoming {
@@ -356,8 +354,8 @@ fn handle_connection(stream: &mut TcpStream, session: &mut AgentSession) -> Resu
             BENCHMARK_SETUP_PROMPT.as_bytes(),
         ),
         ("POST", "/api/chat") => {
-            let request: ChatRequest = serde_json::from_slice(&request.body)
-                .context("invalid /api/chat JSON body")?;
+            let request: ChatRequest =
+                serde_json::from_slice(&request.body).context("invalid /api/chat JSON body")?;
             let response = session.run_user_turn(&request.message)?;
             send_json(stream, "200 OK", &response)
         }
@@ -400,8 +398,14 @@ fn read_request(stream: &mut TcpStream) -> Result<Option<HttpRequest>> {
     let mut lines = headers.split("\r\n");
     let request_line = lines.next().context("missing HTTP request line")?;
     let mut request_parts = request_line.split_whitespace();
-    let method = request_parts.next().context("missing HTTP method")?.to_owned();
-    let path = request_parts.next().context("missing HTTP path")?.to_owned();
+    let method = request_parts
+        .next()
+        .context("missing HTTP method")?
+        .to_owned();
+    let path = request_parts
+        .next()
+        .context("missing HTTP path")?
+        .to_owned();
     let content_length = lines
         .filter_map(|line| line.split_once(':'))
         .find(|(name, _)| name.eq_ignore_ascii_case("content-length"))
