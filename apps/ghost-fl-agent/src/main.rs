@@ -370,9 +370,7 @@ fn handle_connection(
             INDEX_HTML.as_bytes(),
         ),
         ("GET", "/api/info") => send_json(stream, "200 OK", &session.info()),
-        ("GET", "/api/scripting/status") => {
-            send_json(stream, "200 OK", &scripting.status())
-        }
+        ("GET", "/api/scripting/status") => send_json(stream, "200 OK", &scripting.status()),
         ("GET", "/api/benchmark-prompt") => send_response(
             stream,
             "200 OK",
