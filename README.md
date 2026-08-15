@@ -53,3 +53,4 @@ FL Studio, Gopher, Ghost Tap loading, and third-party plugin behavior require th
 - [Technical retrospective](docs/TECHNICAL_RETROSPECTIVE.md)
 - [Workspace migration plan](docs/WORKSPACE_MIGRATION_PLAN.md)
 - [ADR 001 — transparent FL Studio adapter](docs/decisions/001-transparent-fl-studio-adapter.md)
+- [Post-reset idea backlog and scorecard](docs/ideas/README.md)
