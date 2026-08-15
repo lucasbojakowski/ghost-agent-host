@@ -374,6 +374,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "ghost-fl-agent"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "ghost-codex",
+ "ghost-fl-studio",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "ghost-fl-studio"
 version = "0.1.0"
 dependencies = [
