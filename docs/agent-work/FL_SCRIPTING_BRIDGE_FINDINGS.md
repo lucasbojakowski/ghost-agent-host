@@ -105,7 +105,7 @@ The signatures were selected against the user-provided runtime-enriched FL Studi
 
 ## Reversible mutation proof
 
-The probe uses mixer-track selection as the first harmless reversible setter test:
+The probe uses mixer-track selection as the first low-impact reversible setter test:
 
 ```text
 read mixer.trackNumber()
@@ -134,13 +134,13 @@ Default Windows test installation:
 powershell -ExecutionPolicy Bypass -File .\apps\ghost-fl-agent\fl-script\install.ps1
 ```
 
-The installer defaults to:
+The installer resolves Windows' `MyDocuments` known folder and appends:
 
 ```text
-%USERPROFILE%\Documents\Image-Line\FL Studio\Settings\Hardware\Ghost Bridge\device_Ghost.py
+Image-Line\FL Studio\Settings\Hardware\Ghost Bridge\device_Ghost.py
 ```
 
-If the FL Studio user-data directory is elsewhere, override the Hardware directory:
+This is typically under the user's Documents folder, but the resolved location may differ (for example when Documents is redirected). If the FL Studio user-data directory is elsewhere, override the Hardware directory:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\apps\ghost-fl-agent\fl-script\install.ps1 `
