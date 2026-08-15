@@ -1,0 +1,31 @@
+name: FL MCP lockfile refresh
+
+on:
+  push:
+    branches: [feat/fl-mcp-2026]
+    paths:
+      - .github/workflows/fl-mcp-lockfile.yml
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/fl-mcp-2026
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo check -p ghost-fl-mcp --all-features
+      - name: Commit generated lockfile
+        shell: bash
+        run: |
+          if git diff --quiet -- Cargo.lock; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Cargo.lock
+          git commit -m "chore(fl-mcp): refresh Cargo.lock"
+          git push origin HEAD:feat/fl-mcp-2026
