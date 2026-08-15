@@ -25,12 +25,18 @@
     .brand { display: flex; align-items: baseline; gap: 10px; }
     .brand strong { font-size: 15px; letter-spacing: .02em; }
     .brand span { color: var(--muted); font-size: 12px; }
-    .status { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 12px; min-width: 0; }
+    .status, .bridge-status { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 12px; min-width: 0; }
     .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: 0 0 auto; }
     .dot.live { background: var(--accent); box-shadow: 0 0 16px rgba(217,255,105,.35); }
     main { width: min(940px, 100%); margin: 0 auto; padding: 32px 20px 180px; }
-    .notice { border: 1px solid var(--line); background: var(--panel); border-radius: 14px; padding: 14px 16px; color: var(--muted); font-size: 13px; line-height: 1.5; margin-bottom: 24px; }
+    .notice { border: 1px solid var(--line); background: var(--panel); border-radius: 14px; padding: 14px 16px; color: var(--muted); font-size: 13px; line-height: 1.5; margin-bottom: 14px; }
     .notice strong { color: var(--text); }
+    .bridge-panel { border: 1px solid var(--line); background: var(--panel); border-radius: 14px; padding: 13px 14px; margin-bottom: 24px; }
+    .bridge-row { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
+    .bridge-copy { display: grid; gap: 5px; min-width: 0; }
+    .bridge-copy strong { font-size: 12px; }
+    .bridge-note { color: var(--muted); font-size: 11px; line-height: 1.4; }
+    .probe-output { margin: 12px 0 0; border-top: 1px solid var(--line); padding-top: 12px; white-space: pre-wrap; overflow-wrap: anywhere; font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--muted); }
     #messages { display: grid; gap: 18px; }
     .message { display: grid; gap: 8px; }
     .role { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .12em; }
@@ -56,7 +62,8 @@
     @media (max-width: 640px) {
       header { align-items: flex-start; flex-direction: column; }
       main { padding-top: 22px; }
-      .actions { align-items: flex-end; }
+      .actions, .bridge-row { align-items: flex-end; }
+      .bridge-row { flex-direction: column; align-items: stretch; }
       .hint { display: none; }
     }
   </style>
@@ -72,6 +79,18 @@
       <div class="notice">
         <strong>Raw phase-one harness.</strong> This persistent agent receives every tool in the live Gopher catalog. There is no Ghost Tap requirement, mixer scope, plugin allowlist, semantic projection, or hidden write filter. FL Studio remains the source of truth.
       </div>
+
+      <section class="bridge-panel" aria-label="FL scripting bridge diagnostics">
+        <div class="bridge-row">
+          <div class="bridge-copy">
+            <div class="bridge-status"><span id="scripting-dot" class="dot"></span><strong>FL scripting bridge</strong><span id="scripting-status">Checking…</span></div>
+            <div class="bridge-note">Experimental app-local path. Virtual MIDI only loads the FL script; RPC stays on loopback TCP and is not exposed to the agent.</div>
+          </div>
+          <button id="scripting-probe" type="button">Run scripting probe</button>
+        </div>
+        <pre id="scripting-output" class="probe-output" hidden></pre>
+      </section>
+
       <section id="messages"></section>
     </main>
 
@@ -98,6 +117,10 @@
     const benchmark = document.querySelector('#benchmark');
     const statusDot = document.querySelector('#status-dot');
     const statusText = document.querySelector('#status-text');
+    const scriptingDot = document.querySelector('#scripting-dot');
+    const scriptingStatus = document.querySelector('#scripting-status');
+    const scriptingProbe = document.querySelector('#scripting-probe');
+    const scriptingOutput = document.querySelector('#scripting-output');
     let busy = false;
 
     function addMessage(role, text, trace = []) {
@@ -144,6 +167,7 @@
       busy = value;
       send.disabled = value;
       benchmark.disabled = value;
+      scriptingProbe.disabled = value;
       prompt.disabled = value;
       send.textContent = value ? 'Working…' : 'Send';
     }
@@ -153,6 +177,54 @@
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || `HTTP ${response.status}`);
       return payload;
+    }
+
+    async function refreshScriptingStatus() {
+      if (busy) return;
+      try {
+        const status = await request('/api/scripting/status');
+        scriptingDot.classList.toggle('live', Boolean(status.connected));
+        if (status.connected) {
+          const fl = status.hello?.flVersion || 'FL Studio';
+          const api = status.hello?.scriptingApiVersion ?? '?';
+          scriptingStatus.textContent = `${fl} · scripting API ${api}`;
+        } else {
+          const detail = status.lastError ? ` · ${status.lastError}` : '';
+          scriptingStatus.textContent = `waiting on ${status.bind}${detail}`;
+        }
+      } catch (error) {
+        scriptingDot.classList.remove('live');
+        scriptingStatus.textContent = `status unavailable · ${error.message}`;
+      }
+    }
+
+    function formatProbe(result) {
+      const lines = [];
+      for (const entry of result.observations || []) {
+        const value = entry.ok ? JSON.stringify(entry.value) : `ERROR ${entry.error}`;
+        lines.push(`${entry.label}: ${value}`);
+      }
+      const mutation = result.reversibleMutation || {};
+      lines.push('');
+      lines.push(`reversible mutation: attempted=${Boolean(mutation.attempted)} changed=${Boolean(mutation.changed)} restored=${Boolean(mutation.restored)}`);
+      if (mutation.error) lines.push(`mutation note: ${mutation.error}`);
+      return lines.join('\n');
+    }
+
+    async function runScriptingProbe() {
+      if (busy) return;
+      setBusy(true);
+      scriptingOutput.hidden = false;
+      scriptingOutput.textContent = 'Running scripting observations and reversible selection check…';
+      try {
+        const result = await request('/api/scripting/probe', { method: 'POST' });
+        scriptingOutput.textContent = formatProbe(result);
+      } catch (error) {
+        scriptingOutput.textContent = `Scripting probe failed: ${error.message}`;
+      } finally {
+        setBusy(false);
+        refreshScriptingStatus();
+      }
     }
 
     async function sendPrompt() {
@@ -174,6 +246,7 @@
       } finally {
         setBusy(false);
         prompt.focus();
+        refreshScriptingStatus();
       }
     }
 
@@ -193,11 +266,13 @@
       } finally {
         setBusy(false);
         prompt.focus();
+        refreshScriptingStatus();
       }
     }
 
     send.addEventListener('click', sendPrompt);
     benchmark.addEventListener('click', buildBenchmark);
+    scriptingProbe.addEventListener('click', runScriptingProbe);
     prompt.addEventListener('keydown', event => {
       if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
@@ -215,6 +290,9 @@
       .catch(error => {
         statusText.textContent = `Disconnected · ${error.message}`;
       });
+
+    refreshScriptingStatus();
+    setInterval(refreshScriptingStatus, 2000);
   </script>
 </body>
 </html>
