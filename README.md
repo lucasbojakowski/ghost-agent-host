@@ -13,7 +13,8 @@ The current reference slice keeps FL Studio authoritative for processors and rou
 - **ghost-context** represents and compiles provider-neutral reasoning context.
 - **ghost-codex** runs persistent Codex App Server threads and dynamic tools without audio/mixing-domain coupling.
 - **ghost-fl-studio** is a transparent, policy-free mirror of the live FL Studio/Gopher interface.
-- **ghost-workflow** composes the current experiment: capture policy, context selection, Codex tool exposure, FL write scope, and verification choices.
+- **ghost-workflow** composes the proven capture → analysis → agent → DAW regression experiment.
+- **ghost-fl-agent** is the next research app: one persistent raw agent over the complete live Gopher catalog, with a local browser chat UI and no Ghost Tap/mixer/plugin assumptions.
 
 ## Workspace
 
@@ -28,6 +29,7 @@ crates/
 
 apps/
   ghost-workflow/
+  ghost-fl-agent/
 
 tools/
   fl-gopher-probe/

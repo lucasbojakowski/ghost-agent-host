@@ -7,6 +7,7 @@ members = [
   "crates/ghost-codex",
   "crates/ghost-fl-studio",
   "apps/ghost-workflow",
+  "apps/ghost-fl-agent",
   "tools/fl-gopher-probe",
 ]
 resolver = "2"
