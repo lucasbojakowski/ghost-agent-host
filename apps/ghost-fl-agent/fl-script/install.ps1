@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [string]$HardwareRoot = (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Image-Line\FL Studio\Settings\Hardware'),
-    [string]$ScriptFolder = 'Ghost Bridge'
+    [string]$ScriptFolder = 'Ghost Bridge',
+    [string]$SharedPythonLib = $env:GHOST_FL_SHARED_PYTHON_LIB
 )
 
 $ErrorActionPreference = 'Stop'
@@ -22,3 +23,24 @@ Copy-Item -LiteralPath $source -Destination (Join-Path $destination 'device_Ghos
 Write-Host "Installed Ghost Bridge FL Studio script to: $destination"
 Write-Host "Expected virtual MIDI bootstrap device: Ghost Midi"
 Write-Host "RPC transport remains loopback TCP; loopMIDI is not used as the data plane."
+
+$nativeRoot = Join-Path (Split-Path -Parent $PSScriptRoot) 'fl-native'
+$nativeArtifact = Get-ChildItem -LiteralPath $nativeRoot -Filter 'ghost_native*.pyd' -ErrorAction SilentlyContinue |
+    Sort-Object LastWriteTime -Descending |
+    Select-Object -First 1
+
+if ($null -eq $nativeArtifact) {
+    Write-Warning "ghost_native .pyd was not found. Build it first with: $nativeRoot\build.ps1"
+    return
+}
+
+if ([string]::IsNullOrWhiteSpace($SharedPythonLib)) {
+    Write-Warning 'Native transport was built but not installed. Pass -SharedPythonLib <FL Studio\Shared\Python\Lib> or set GHOST_FL_SHARED_PYTHON_LIB.'
+    return
+}
+
+New-Item -ItemType Directory -Path $SharedPythonLib -Force | Out-Null
+$nativeDestination = Join-Path $SharedPythonLib $nativeArtifact.Name
+Copy-Item -LiteralPath $nativeArtifact.FullName -Destination $nativeDestination -Force
+Write-Host "Installed Ghost native transport to: $nativeDestination"
+Write-Host 'Close FL Studio before replacing a loaded .pyd, then restart FL Studio.'
