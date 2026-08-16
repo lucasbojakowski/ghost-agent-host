@@ -1,8 +1,27 @@
-# FL Studio native transport probe
+# FL Studio native transport
 
-This directory contains a deliberately small CPython 3.12 Windows extension used to test a native transport boundary inside FL Studio's MIDI scripting subinterpreter.
+This directory contains the CPython 3.12 Windows extension used by the FL Studio MIDI scripting bridge.
 
-It is **not wired into `device_Ghost.py` yet**. The purpose of this step is only to prove that our own subinterpreter-compatible `.pyd` can create a native nonblocking WinSock socket, then attempt a loopback connection without using Python's broken audited `_socket.socket()` path.
+FL Studio 2026 runs MIDI scripts in a CPython 3.12 subinterpreter. Live probing showed that the runtime's audit path is broken for audited operations such as `_socket.socket()` and `_io.FileIO`, while a custom multi-phase native extension declaring per-interpreter support loads and executes normally. `ghost_native` therefore owns only the OS transport boundary and leaves the scripting protocol and FL API dispatch in `device_Ghost.py`.
+
+The transport remains loopback TCP to the existing Rust listener on `127.0.0.1:48766`. No Python `_socket.socket`, `ctypes`, filesystem IPC, or named-pipe data plane is used by the bridge.
+
+## Native API
+
+`ghost_native` exposes a deliberately small nonblocking transport surface:
+
+```python
+status()
+start(host="127.0.0.1", port=48766)  # -> "connected" | "connecting"
+poll()                                # -> "connected" | "connecting" | "disconnected"
+recv(max_bytes=4096)                  # -> bytes | None
+send(data)                             # -> bytes written, 0 when it would block
+close()
+```
+
+The extension also retains `socket_probe()` and `connect_probe()` as diagnostic helpers.
+
+The extension uses per-module state instead of mutable C globals so each importing Python subinterpreter owns its own socket state. WinSock is initialized when the module executes and cleaned up when the module is freed.
 
 ## Build
 
@@ -19,82 +38,46 @@ The build should produce an artifact similar to:
 ghost_native.cp312-win_amd64.pyd
 ```
 
-Copy that file into FL Studio's shared Python library directory, for example:
+Copy that file into FL Studio's shared Python library directory:
 
 ```text
 <FL Studio install>\Shared\Python\Lib\
 ```
 
-Restart/reload the FL scripting environment before importing a replaced `.pyd`.
+FL cannot replace a loaded `.pyd` in-place safely. Close FL Studio before replacing the extension, then restart it.
 
-## Probe 1: native socket creation
+## Live validation
 
-Run from FL Studio's scripting interpreter:
+With `ghost-fl-agent` running and listening on `127.0.0.1:48766`, reload the `Ghost Bridge` MIDI script.
+
+The expected sequence is:
+
+1. `device_Ghost.py` imports `ghost_native` and verifies `API_VERSION == 1`.
+2. `ghost_native.start()` creates a native nonblocking WinSock socket and begins the loopback connection.
+3. `OnIdle()` calls `ghost_native.poll()` until the connection completes; it never waits for the Rust process.
+4. The Python script sends the existing versioned NDJSON hello frame.
+5. Rust reports the scripting bridge as connected.
+6. The existing scripting probe can exercise state reads plus the reversible mixer-selection mutation/restore sequence.
+
+The protocol above the transport is unchanged: bounded newline-delimited JSON, Rust-owned request IDs, explicit allowlisted FL modules, bounded work per `OnIdle()`, reconnect backoff, and no agent exposure in this phase.
+
+## Diagnostic probes
+
+The native socket probe remains available:
 
 ```python
 import ghost_native
-
 print(ghost_native.runtime)
 print(ghost_native.API_VERSION)
-print(ghost_native.ping())
-print(ghost_native.pid())
 print(ghost_native.socket_probe())
 ```
 
-Expected shape:
+A healthy result has `ok=True`, `stage="complete"`, and `nonblocking=True`.
 
-```python
-{
-    "ok": True,
-    "stage": "complete",
-    "winsock_version": 514,
-    "winsock_high_version": 514,
-    "nonblocking": True,
-}
-```
-
-The exact WinSock version integers are diagnostic; `ok=True` is the important result.
-
-`socket_probe()` performs only native calls inside the extension:
-
-1. `WSAStartup(2.2)`
-2. `socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)`
-3. `ioctlsocket(FIONBIO)`
-4. `closesocket()`
-5. `WSACleanup()`
-
-No Python `_socket.socket` object is created.
-
-## Probe 2: native loopback connect
-
-Only run this after `socket_probe()` returns `ok=True`.
-
-Start `ghost-fl-agent` so its scripting listener is active on `127.0.0.1:48766`, then run in FL:
+A one-shot loopback connect probe is also available:
 
 ```python
 print(ghost_native.connect_probe("127.0.0.1", 48766))
 ```
 
-A successful native start returns either:
-
-```python
-{"ok": True, "stage": "connect", "status": "connected", ...}
-```
-
-or:
-
-```python
-{"ok": True, "stage": "connect", "status": "in_progress", ...}
-```
-
-The probe intentionally closes the socket immediately and does not send the Ghost hello frame. The Rust bridge may therefore briefly observe a connection followed by EOF; that is expected for this probe.
-
-A native failure returns a structured WinSock error instead of raising through FL's Python audit path, for example:
-
-```python
-{"ok": False, "stage": "connect", "winerror": 10061}
-```
-
-## Scope
-
-This probe does not change the scripting protocol or expose any new tool surface. If both native probes pass, the next implementation step is to replace only the FL-side `_socket` transport with a small native nonblocking transport API while leaving the Rust listener, NDJSON framing, request IDs, bounded dispatch, allowlisted FL calls, and agent boundary unchanged.
+It intentionally closes the temporary socket immediately, so the Rust listener may observe a connection followed by EOF. Use the wired `Ghost Bridge` script for the actual protocol validation.
