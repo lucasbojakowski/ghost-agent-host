@@ -1,11 +1,17 @@
 # name=Ghost Bridge
 # supportedDevices=Ghost Midi
 
-import _socket as raw_socket
-import errno
 import json
 import os
 import time
+
+try:
+    import ghost_native
+except Exception as error:
+    ghost_native = None
+    _NATIVE_IMPORT_ERROR = error
+else:
+    _NATIVE_IMPORT_ERROR = None
 
 import arrangement
 import channels
@@ -18,6 +24,7 @@ import transport
 import ui
 
 PROTOCOL_VERSION = 1
+NATIVE_API_VERSION = 1
 BRIDGE_NAME = "ghost-fl-scripting"
 BRIDGE_HOST = os.environ.get("GHOST_FL_SCRIPTING_HOST", "127.0.0.1")
 BRIDGE_PORT = int(os.environ.get("GHOST_FL_SCRIPTING_PORT", "48766"))
@@ -44,16 +51,6 @@ ALLOWED_MODULES = {
     "ui": ui,
 }
 
-_IN_PROGRESS = {
-    errno.EINPROGRESS,
-    errno.EWOULDBLOCK,
-    errno.EALREADY,
-    getattr(errno, "WSAEWOULDBLOCK", 10035),
-    getattr(errno, "WSAEINPROGRESS", 10036),
-    getattr(errno, "WSAEALREADY", 10037),
-}
-
-_sock = None
 _connecting = False
 _connected = False
 _receive_buffer = bytearray()
@@ -66,6 +63,9 @@ _last_transport_error_at = 0.0
 
 def OnInit():
     _reset_transport(schedule_reconnect=False)
+    if not _native_transport_available():
+        _report_native_unavailable()
+        return
     _try_connect()
 
 
@@ -74,6 +74,10 @@ def OnDeInit():
 
 
 def OnIdle():
+    if not _native_transport_available():
+        _report_native_unavailable()
+        return
+
     if not _connected:
         _try_connect()
         _finish_connect_if_ready()
@@ -84,60 +88,71 @@ def OnIdle():
     _write_bounded()
 
 
+def _native_transport_available():
+    return ghost_native is not None and getattr(ghost_native, "API_VERSION", None) == NATIVE_API_VERSION
+
+
+def _report_native_unavailable():
+    if ghost_native is None:
+        error = _NATIVE_IMPORT_ERROR or RuntimeError("ghost_native could not be imported")
+        _report_transport_error("native transport unavailable", error)
+        return
+    _report_transport_error(
+        "native transport unavailable",
+        RuntimeError(
+            "ghost_native API version "
+            + repr(getattr(ghost_native, "API_VERSION", None))
+            + " does not match required version "
+            + str(NATIVE_API_VERSION)
+        ),
+    )
+
+
 def _try_connect():
-    global _sock, _connecting, _next_connect_at
-    if _sock is not None or time.monotonic() < _next_connect_at:
+    global _connecting
+    if _connecting or _connected or time.monotonic() < _next_connect_at:
         return
 
-    candidate = None
     try:
-        # FL Studio's embedded Python can load Lib/socket.py while its Python-level
-        # socket.socket subclass fails inside _socket.socket.__init__. Construct the
-        # native socket type directly so we bypass that wrapper entirely.
-        candidate = raw_socket.socket(raw_socket.AF_INET, raw_socket.SOCK_STREAM, 0)
-        candidate.setblocking(False)
-        result = candidate.connect_ex((BRIDGE_HOST, BRIDGE_PORT))
+        status = ghost_native.start(BRIDGE_HOST, BRIDGE_PORT)
     except Exception as error:
-        if candidate is not None:
-            try:
-                candidate.close()
-            except Exception:
-                pass
-        _report_transport_error("socket setup/connect failed", error)
+        _report_transport_error("native connect start failed", error)
         _schedule_reconnect()
         return
 
-    if result == 0:
-        _sock = candidate
+    if status == "connected":
         _mark_connected()
         return
-    if result in _IN_PROGRESS:
-        _sock = candidate
+    if status == "connecting":
         _connecting = True
         return
 
-    candidate.close()
-    _report_transport_error("connect_ex failed", OSError(result, "connect_ex"))
-    _schedule_reconnect()
+    _report_transport_error("native connect start failed", RuntimeError("unexpected status: " + repr(status)))
+    _reset_transport(schedule_reconnect=True)
 
 
 def _finish_connect_if_ready():
     global _connecting
-    if _sock is None or not _connecting:
+    if not _connecting or _connected:
         return
 
     try:
-        error = _sock.getsockopt(raw_socket.SOL_SOCKET, raw_socket.SO_ERROR)
+        status = ghost_native.poll()
     except Exception as error:
-        _report_transport_error("connect completion failed", error)
+        _report_transport_error("native connect completion failed", error)
         _reset_transport(schedule_reconnect=True)
         return
 
-    if error == 0:
+    if status == "connected":
         _connecting = False
         _mark_connected()
-    elif error not in _IN_PROGRESS:
-        _report_transport_error("connect completion failed", OSError(error, "SO_ERROR"))
+    elif status == "connecting":
+        return
+    else:
+        _report_transport_error(
+            "native connect completion failed",
+            RuntimeError("unexpected status: " + repr(status)),
+        )
         _reset_transport(schedule_reconnect=True)
 
 
@@ -179,26 +194,28 @@ def _safe_api_version():
 
 
 def _read_bounded():
-    if _sock is None:
-        return
-
     for _ in range(MAX_READS_PER_IDLE):
         try:
-            chunk = _sock.recv(IO_CHUNK_BYTES)
-        except BlockingIOError:
-            return
+            chunk = ghost_native.recv(IO_CHUNK_BYTES)
         except Exception as error:
-            _report_transport_error("socket read failed", error)
+            _report_transport_error("native socket read failed", error)
             _reset_transport(schedule_reconnect=True)
             return
 
+        if chunk is None:
+            return
         if not chunk:
-            _report_transport_error("socket read failed", EOFError("bridge closed the connection"))
+            _report_transport_error("native socket read failed", EOFError("bridge closed the connection"))
             _reset_transport(schedule_reconnect=True)
             return
 
         if len(_receive_buffer) + len(chunk) > MAX_BUFFER_BYTES:
             _receive_buffer.clear()
+            _report_transport_error(
+                "native socket read failed",
+                BufferError("receive buffer exceeded bridge limit"),
+            )
+            _reset_transport(schedule_reconnect=True)
             return
         _receive_buffer.extend(chunk)
 
@@ -316,23 +333,23 @@ def _queue_message(message):
 
 
 def _write_bounded():
-    if _sock is None:
-        return
-
     for _ in range(MAX_WRITES_PER_IDLE):
         if not _send_buffer:
             return
-        chunk = _send_buffer[:IO_CHUNK_BYTES]
+        chunk = bytes(_send_buffer[:IO_CHUNK_BYTES])
         try:
-            count = _sock.send(chunk)
-        except BlockingIOError:
-            return
+            count = ghost_native.send(chunk)
         except Exception as error:
-            _report_transport_error("socket write failed", error)
+            _report_transport_error("native socket write failed", error)
             _reset_transport(schedule_reconnect=True)
             return
-        if count <= 0:
-            _report_transport_error("socket write failed", OSError("send returned zero bytes"))
+        if count == 0:
+            return
+        if count < 0 or count > len(chunk):
+            _report_transport_error(
+                "native socket write failed",
+                OSError("native send returned an invalid byte count"),
+            )
             _reset_transport(schedule_reconnect=True)
             return
         del _send_buffer[:count]
@@ -349,13 +366,12 @@ def _report_transport_error(context, error):
 
 
 def _reset_transport(schedule_reconnect):
-    global _sock, _connecting, _connected, _next_connect_at, _reconnect_delay
-    if _sock is not None:
+    global _connecting, _connected, _next_connect_at, _reconnect_delay
+    if ghost_native is not None:
         try:
-            _sock.close()
+            ghost_native.close()
         except Exception:
             pass
-    _sock = None
     _connecting = False
     _connected = False
     _receive_buffer.clear()
