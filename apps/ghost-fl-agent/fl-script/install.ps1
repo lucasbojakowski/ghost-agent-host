@@ -2,7 +2,7 @@
 param(
     [string]$HardwareRoot = (Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'Image-Line\FL Studio\Settings\Hardware'),
     [string]$ScriptFolder = 'Ghost Bridge',
-    [string]$SharedPythonLib = $env:GHOST_FL_SHARED_PYTHON_LIB
+    [string]$SharedPythonLib = 'D:\Image-Line\FL Studio 2026\Shared\Python\Lib'
 )
 
 $ErrorActionPreference = 'Stop'
