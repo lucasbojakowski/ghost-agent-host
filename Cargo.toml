@@ -9,6 +9,7 @@ members = [
   "apps/ghost-workflow",
   "apps/ghost-fl-agent",
   "tools/fl-gopher-probe",
+  "tools/analyse-full",
 ]
 resolver = "2"
 

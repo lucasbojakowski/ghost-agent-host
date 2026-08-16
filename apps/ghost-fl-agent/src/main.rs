@@ -160,6 +160,7 @@ fn main() -> Result<()> {
         "[ghost-fl-agent] started persistent thread {} using {}",
         thread.id, thread.model
     );
+    println!("[ghost-fl-agent] WARNING: Codex turns run with full host filesystem access");
 
     let scripting = ScriptingBridge::start(
         &cli.scripting_bind,
@@ -247,7 +248,7 @@ impl AgentSession {
         let output = self.runtime.run_turn(
             &self.thread,
             &input,
-            &TurnOptions::default(),
+            &full_access_turn_options(),
             &mut |event| {
                 if verbose {
                     println!("[ghost-fl-agent] agent event: {event:?}");
@@ -285,6 +286,13 @@ impl AgentSession {
             thread_id: self.thread.id.clone(),
             trace,
         })
+    }
+}
+
+fn full_access_turn_options() -> TurnOptions {
+    TurnOptions {
+        sandbox_policy: serde_json::json!({"type": "dangerFullAccess"}),
+        ..TurnOptions::default()
     }
 }
 
@@ -508,5 +516,22 @@ mod tests {
         assert!(BENCHMARK_SETUP_PROMPT.contains("fresh or disposable"));
         assert!(BENCHMARK_SETUP_PROMPT.contains("BENCHMARK_SETUP_GREEN"));
         assert!(BENCHMARK_SETUP_PROMPT.contains("BENCHMARK_SETUP_ABORTED"));
+    }
+
+    #[test]
+    fn agent_turns_use_full_access_without_changing_global_defaults() {
+        let options = full_access_turn_options();
+        assert_eq!(
+            options.sandbox_policy,
+            serde_json::json!({"type": "dangerFullAccess"})
+        );
+        assert_eq!(options.approval_policy, "never");
+        assert_eq!(
+            TurnOptions::default().sandbox_policy,
+            serde_json::json!({
+                "type": "readOnly",
+                "access": {"type": "fullAccess"}
+            })
+        );
     }
 }

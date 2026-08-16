@@ -32,6 +32,7 @@ apps/
   ghost-fl-agent/
 
 tools/
+  analyse-full/
   fl-gopher-probe/
 ```
 
