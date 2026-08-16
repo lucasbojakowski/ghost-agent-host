@@ -4,19 +4,24 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$pythonArgs = @()
+if ([System.IO.Path]::GetFileNameWithoutExtension($PythonLauncher) -eq 'py') {
+    $pythonArgs += '-3.12'
+}
+
 Push-Location $PSScriptRoot
 try {
-    & $PythonLauncher -3.12 -c "import sys; assert sys.version_info[:2] == (3, 12), sys.version"
+    & $PythonLauncher @pythonArgs -c "import sys; assert sys.version_info[:2] == (3, 12), sys.version"
     if ($LASTEXITCODE -ne 0) {
-        throw 'Python 3.12 is required to build the FL Studio cp312 probe.'
+        throw 'Python 3.12 is required to build the FL Studio cp312 extension.'
     }
 
-    & $PythonLauncher -3.12 -c "import setuptools"
+    & $PythonLauncher @pythonArgs -c "import setuptools"
     if ($LASTEXITCODE -ne 0) {
-        throw 'setuptools is required. Install it with: py -3.12 -m pip install setuptools'
+        throw 'setuptools is required. Install it for the selected Python 3.12 interpreter.'
     }
 
-    & $PythonLauncher -3.12 setup.py build_ext --inplace
+    & $PythonLauncher @pythonArgs setup.py build_ext --inplace
     if ($LASTEXITCODE -ne 0) {
         throw 'Native extension build failed.'
     }
