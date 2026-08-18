@@ -16,23 +16,53 @@ The experiment asks a narrower question:
 
 > How far can a frontier agent get in real FL Studio work when it receives the faithful live Gopher tool catalog with only minimal harness instructions?
 
-## Branch experiment: FL scripting bridge
+## Frozen behavioral baseline
 
-`feat/fl-scripting-bridge` preserves the proven Gopher baseline and adds a second, app-local experiment for FL Studio MIDI Scripting.
+The raw agent behavior in this app is now a control group. Its Codex tool registry must remain the complete live Gopher catalog only.
 
-Read these branch documents before implementing or modifying that work:
+The scripting bridge was originally implemented here to prove transport feasibility. That proof succeeded in the real FL Studio runtime, but scripting calls are still deliberately separate from the raw agent registry.
+
+On `feat/fl-scripting-framework`, reusable scripting transport/protocol/assets are promoted into a dedicated lower-layer crate while this app remains the Gopher-only behavioral baseline.
+
+Read:
+
+- [`docs/FL_SCRIPTING_JOURNEY.md`](../../docs/FL_SCRIPTING_JOURNEY.md)
+- [`docs/agent-work/FL_SCRIPTING_FRAMEWORK.md`](../../docs/agent-work/FL_SCRIPTING_FRAMEWORK.md)
+- [`docs/agent-work/FL_SCRIPTING_FRAMEWORK_IMPLEMENTATION_PROMPT.md`](../../docs/agent-work/FL_SCRIPTING_FRAMEWORK_IMPLEMENTATION_PROMPT.md)
+
+The target reusable crate is:
+
+```text
+crates/ghost-fl-scripting/
+```
+
+The target combined Gopher + scripting research app is:
+
+```text
+apps/ghost-fl-workspace/
+```
+
+Do not turn `ghost-fl-agent` itself into that combined app.
+
+## Source experiment: FL scripting bridge
+
+`feat/fl-scripting-bridge` preserved the proven Gopher baseline and added a second, initially app-local experiment for FL Studio MIDI Scripting.
+
+Historical branch documents:
 
 - [`docs/agent-work/FL_SCRIPTING_BRIDGE.md`](../../docs/agent-work/FL_SCRIPTING_BRIDGE.md)
 - [`docs/agent-work/FL_SCRIPTING_BRIDGE_IMPLEMENTATION_PROMPT.md`](../../docs/agent-work/FL_SCRIPTING_BRIDGE_IMPLEMENTATION_PROMPT.md)
 - [`docs/agent-work/FL_SCRIPTING_BRIDGE_FINDINGS.md`](../../docs/agent-work/FL_SCRIPTING_BRIDGE_FINDINGS.md)
 
-The topology is **virtual MIDI for FL auto-load only** plus an outbound, nonblocking localhost socket from the FL controller script back to the Rust app. The first runtime proof uses the user's existing loopMIDI endpoint `Ghost Midi`; native Windows MIDI Services/CoreMIDI endpoint creation is explicitly later work.
+The final live-proven topology is **virtual MIDI for FL auto-load only** plus an outbound, nonblocking localhost connection implemented through a subinterpreter-compatible native CPython extension. The Python-level socket constructor was not viable in FL's embedded runtime; `ghost_native` owns native WinSock while `device_Ghost.py` owns bounded FL callback/protocol dispatch.
 
-Do not redesign or "improve" the Gopher tool surface while doing the scripting bridge experiment.
+The current test bootstrap uses the user's loopMIDI endpoint `Ghost Midi`; native Windows MIDI Services/CoreMIDI endpoint creation is explicitly later work.
+
+Do not redesign or "improve" the Gopher tool surface while extracting scripting.
 
 ### Install the FL controller script for the Windows test
 
-The source is bundled at:
+On the source experiment, the script is bundled at:
 
 ```text
 apps/ghost-fl-agent/fl-script/device_Ghost.py
@@ -45,7 +75,7 @@ Its controller metadata is:
 # supportedDevices=Ghost Midi
 ```
 
-Default install:
+Default source-branch install:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\apps\ghost-fl-agent\fl-script\install.ps1
@@ -60,7 +90,9 @@ powershell -ExecutionPolicy Bypass -File .\apps\ghost-fl-agent\fl-script\install
 
 The installer does not create a virtual MIDI endpoint. `Ghost Midi` remains temporary external test infrastructure.
 
-### Run the combined raw-agent + scripting experiment
+`feat/fl-scripting-framework` should update these commands/paths once the script/native assets move into `crates/ghost-fl-scripting`.
+
+### Run the raw-agent + scripting diagnostic source app
 
 Prerequisites remain the normal Gopher/CDP prerequisites below. The scripting listener defaults to `127.0.0.1:48766`:
 
@@ -74,7 +106,7 @@ Then open:
 http://127.0.0.1:48765
 ```
 
-The existing UI shows a separate **FL scripting bridge** status and a **Run scripting probe** developer action. Scripting calls are not added to the Codex tool registry on this branch.
+The UI shows a separate **FL scripting bridge** status and a **Run scripting probe** developer action. Scripting calls are not added to the Codex tool registry.
 
 Useful scripting options:
 
@@ -91,7 +123,7 @@ $env:GHOST_FL_SCRIPTING_PORT = "48767"
 cargo run -p ghost-fl-agent -- --i-accept-live-fl-writes --scripting-bind 127.0.0.1:48767
 ```
 
-See the findings document for the exact Windows/FL validation procedure and the boundary between deterministic validation and live proprietary-runtime evidence.
+See the journey document for the exact live runtime findings and the regression baseline.
 
 ## Run
 
@@ -135,7 +167,7 @@ This app adds only minimal agent instructions about live-state discipline, disco
 
 The coarse `--i-accept-live-fl-writes` gate exists because the raw catalog includes destructive operations. There is deliberately no hidden per-tool write policy in phase one.
 
-The scripting bridge is separate from that agent tool surface. It is currently a transport/state probe used from the developer UI, not an additional raw-tool registry.
+The scripting bridge is separate from that agent tool surface. It is a transport/state probe used from the developer UI, not an additional raw-tool registry.
 
 ## Browser chat
 
@@ -151,18 +183,18 @@ browser
 
 Completed turns return the final assistant text plus a compact native-tool trace for inspection in the chat UI. Streaming, profiles, approvals, persistence and richer trajectory capture belong to later phases after the raw baseline is measured.
 
-The same page now also exposes app-local scripting diagnostics:
+The same page also exposes scripting diagnostics:
 
 ```text
 browser
   -> GET /api/scripting/status
   -> POST /api/scripting/probe
-  -> Rust scripting bridge
+  -> Rust scripting adapter/bridge
   -> outbound-connected FL device script
   -> FL Studio MIDI Scripting API
 ```
 
-This second path remains separate from Codex/Gopher during the transport experiment.
+This path remains separate from Codex/Gopher in this baseline app even after its reusable transport is extracted.
 
 ## Benchmark Session A setup
 
@@ -182,7 +214,7 @@ A GREEN result is an early signal that the raw agent can coordinate many indepen
 
 ## Phase-one limits
 
-This app intentionally does not yet provide:
+This app intentionally does not itself provide:
 
 - readonly/studio/raw profiles;
 - structured scenario runner or deterministic verifiers;
@@ -194,4 +226,4 @@ This app intentionally does not yet provide:
 - native Windows MIDI Services/CoreMIDI virtual endpoint creation;
 - any `ghost-application` abstractions for the scripting bridge.
 
-Those should be driven by evidence from this app rather than designed in advance.
+The new `ghost-fl-workspace` app is where combined-surface experiments should happen.
