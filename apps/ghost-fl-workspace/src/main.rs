@@ -149,7 +149,8 @@ fn main() -> Result<()> {
         bind: cli.scripting_bind.clone(),
         call_timeout: Duration::from_millis(cli.scripting_timeout_ms),
     })?);
-    let registry = build_workspace_registry(&manifest, Arc::clone(&gopher), Arc::clone(&scripting))?;
+    let registry =
+        build_workspace_registry(&manifest, Arc::clone(&gopher), Arc::clone(&scripting))?;
     let total_tool_count = registry.definitions().len();
 
     println!(
