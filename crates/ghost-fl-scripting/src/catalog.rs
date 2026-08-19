@@ -3,9 +3,8 @@ use std::collections::BTreeSet;
 use serde::Serialize;
 use thiserror::Error;
 
-const ENRICHED_SIGNATURES: &str = include_str!(
-    "../../../docs/daw-apis/fl-studio/fl_studio_api_dump.enriched.signatures"
-);
+const ENRICHED_SIGNATURES: &str =
+    include_str!("../../../docs/daw-apis/fl-studio/fl_studio_api_dump.enriched.signatures");
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
@@ -301,7 +300,9 @@ impl PendingFunction {
             .split_once('(')
             .map(|(function, _)| function.trim())
             .filter(|function| is_identifier(function))
-            .ok_or_else(|| CatalogError::Parse(format!("invalid function signature `{signature}`")))?;
+            .ok_or_else(|| {
+                CatalogError::Parse(format!("invalid function signature `{signature}`"))
+            })?;
         Ok(Self {
             module,
             function: function.to_owned(),
@@ -315,19 +316,18 @@ impl PendingFunction {
 
     fn finish(self) -> FlScriptingFunction {
         let minimum_api_version = self.api_version.as_deref().and_then(first_unsigned_integer);
-        let (bridge_callable, unsupported_reason) = if crate::adapter::BRIDGE_MODULES
-            .contains(&self.module.as_str())
-        {
-            bridge_support(
-                self.arguments.as_deref().unwrap_or_default(),
-                self.returns.as_deref().unwrap_or_default(),
-            )
-        } else {
-            (
-                false,
-                Some("module is not imported by the current FL scripting bridge".into()),
-            )
-        };
+        let (bridge_callable, unsupported_reason) =
+            if crate::adapter::BRIDGE_MODULES.contains(&self.module.as_str()) {
+                bridge_support(
+                    self.arguments.as_deref().unwrap_or_default(),
+                    self.returns.as_deref().unwrap_or_default(),
+                )
+            } else {
+                (
+                    false,
+                    Some("module is not imported by the current FL scripting bridge".into()),
+                )
+            };
         FlScriptingFunction {
             module: self.module,
             function: self.function,
