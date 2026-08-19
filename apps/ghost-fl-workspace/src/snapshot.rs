@@ -53,12 +53,7 @@ pub(crate) fn capture_workspace_snapshot(scripting: &FlScriptingAdapter) -> Work
             "selectionEnd",
             vec![],
         ),
-        (
-            "focusedPluginName",
-            "ui",
-            "getFocusedPluginName",
-            vec![],
-        ),
+        ("focusedPluginName", "ui", "getFocusedPluginName", vec![]),
         (
             "focusedWindowCaption",
             "ui",
@@ -66,12 +61,7 @@ pub(crate) fn capture_workspace_snapshot(scripting: &FlScriptingAdapter) -> Work
             vec![],
         ),
         ("songPosition", "transport", "getSongPos", vec![]),
-        (
-            "songPositionHint",
-            "transport",
-            "getSongPosHint",
-            vec![],
-        ),
+        ("songPositionHint", "transport", "getSongPosHint", vec![]),
         ("loopMode", "transport", "getLoopMode", vec![]),
         ("isPlaying", "transport", "isPlaying", vec![]),
     ] {
