@@ -50,12 +50,11 @@ as the authoritative architecture/scope document for this branch.
 Also search the repository before implementation for these research artifacts:
 
 ```text
-fl_studio_api_dump.enriched.signatures.txt
+fl_studio_api_dump.enriched.signatures
 MCPTools.api.txt
-MCPTools.api.json
 ```
 
-Current known repository location for the Gopher artifacts is under `docs/daw-apis/fl-studio/`, but do not assume the enriched scripting artifact has the same final path. Search.
+Current known repository location for the fl-apis artifacts is under `docs/daw-apis/fl-studio/`.
 
 ## Proven live facts — do not regress them
 
