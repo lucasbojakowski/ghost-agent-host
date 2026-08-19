@@ -71,76 +71,16 @@ fn run_scripting_probe(scripting: &FlScriptingAdapter) -> Result<ScriptingProbe>
     }
 
     let mut observations = vec![
-        probe(
-            scripting,
-            "scriptingApiVersion",
-            "general",
-            "getVersion",
-            vec![],
-        ),
-        probe(
-            scripting,
-            "flVersion",
-            "ui",
-            "getVersion",
-            vec![json!(5)],
-        ),
-        probe(
-            scripting,
-            "projectTitle",
-            "general",
-            "getProjectTitle",
-            vec![],
-        ),
-        probe(
-            scripting,
-            "projectChangedFlag",
-            "general",
-            "getChangedFlag",
-            vec![],
-        ),
-        probe(
-            scripting,
-            "safeToEdit",
-            "general",
-            "safeToEdit",
-            vec![],
-        ),
-        probe(
-            scripting,
-            "selectedChannel",
-            "channels",
-            "channelNumber",
-            vec![],
-        ),
-        probe(
-            scripting,
-            "selectedMixerTrack",
-            "mixer",
-            "trackNumber",
-            vec![],
-        ),
-        probe(
-            scripting,
-            "mixerTrackCount",
-            "mixer",
-            "trackCount",
-            vec![],
-        ),
-        probe(
-            scripting,
-            "currentPattern",
-            "patterns",
-            "patternNumber",
-            vec![],
-        ),
-        probe(
-            scripting,
-            "patternCount",
-            "patterns",
-            "patternCount",
-            vec![],
-        ),
+        probe(scripting, "scriptingApiVersion", "general", "getVersion", vec![]),
+        probe(scripting, "flVersion", "ui", "getVersion", vec![json!(5)]),
+        probe(scripting, "projectTitle", "general", "getProjectTitle", vec![]),
+        probe(scripting, "projectChangedFlag", "general", "getChangedFlag", vec![]),
+        probe(scripting, "safeToEdit", "general", "safeToEdit", vec![]),
+        probe(scripting, "selectedChannel", "channels", "channelNumber", vec![]),
+        probe(scripting, "selectedMixerTrack", "mixer", "trackNumber", vec![]),
+        probe(scripting, "mixerTrackCount", "mixer", "trackCount", vec![]),
+        probe(scripting, "currentPattern", "patterns", "patternNumber", vec![]),
+        probe(scripting, "patternCount", "patterns", "patternCount", vec![]),
     ];
 
     if let Some(pattern) = observation_i64(&observations, "currentPattern") {
@@ -168,13 +108,7 @@ fn run_scripting_probe(scripting: &FlScriptingAdapter) -> Result<ScriptingProbe>
             "selectionEnd",
             vec![],
         ),
-        probe(
-            scripting,
-            "focusedPluginName",
-            "ui",
-            "getFocusedPluginName",
-            vec![],
-        ),
+        probe(scripting, "focusedPluginName", "ui", "getFocusedPluginName", vec![]),
         probe(
             scripting,
             "focusedWindowCaption",
@@ -182,13 +116,7 @@ fn run_scripting_probe(scripting: &FlScriptingAdapter) -> Result<ScriptingProbe>
             "getFocusedFormCaption",
             vec![],
         ),
-        probe(
-            scripting,
-            "songPosition",
-            "transport",
-            "getSongPos",
-            vec![],
-        ),
+        probe(scripting, "songPosition", "transport", "getSongPos", vec![]),
         probe(
             scripting,
             "songPositionHint",
@@ -196,20 +124,8 @@ fn run_scripting_probe(scripting: &FlScriptingAdapter) -> Result<ScriptingProbe>
             "getSongPosHint",
             vec![],
         ),
-        probe(
-            scripting,
-            "loopMode",
-            "transport",
-            "getLoopMode",
-            vec![],
-        ),
-        probe(
-            scripting,
-            "isPlaying",
-            "transport",
-            "isPlaying",
-            vec![],
-        ),
+        probe(scripting, "loopMode", "transport", "getLoopMode", vec![]),
+        probe(scripting, "isPlaying", "transport", "isPlaying", vec![]),
     ]);
 
     if let (Some(start), Some(end)) = (
