@@ -163,9 +163,8 @@ impl FlScriptingAdapter {
             .local_addr()
             .map_err(|error| FlScriptingError::Transport(error.to_string()))?
             .to_string();
-        let catalog = Arc::new(
-            FlScriptingCatalog::bundled().map_err(FlScriptingError::Configuration)?,
-        );
+        let catalog =
+            Arc::new(FlScriptingCatalog::bundled().map_err(FlScriptingError::Configuration)?);
         let state = Arc::new(Mutex::new(AdapterState {
             connection: None,
             status: AdapterStatus {
@@ -394,10 +393,12 @@ fn prepare_connection(
 ) -> Result<(BridgeConnection, FlScriptingHello), String> {
     stream
         .set_read_timeout(Some(SOCKET_POLL))
-        .map_err(|error| format!("failed to configure FL scripting socket read timeout: {error}"))?;
-    stream
-        .set_write_timeout(Some(timeout))
-        .map_err(|error| format!("failed to configure FL scripting socket write timeout: {error}"))?;
+        .map_err(|error| {
+            format!("failed to configure FL scripting socket read timeout: {error}")
+        })?;
+    stream.set_write_timeout(Some(timeout)).map_err(|error| {
+        format!("failed to configure FL scripting socket write timeout: {error}")
+    })?;
     stream
         .set_nodelay(true)
         .map_err(|error| format!("failed to configure FL scripting TCP_NODELAY: {error}"))?;
@@ -424,7 +425,9 @@ fn prepare_connection(
                     ));
                 }
                 IncomingMessage::Result(_) => {
-                    return Err("FL scripting client sent a result before the hello handshake".into());
+                    return Err(
+                        "FL scripting client sent a result before the hello handshake".into(),
+                    );
                 }
             }
         }
