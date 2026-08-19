@@ -90,9 +90,10 @@ fn register_scripting_gateway(
         "fl_scripting_search" => {
             let catalog = scripting.catalog();
             registry.register(definition, move |arguments| {
-                let request: ScriptingSearchArgs = serde_json::from_value(arguments).map_err(
-                    |error| ToolError(format!("invalid scripting search arguments: {error}")),
-                )?;
+                let request: ScriptingSearchArgs =
+                    serde_json::from_value(arguments).map_err(|error| {
+                        ToolError(format!("invalid scripting search arguments: {error}"))
+                    })?;
                 search_scripting_catalog(&catalog, &request.query, request.module.as_deref())
                     .map_err(ToolError)
             })?;
@@ -100,9 +101,10 @@ fn register_scripting_gateway(
         "fl_scripting_describe" => {
             let catalog = scripting.catalog();
             registry.register(definition, move |arguments| {
-                let request: ScriptingDescribeArgs = serde_json::from_value(arguments).map_err(
-                    |error| ToolError(format!("invalid scripting describe arguments: {error}")),
-                )?;
+                let request: ScriptingDescribeArgs =
+                    serde_json::from_value(arguments).map_err(|error| {
+                        ToolError(format!("invalid scripting describe arguments: {error}"))
+                    })?;
                 describe_scripting_function(&catalog, &request.module, &request.function)
                     .map_err(ToolError)
             })?;
@@ -110,9 +112,10 @@ fn register_scripting_gateway(
         "fl_scripting_call" => {
             let adapter = Arc::clone(scripting);
             registry.register(definition, move |arguments| {
-                let request: ScriptingCallArgs = serde_json::from_value(arguments).map_err(
-                    |error| ToolError(format!("invalid scripting call arguments: {error}")),
-                )?;
+                let request: ScriptingCallArgs =
+                    serde_json::from_value(arguments).map_err(|error| {
+                        ToolError(format!("invalid scripting call arguments: {error}"))
+                    })?;
                 adapter
                     .call(&request.module, &request.function, request.args)
                     .map_err(|error| ToolError(error.to_string()))
@@ -124,11 +127,8 @@ fn register_scripting_gateway(
 }
 
 fn workspace_tool_definitions(manifest: &FlStudioManifest) -> Vec<ToolDefinition> {
-    let mut definitions: Vec<ToolDefinition> = manifest
-        .tools
-        .iter()
-        .map(gopher_tool_definition)
-        .collect();
+    let mut definitions: Vec<ToolDefinition> =
+        manifest.tools.iter().map(gopher_tool_definition).collect();
     definitions.extend(scripting_gateway_definitions());
     definitions
 }
@@ -209,9 +209,7 @@ fn search_scripting_catalog(
         .functions()
         .iter()
         .filter(|entry| module.is_none_or(|name| entry.module.eq_ignore_ascii_case(name)))
-        .filter_map(|entry| {
-            search_score(entry, &lowered_query, &terms).map(|score| (score, entry))
-        })
+        .filter_map(|entry| search_score(entry, &lowered_query, &terms).map(|score| (score, entry)))
         .collect();
 
     matches.sort_by(|(score_a, entry_a), (score_b, entry_b)| {
