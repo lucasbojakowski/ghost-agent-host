@@ -1,0 +1,2336 @@
+FL STUDIO API ARGUMENTS AND RETURNS
+Runtime generated: 2026-08-15 02:36:02
+Documentation: https://www.image-line.com/fl-studio-learning-content/fl-studio-online-manual/html/midi_scripting.htm
+Matched functions: 362
+Documented overloads: 363
+
+==============================================================================
+MODULE: arrangement
+
+addAutoTimeMarker(int time, string name) -> None
+  Arguments: int time, string name
+  Returns: -
+  Description: Add an automatic time marker at "time" with its name set to "name"
+  API version: 1
+
+currentTime(int snap) -> int
+  Arguments: int snap
+  Returns: int
+  Description: Returns the current time in the current arrangement - set "snap" to True, to get returned value snapped to the grid.
+  API version: 1
+
+currentTimeHint(int mode, int time, (int setRecPPB = ), (int isLength = 0)) -> string
+  Arguments: int mode, int time, (int setRecPPB = ), (int isLength = 0)
+  Returns: string
+  Description: Returns a hint string for the requested "time" in the current arrangement - "mode" is 0 for pattern mode and 1 for song mode.
+  API version: 1
+
+getMarkerName(int index) -> string
+  Arguments: int index
+  Returns: string
+  Description: Returns the name of the requested marker - If the marker doesn't exist, an empty string is returned.
+  API version: 1
+
+jumpToMarker(int delta, int select) -> None
+  Arguments: int delta, int select
+  Returns: -
+  Description: Select a marker - set "delta" to -1, to select the previous marker or to +1 to select the next marker - set "select" to True to select marker as well.
+  API version: 1
+
+liveSelection(int time, int stop) -> None
+  Arguments: int time, int stop
+  Returns: -
+  Description: Set a live selection point at "time" - set "stop" to True, to use end point of the selection (instead of start).
+  API version: 1
+
+liveSelectionStart() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns the start time of the current live selection.
+  API version: 1
+
+selectionEnd() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns the end time of the current selection in the current arrangement.
+  API version: 1
+
+selectionStart() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns the start time of the current selection in the current arrangement.
+  API version: 1
+
+==============================================================================
+MODULE: channels
+
+channelCount((int globalCount* = 0)) -> int
+  Arguments: (int globalCount* = 0)
+  Returns: int
+  Description: Returns the number of channels respecting groups - set optional globalCount* parameter to 1 to get count of all channels
+  API version: 1, *3
+
+channelNumber((int canBeNone = 0), (int offset = 0)) -> int
+  Arguments: (int canBeNone = 0), (int offset = 0)
+  Returns: int
+  Description: Returns 'indexGlobal' of the first selected channel When there is no selection, function will return -1 (or 0 if canBeNone is 1) Use optional 'offset' parameter to find other selected channels
+  API version: 1
+
+deselectAll() -> None
+  Arguments: -
+  Returns: -
+  Description: Deselect all channels in the current channel group.
+  API version: 1
+
+focusEditor(int index, (bool useGlobalIndex* = False)) -> None
+  Arguments: int index, (bool useGlobalIndex* = False)
+  Returns: -
+  Description: Focus editor (plugin window) for channel at "index".
+  API version: 1, *33
+
+getActivityLevel(int index, (bool useGlobalIndex* = False)) -> float
+  Arguments: int index, (bool useGlobalIndex* = False)
+  Returns: float
+  Description: Returns activity level for channel at "index".
+  API version: 9, *33
+
+getChannelColor(int index, (bool useGlobalIndex* = False)) -> int
+  Arguments: int index, (bool useGlobalIndex* = False)
+  Returns: int
+  Description: Returns the color of the channel at "index".
+  API version: 1, *33
+
+getChannelIndex(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Returns 'indexGlobal' for channel at "index" (respecting the groups).
+  API version: 1
+
+getChannelMidiInPort(int index, (bool useGlobalIndex* = False)) -> int
+  Arguments: int index, (bool useGlobalIndex* = False)
+  Returns: int
+  Description: Returns MIDI port for channel at "index" or one of the following: -3 receive notes from touch keyboard -2 this channel will only receive notes when it's the selected channel -1 receive notes from typing keyboard
+  API version: 1, *33
+
+getChannelName(int index, (bool useGlobalIndex* = False)) -> string
+  Arguments: int index, (bool useGlobalIndex* = False)
+  Returns: string
+  Description: Returns the name of the channel at "index".
+  API version: 1, *33
+
+getChannelPan(int index, (bool useGlobalIndex* = False)) -> float
+  Arguments: int index, (bool useGlobalIndex* = False)
+  Returns: float
+  Description: Returns the pan value for the channel at "index", as a value between -1.0 and +1.0.
+  API version: 1, *33
+
+getChannelType(int index, (bool useGlobalIndex* = False)) -> int
+  Arguments: int index, (bool useGlobalIndex* = False)
+  Returns: int
+  Description: Returns the type of channel, can be one of the following values
+  API version: 19, *33
+
+getChannelVolume(int index, (int useDb* = 0), (bool useGlobalIndex** = False)) -> float
+  Arguments: int index, (int useDb* = 0), (bool useGlobalIndex** = False)
+  Returns: float
+  Description: Returns the normalized volume (between 0 and 1.0) of the channel at "index" - set optional useDb to 1 to get volume in dB
+  API version: 1, *14, **33
+
+getCurrentStepParam(int index, int step, int param , (bool useGlobalIndex = False)) -> int
+  Arguments: int index, int step, int param , (bool useGlobalIndex = False)
+  Returns: int
+  Description: Get current step parameter for channel at "index" and for step at "step".
+  API version: 1
+
+getGridBit(int index, int position, (bool useGlobalIndex* = False)) -> int
+  Arguments: int index, int position, (bool useGlobalIndex* = False)
+  Returns: int
+  Description: Returns grid bit at "position" for channel at "index".
+  API version: 1, *33
+
+getGridBitWithLoop(int index, int position, (bool useGlobalIndex* = False)) -> int
+  Arguments: int index, int position, (bool useGlobalIndex* = False)
+  Returns: int
+  Description: Get grid bit with loop for channel at "index".
+  API version: 1, *33
+
+getRecEventId(int index, (bool useGlobalIndex* = False)) -> int
+  Arguments: int index, (bool useGlobalIndex* = False)
+  Returns: int
+  Description: Returns eventID for channel at "index". Use this eventID in processRECEvent . Example (to get eventId for volume of first channel): eventId = midi.REC_Chan_Vol + channels.getRecEventId(0)
+  API version: 1
+
+getStepParam(int step, int param , int offset, int startPos, (int padsStride = 16), (bool useGlobalIndex* = False)) -> int
+  Arguments: int step, int param , int offset, int startPos, (int padsStride = 16), (bool useGlobalIndex* = False)
+  Returns: int
+  Description: Get step parameter for step at "step"
+  API version: 1, *33
+
+getTargetFxTrack(int index, (bool useGlobalIndex* = False)) -> int
+  Arguments: int index, (bool useGlobalIndex* = False)
+  Returns: int
+  Description: Returns target FX track for channel at "index".
+  API version: 1, *33
+
+incEventValue(int eventId, int step, float res*) -> int
+  Arguments: int eventId, int step, float res*
+  Returns: int
+  Description: Get event value increased by step. Use (optional*) res paremeter to specify increment resolution. Use result as new value in processRECEvent Example (to increase volume of first channel): step = 1 eventId = midi.REC_Chan_Vol + channels.getRecEventId(0) newValue = channels.incEventValue(eventId, step) general.processRECEvent(eventId, newValue, midi.REC_UpdateValue | midi.REC_UpdateControl)
+  API version: 1, *20: res is optional, default = 1/24
+
+isChannelMuted(int index, (bool useGlobalIndex* = False)) -> int
+  Arguments: int index, (bool useGlobalIndex* = False)
+  Returns: int
+  Description: Returns True if the channel at "index" is muted.
+  API version: 1, *33
+
+isChannelSelected(int index, (bool useGlobalIndex* = False)) -> int
+  Arguments: int index, (bool useGlobalIndex* = False)
+  Returns: int
+  Description: Returns True if the channel at "index" is selected.
+  API version: 1, *33
+
+isChannelSolo(int index, (bool useGlobalIndex* = False)) -> int
+  Arguments: int index, (bool useGlobalIndex* = False)
+  Returns: int
+  Description: Returns True if the channel at "index" is soloed.
+  API version: 1, *33
+
+isGridBitAssigned(int index, (bool useGlobalIndex* = False)) -> int
+  Arguments: int index, (bool useGlobalIndex* = False)
+  Returns: int
+  Description: Returns 1 when grid bit for channel at "index" is assigned.
+  API version: 30, *33
+
+isHighLighted() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns True when red highlight rectangle is active in channel rack.
+  API version: 1
+
+midiNoteOn(int indexGlobal, int note, int velocity, (int channel = -1)) -> None
+  Arguments: int indexGlobal, int note, int velocity, (int channel = -1)
+  Returns: -
+  Description: Set MIDI note for channel at "indexGlobal".
+  API version: 1
+
+muteChannel(int index, (int value = -1), (bool useGlobalIndex* = False)) -> None
+  Arguments: int index, (int value = -1), (bool useGlobalIndex* = False)
+  Returns: -
+  Description: Toggles the muted state of the channel at "index" if value is default, otherwise mute channel if value is 1, or unmute if value is 0.
+  API version: 1, *33
+
+quickQuantize(int index, (int startOnly = 1), (bool useGlobalIndex* = False)) -> None
+  Arguments: int index, (int startOnly = 1), (bool useGlobalIndex* = False)
+  Returns: -
+  Description: Perform quick quantize for channel at "index".
+  API version: 9, *33
+
+rerollLoopStarterLoop(int index, (bool useGlobalIndex = True)) -> None
+  Arguments: int index, (bool useGlobalIndex = True)
+  Returns: -
+  Description: Same as clicking the dice button on Loopstarter audio loops channels.
+  API version: 39
+
+selectAll() -> None
+  Arguments: -
+  Returns: -
+  Description: Select all channels in the current channel group.
+  API version: 1
+
+selectChannel(int index, (int value = -1), (bool useGlobalIndex* = False)) -> None
+  Arguments: int index, (int value = -1), (bool useGlobalIndex* = False)
+  Returns: -
+  Description: Toggle the selection of the channel at "index" - to not toggle, set value to 1 (select) or 0 (deselect)
+  API version: 1, *33
+
+selectOneChannel(int index, (bool useGlobalIndex* = False)) -> None
+  Arguments: int index, (bool useGlobalIndex* = False)
+  Returns: -
+  Description: Select channel at "index" exclusively.
+  API version: 8, *33
+
+selectedChannel((int canBeNone = 0), (int offset = 0), (int indexGlobal = 0)) -> int
+  Arguments: (int canBeNone = 0), (int offset = 0), (int indexGlobal = 0)
+  Returns: int
+  Description: Returns 'index' (respecting groups) of the first selected channel When there is no selection, function will return 0 (or -1 if canBeNone is 1) Use optional 'offset' parameter to find other selected channels Set optional 'indexGlobal' to 1 to return global channel index instead of index respecting groups
+  API version: 5
+
+setChannelColor(int index, int color, (bool useGlobalIndex* = False)) -> None
+  Arguments: int index, int color, (bool useGlobalIndex* = False)
+  Returns: -
+  Description: Changes the color of the channel at "index" to the value of "color".
+  API version: 1, *33
+
+setChannelName(int index, string name, (bool useGlobalIndex* = False)) -> None
+  Arguments: int index, string name, (bool useGlobalIndex* = False)
+  Returns: -
+  Description: Changes the name of the channel at "index" to "name".
+  API version: 1, *33
+
+setChannelPan(int index, float pan, (int pickupMode * = PIM_None), (bool useGlobalIndex** = False)) -> None
+  Arguments: int index, float pan, (int pickupMode * = PIM_None), (bool useGlobalIndex** = False)
+  Returns: -
+  Description: Change the pan value of the channel at "index" to the value of "pan" - The value should be between -1.0 and +1.0 - use optional pickupMode to override FL default pickup option
+  API version: 1, *13, **33
+
+setChannelPitch(int index, float value, (int pitchUnit = 0), (int pickupMode * = PIM_None), (bool useGlobalIndex** = False)) -> None
+  Arguments: int index, float value, (int pitchUnit = 0), (int pickupMode * = PIM_None), (bool useGlobalIndex** = False)
+  Returns: -
+  Description: Change the pitch value of the channel at "index" - The value should be between -1.0 and +1.0 - use optional pitchUnit parameter to send value in semitones (pitchUnit = 1) or to change pitch range (pitchUnit = 2) use optional pickupMode to override FL default pickup option
+  API version: 8, *13, **33
+
+setChannelVolume(int index, float volume, (int pickupMode * = PIM_None), (bool useGlobalIndex** = False)) -> None
+  Arguments: int index, float volume, (int pickupMode * = PIM_None), (bool useGlobalIndex** = False)
+  Returns: -
+  Description: Changes the volume for the channel at "index" - volume is a value between 0 and 1.0 use optional pickupMode to override FL default pickup option
+  API version: 1, *13, **33
+
+setGridBit(int index, int position, int value, (bool useGlobalIndex* = False)) -> None
+  Arguments: int index, int position, int value, (bool useGlobalIndex* = False)
+  Returns: -
+  Description: Set grid bit value at "position" for channel at "index".
+  API version: 1, *33
+
+setStepParameterByIndex(int index, int patNum, int step, int param , int value, (bool useGlobalIndex = False)) -> None
+  Arguments: int index, int patNum, int step, int param , int value, (bool useGlobalIndex = False)
+  Returns: -
+  Description: Set current step parameter for channel at "index" and for step at "step". set optional useGlobalIndex to 1 to use global channel index
+  API version: 1
+
+setTargetFxTrack(int channelIndex, int mixerIndex, (bool useGlobalIndex* = False)) -> None
+  Arguments: int channelIndex, int mixerIndex, (bool useGlobalIndex* = False)
+  Returns: -
+  Description: Routes the channel at "channelIndex" to the mixer track at "mixerIndex".
+  API version: 28, *33
+
+showCSForm(int index, (int state* = 1), (bool useGlobalIndex** = False)) -> None
+  Arguments: int index, (int state* = 1), (bool useGlobalIndex** = False)
+  Returns: -
+  Description: Show channel settings (or plugin window for plugins) for channel at "index" - use optional state to 0 (close), 1 (open), -1 (toggle) channel settings window
+  API version: 1, *9, **33
+
+showEditor(int index, (int value* = -1), (bool useGlobalIndex** = False)) -> None
+  Arguments: int index, (int value* = -1), (bool useGlobalIndex** = False)
+  Returns: -
+  Description: Show editor (plugin window) for channel at "index" - set optional 'value'* to 1 to show or to 0 to hide editor
+  API version: 1, *3, **33
+
+showGraphEditor(bool temporary, int param , int step, int index, (bool useGlobalIndex* = False)) -> None
+  Arguments: bool temporary, int param , int step, int index, (bool useGlobalIndex* = False)
+  Returns: -
+  Description: Show graph editor for channel at "index" and for step at "step". set temporary to false to keep editor open
+  API version: 1, *20
+
+soloChannel(int index, (int value* = -1), (bool useGlobalIndex** = False)) -> None
+  Arguments: int index, (int value* = -1), (bool useGlobalIndex** = False)
+  Returns: -
+  Description: Toggles the state of the channel at "index" if value is default. Otherwise solo channel if value is 1 and unsolo if value is 0.
+  API version: 1, *30, **33
+
+==============================================================================
+MODULE: device
+
+baseTrackSelect(int index, int step) -> None
+  Arguments: int index, int step
+  Returns: -
+  Description: Base track selection (for control surfaces). Set step to MaxInt for reset.
+  API version: 1
+
+createRefreshThread() -> None
+  Arguments: -
+  Returns: -
+  Description: Start a threaded refresh of the entire MIDI device.
+  API version: 1
+
+destroyRefreshThread() -> None
+  Arguments: -
+  Returns: -
+  Description: Stop a previously started threaded refresh.
+  API version: 1
+
+directFeedback(eventData) -> None
+  Arguments: eventData
+  Returns: -
+  Description: Send a received message on to the (linked) output interface - use this function inside OnMidiMsg and pass (modified) eventData object as function parameter
+  API version: 1
+
+dispatch(int ctrlIndex, int message, (bytes sysex)) -> None
+  Arguments: int ctrlIndex, int message, (bytes sysex)
+  Returns: -
+  Description: Dispatch midi message (or sysex) to controller specified by ctrlIndex - receiver (script) must define sender(s) inside script: # receiveFrom="Sender name"
+  API version: 1
+
+dispatchGetReceiverPortNumber(int ctrlIndex) -> int
+  Arguments: int ctrlIndex
+  Returns: int
+  Description: Returns port number of receiver specified by ctrlIndex.
+  API version: 5
+
+dispatchReceiverCount() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns number of available receivers.
+  API version: 1
+
+findEventID(int controlId, (int flags = [])) -> int
+  Arguments: int controlId, (int flags = [])
+  Returns: int
+  Description: Returns eventID for controlId or REC_InvalidID when nothing is linked to this control "flags" can be one of the: FEID_Flags_Skip_Unsafe = 1 (skip unsafe (using formula) links)
+  API version: 1
+
+forwardMIDICC(int message, (int forwardTo = 1)) -> None
+  Arguments: int message, (int forwardTo = 1)
+  Returns: -
+  Description: Forward CC message to plugin - Use this function to forward midi cc messages to FL plugin(s) - Specify message as: message = status + (data1 << 8) + (data2 << 16) + (port << 24) Message will be forwarded to active (focused) plugin - Use optional forwardTo parameter to send message to selected channel (forwardTo = 2) or to all plugins (0) - Remark: midi input port of plugin must be equal to port specified in message.
+  API version: 7
+
+fullRefresh() -> None
+  Arguments: -
+  Returns: -
+  Description: Trigger a previously started threaded refresh - If there is none, the refresh is triggered immediately.
+  API version: 1
+
+getDeviceID() -> bytes
+  Arguments: 
+  Returns: bytes
+  Description: Returns the ID of the device, which is the identifying component of its response to a universal device enquiry Sysex message. Note that this does not include the Sysex header (0xF0, 0x7E, 0x01, 0x06, 0x02), or the ending byte (0xF7). Also note that for many devices, it will also contain the firmware version, meaning that you should may wish to ignore the final 4 bytes of the response.
+  API version: 25
+
+getLinkedChannel(int eventID) -> int
+  Arguments: int eventID
+  Returns: int
+  Description: Returns MIDI channel number for linked control via eventID (to get control eventId, use findEventID function) - Result is -1 if there is no linked control.
+  API version: 27
+
+getLinkedInfo(int eventID) -> int
+  Arguments: int eventID
+  Returns: int
+  Description: Returns information about the linked control via eventID (to get control eventId, use findEventID function) - Result is -1 if there is no linked control, otherwise result is one or more of the constants
+  API version: 1
+
+getLinkedParamName(int eventID) -> string
+  Arguments: int eventID
+  Returns: string
+  Description: Returns parameter name of the control linked via eventID (to get control eventId, use findEventID function) - Result is ERR_PLUGINNOTVALID if there is no linked control.
+  API version: 10
+
+getLinkedValue(int eventID) -> float
+  Arguments: int eventID
+  Returns: float
+  Description: Returns normalized value of the linked control via eventID (to get control eventId, use findEventID function) - Result is -1 if there is no linked control.
+  API version: 1
+
+getLinkedValueString(int eventID) -> string
+  Arguments: int eventID
+  Returns: string
+  Description: Returns text value of linked control via eventID (to get control eventId, use findEventID function) - Result is ERR_PLUGINNOTVALID if there is no linked control.
+  API version: 10
+
+getMasterSync() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns 'send master synch' state for current device (1 = enableb)
+  API version: 19
+
+getName() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns the device name
+  API version: 7
+
+getPortNumber() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns the interface port number. (or -1 when port number is not assigned) this is same number as interface port number set in FL Studio Midi settings
+  API version: 1
+
+hardwareRefreshMixerTrack(int index) -> None
+  Arguments: int index
+  Returns: -
+  Description: Let FL Studio dispatch OnDirtyMixerTrack event to all midi devices. Use index = -1 for all tracks
+  API version: 1
+
+isAssigned() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns True if (linked) output interface is assigned.
+  API version: 1
+
+isDoubleClick(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Returns True if the function was called with the same index shortly before, indicating a float click.
+  API version: 1
+
+linkToLastTweaked(int controlIndex, int channel, (int globalLink, int eventID)) -> int
+  Arguments: int controlIndex, int channel, (int globalLink, int eventID)
+  Returns: int
+  Description: this function will create a regular (or global) controller link for the last tweaked parameter. set optional eventID to assign link to specific control instead of last tweaked control function returns (0) on success, (1) when nothing was tweaked or (2) when control is in use
+  API version: 21
+
+midiOutMsg(int message) -> None [overload 1]
+  Arguments: int message
+  Returns: -
+  Description: Send a MIDI message to the (linked) output interface - "message" holds the value to be sent, with the channel and command in the lower byte and the first and second data values in the next two bytes.
+  API version: 1
+
+midiOutMsg(int midiId, int channel, int data1, int data2) -> None [overload 2]
+  Arguments: int midiId, int channel, int data1, int data2
+  Returns: -
+  Description: Send a MIDI message to the (linked) output interface (alternative version with separate parameters)
+  API version: 2
+
+midiOutNewMsg(int slotIndex, int message) -> None
+  Arguments: int slotIndex, int message
+  Returns: -
+  Description: Send a MIDI message to the (linked) output interface, but only if the value has changed - "slotIndex" is a value chosen by the caller, it should be the same as it was for the previous message that should be compared with - "message" holds the value to be sent.
+  API version: 1
+
+midiOutSysex(string message) -> None
+  Arguments: string message
+  Returns: -
+  Description: Send a SYSEX message to the (linked) output interface.
+  API version: 1
+
+processMIDICC(eventData) -> None
+  Arguments: eventData
+  Returns: -
+  Description: Let FL process a CC message - use this function inside OnMidiMsg and pass (modified) eventData object as function parameter
+  API version: 1
+
+repeatMidiEvent(eventData , (int delay = 300, int rate = 300)) -> None
+  Arguments: eventData , (int delay = 300, int rate = 300)
+  Returns: -
+  Description: Start repeatedly sending out the previously sent message - It will be sent first after "delay" milliseconds, and afterwards every "rate" milliseconds.
+  API version: 1
+
+setHasMeters() -> None
+  Arguments: -
+  Returns: -
+  Description: use this in OnInit event to tell FL Studio device use peak meters
+  API version: 1
+
+setMasterSync(int value) -> None
+  Arguments: int value
+  Returns: -
+  Description: Toggle (value = 1 to enable, 0 to disable) send master synch for current device
+  API version: 18
+
+stopRepeatMidiEvent() -> None
+  Arguments: -
+  Returns: -
+  Description: Stop repeating the message sent with repeatMidiEvent.
+  API version: 1
+
+==============================================================================
+MODULE: general
+
+clearLog() -> None
+  Arguments: -
+  Returns: -
+  Description: Clear log
+  API version: 15
+
+dumpScoreLog(int time, (int silent = 0)) -> None
+  Arguments: int time, (int silent = 0)
+  Returns: -
+  Description: Dump score log, specify time to dump (time), use optional (silent) flag to supress message when score is empty
+  API version: 15
+
+getChangedFlag() -> int
+  Arguments: -
+  Returns: int
+  Description: Get FL Studio project "changed' flag Result is one of the: 0 = clean, 1 = dirty, 2 = dirty but clean for autosave
+  API version: 1
+
+getPrecount() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns precount value
+  API version: 1
+
+getProjectAuthor() -> string
+  Arguments: -
+  Returns: string
+  Description: Returns project author
+  API version: 38
+
+getProjectGenre() -> string
+  Arguments: -
+  Returns: string
+  Description: Returns project genre
+  API version: 38
+
+getProjectTitle() -> string
+  Arguments: -
+  Returns: string
+  Description: Returns project title
+  API version: 38
+
+getRecPPB() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns the current time signature value. (Timebase * Numerator)
+  API version: 1
+
+getRecPPQ() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns the current timebase (PPQ)
+  API version: 8
+
+getUndoHistoryCount() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns undo history length
+  API version: 1
+
+getUndoHistoryLast() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns last undo history position
+  API version: 1
+
+getUndoHistoryPos() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns undo history position
+  API version: 1
+
+getUndoLevelHint() -> string
+  Arguments: -
+  Returns: string
+  Description: Returns undo level hint
+  API version: 1
+
+getUseMetronome() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns True when metronome is used
+  API version: 1
+
+getVersion() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns Midi scripting API version number
+  API version: 1
+
+restoreUndoLevel(int level) -> None
+  Arguments: int level
+  Returns: -
+  Description: Restore to specific undo point (level)
+  API version: 1
+
+safeToEdit() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns 1 when safe to use setter functions
+  API version: 29
+
+saveUndo(string undoName, int flags , (int updateHistory = 1)) -> None
+  Arguments: string undoName, int flags , (int updateHistory = 1)
+  Returns: -
+  Description: Saves undo history point (level) set optional updateHistory parameter to 0 to hide undo point in browser history
+  API version: 1
+
+setDenominator(int denominator) -> 
+  Arguments: int denominator
+  Returns: 
+  Description: Set denominator
+  API version: 38
+
+setNumerator(int numerator) -> 
+  Arguments: int numerator
+  Returns: 
+  Description: Set numerator
+  API version: 38
+
+setRecPPQ(int ppq) -> 
+  Arguments: int ppq
+  Returns: 
+  Description: Set current timebase (PPQ)
+  API version: 38
+
+setUndoHistoryCount(int value) -> None
+  Arguments: int value
+  Returns: -
+  Description: Set undo history count
+  API version: 1
+
+setUndoHistoryLast(int index) -> None
+  Arguments: int index
+  Returns: -
+  Description: Set undo history last position
+  API version: 1
+
+setUndoHistoryPos(int index) -> None
+  Arguments: int index
+  Returns: -
+  Description: Set undo history position
+  API version: 1
+
+undo() -> int
+  Arguments: -
+  Returns: int
+  Description: Undo last history level this function mimic FL Studio CTRL+Z functionality: it steps forward through the history, unless you are at the latest step (in this case, undo works as the standard one step undo/redo shortcut).
+  API version: 1
+
+undoDown() -> int
+  Arguments: -
+  Returns: int
+  Description: Move down in undo history (down one level)
+  API version: 4
+
+undoUp() -> int
+  Arguments: -
+  Returns: int
+  Description: Move up in undo history (up one level)
+  API version: 1
+
+undoUpDown(int offset) -> int
+  Arguments: int offset
+  Returns: int
+  Description: Move up or down in undo history by offset
+  API version: 1
+
+==============================================================================
+MODULE: launchMapPages
+
+checkMapForHiddenItem() -> None
+  Arguments: -
+  Returns: -
+  Description: Checks for launchpad hidden item.
+  API version: 1
+
+createOverlayMap(int offColor, int onColor, int width, int height) -> None
+  Arguments: int offColor, int onColor, int width, int height
+  Returns: -
+  Description: Creates overlay map.
+  API version: 1
+
+getMapCount(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Returns length of items of page at "index"
+  API version: 1
+
+getMapItemAftertouch(int index, int itemIndex) -> int
+  Arguments: int index, int itemIndex
+  Returns: int
+  Description: Returns aftertouch for item at "itemIndex" of page at "index"
+  API version: 1
+
+getMapItemChannel(int index, int itemIndex) -> int
+  Arguments: int index, int itemIndex
+  Returns: int
+  Description: Returns destination channel at "itemIndex" of page at "index"
+  API version: 1
+
+getMapItemColor(int index, int itemIndex) -> int
+  Arguments: int index, int itemIndex
+  Returns: int
+  Description: Returns color at "itemIndex" of page at "index"
+  API version: 1
+
+init(string deviceName , int width, int height) -> None
+  Arguments: string deviceName , int width, int height
+  Returns: -
+  Description: Initialize launchmap pages.
+  API version: 1
+
+length() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns launchmap pages length.
+  API version: 1
+
+processMapItem(eventData , int index, int itemIndex, int velocity) -> None
+  Arguments: eventData , int index, int itemIndex, int velocity
+  Returns: -
+  Description: Process map item at "itemIndex" of page at "index"
+  API version: 1
+
+releaseMapItem(eventData , int index) -> None
+  Arguments: eventData , int index
+  Returns: -
+  Description: Release map item at "itemIndex" of page at "index"
+  API version: 1
+
+setMapItemTarget(int index, int itemIndex, int target) -> int
+  Arguments: int index, int itemIndex, int target
+  Returns: int
+  Description: Set target for item at "itemIndex" of page at "index".
+  API version: 1
+
+updateMap(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Updates launchmap page at "index".
+  API version: 1
+
+==============================================================================
+MODULE: mixer
+
+afterRoutingChanged() -> None
+  Arguments: -
+  Returns: -
+  Description: Notify FL about routing changes.
+  API version: 1
+
+armTrack(int index) -> None
+  Arguments: int index
+  Returns: -
+  Description: Toggle the armed state of the track at index.
+  API version: 1
+
+automateEvent(int index, int value, int flags , (int speed = 0), (int isIncrement = 0), (float res = EKRes)) -> int
+  Arguments: int index, int value, int flags , (int speed = 0), (int isIncrement = 0), (float res = EKRes)
+  Returns: int
+  Description: Automate event
+  API version: 1
+
+deselectAll() -> None
+  Arguments: -
+  Returns: -
+  Description: Deselect all mixer tracks.
+  API version: 1
+
+enableTrack(int index) -> None
+  Arguments: int index
+  Returns: -
+  Description: Toggle the enabled state of the track at index.
+  API version: 1
+
+enableTrackSlots(int index, (int value = -1)) -> int
+  Arguments: int index, (int value = -1)
+  Returns: int
+  Description: Toggle mixer track (index) 'Enable effect slots' option. (value: -1 = toggle, 0 = disable, 1 = enable)
+  API version: 19
+
+focusEditor(int index, int plugIndex) -> None
+  Arguments: int index, int plugIndex
+  Returns: -
+  Description: Focus editor (plugin window) for plugIndex on the track at "index".
+  API version: 25
+
+getActiveEffectIndex() -> tuple[int index, int plugIndex] | None
+  Arguments: -
+  Returns: tuple[int index, int plugIndex] | None
+  Description: Returns tracks index and pluIndex for focused effect editor or none of no effect editor is focused.
+  API version: 25
+
+getAutoSmoothEventValue(int index, (int locked = 1)) -> int
+  Arguments: int index, (int locked = 1)
+  Returns: int
+  Description: Returns auto smooth event value.
+  API version: 1
+
+getCurrentTempo((int asInt = 0)) -> int/float
+  Arguments: (int asInt = 0)
+  Returns: int/float
+  Description: Returns current tempo - set optional "asInt" to True to get result as int
+  API version: 1
+
+getEqBandCount() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns number of Eq bands
+  API version: 35
+
+getEqBandwidth(int index, int band) -> float
+  Arguments: int index, int band
+  Returns: float
+  Description: Returns Eq bandwidth for band in track (index) as normalized value.
+  API version: 35
+
+getEqFrequency(int index, int band, (int mode)) -> float
+  Arguments: int index, int band, (int mode)
+  Returns: float
+  Description: Returns Eq frequency for band in track (index) as normalized value. Set optional mode to 1 to get value in Hz.
+  API version: 35
+
+getEqGain(int index, int band, (int mode)) -> float
+  Arguments: int index, int band, (int mode)
+  Returns: float
+  Description: Returns Eq gain for band in track (index) as normalized value. Set optional mode to 1 to get value in Db.
+  API version: 35
+
+getEventIDName(int index, (int shortName = 0)) -> str
+  Arguments: int index, (int shortName = 0)
+  Returns: str
+  Description: Returns event name (set shortName to True for short name).
+  API version: 1
+
+getEventIDValueString(int index, int value) -> string
+  Arguments: int index, int value
+  Returns: string
+  Description: Returns event value as string.
+  API version: 1
+
+getEventValue(int index, (int value = MaxInt), (int smoothTarget = 1)) -> int
+  Arguments: int index, (int value = MaxInt), (int smoothTarget = 1)
+  Returns: int
+  Description: Returns event value from MIDI.
+  API version: 1
+
+getLastPeakVol(int audioChannel) -> float
+  Arguments: int audioChannel
+  Returns: float
+  Description: Returns last peak volume. Set audioChannel to 0 for left volume or to 1 for right volume.
+  API version: 9
+
+getPluginMixLevel(int index, int plugIndex) -> float
+  Arguments: int index, int plugIndex
+  Returns: float
+  Description: Returns value of mix level for plugin at plugIndex on mixer track at index.
+  API version: 37
+
+getRecPPS() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns recording pps.
+  API version: 1
+
+getRouteSendActive(int index, int destIndex) -> int
+  Arguments: int index, int destIndex
+  Returns: int
+  Description: Returns True if route sends from track at index to "destIndex" is active.
+  API version: 1
+
+getRouteToLevel(int index, int destIndex) -> float
+  Arguments: int index, int destIndex
+  Returns: float
+  Description: Get routeTo levelas normalized value
+  API version: 36
+
+getSlotColor(int index, int slot) -> int
+  Arguments: int index, int slot
+  Returns: int
+  Description: Returns the color of the slot of the track at index as an RGBA value.
+  API version: 32
+
+getSongStepPos() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns song step position.
+  API version: 1
+
+getSongTickPos((int mode = ST_Int)) -> int/float
+  Arguments: (int mode = ST_Int)
+  Returns: int/float
+  Description: Returns song ticks pos.
+  API version: 1
+
+getTrackColor(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Returns the color of the track at index.
+  API version: 1
+
+getTrackCount() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns the number of tracks excluding Master track and special "Current" utility track
+  API version: 38
+
+getTrackDockSide(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Returns dock side of the mixer track (index). (0 = left, 1 = center, 2 = right) listen to OnRefresh event (HW_Dirty_Mixer_Controls) flag to update on dock changes
+  API version: 13
+
+getTrackInfo(int trackType) -> int
+  Arguments: int trackType
+  Returns: int
+  Description: Returns track info.
+  API version: 1
+
+getTrackName(int index, (int maxLen = -1)) -> string
+  Arguments: int index, (int maxLen = -1)
+  Returns: string
+  Description: Returns the name of the track at index.
+  API version: 1
+
+getTrackPan(int index) -> float
+  Arguments: int index
+  Returns: float
+  Description: Returns the pan value (between -1.0 and 1.0) for the track at index.
+  API version: 1
+
+getTrackPeaks(int index, int mode) -> float
+  Arguments: int index, int mode
+  Returns: float
+  Description: Returns peaks for track at "index" returned value is between 0 (silence) and 1 (0db) or < 1 (clipping)
+  API version: 1
+
+getTrackPluginId(int index, int plugIndex) -> int
+  Arguments: int index, int plugIndex
+  Returns: int
+  Description: Returns plugin id of plugin with plugIndex on the track at index.
+  API version: 1
+
+getTrackRecordingFileName(int index) -> string
+  Arguments: int index
+  Returns: string
+  Description: Returns recording file name for track at "index"
+  API version: 1
+
+getTrackStereoSep(int index) -> float
+  Arguments: int index
+  Returns: float
+  Description: Returns the stereo separation value (between -1.0 and 1.0) for the track at index - set optional 'pickup' to 1 to use pickup function, or to 2 to follow FL global pickup setting
+  API version: 12, 13(pickup)
+
+getTrackVolume(int index, (int mode* = 0)) -> float
+  Arguments: int index, (int mode* = 0)
+  Returns: float
+  Description: Returns the normalized volume (between 0 and 1.0) of the track at index - set optional mode to 1 to get volume in dB
+  API version: 1, *14
+
+isTrackArmed(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Returns True if the track at index is armed.
+  API version: 1
+
+isTrackAutomationEnabled(int index, int plugIndex) -> None
+  Arguments: int index, int plugIndex
+  Returns: -
+  Description: Returns True if the track at index has automation enabled.
+  API version: 1
+
+isTrackEnabled(int index) -> None
+  Arguments: int index
+  Returns: -
+  Description: Returns True if the track at index is enabled.
+  API version: 1
+
+isTrackMuteLock(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Returns True if the Mute for track at index is locked.
+  API version: 13
+
+isTrackMuted(int index) -> None
+  Arguments: int index
+  Returns: -
+  Description: Returns True if the track at index is muted.
+  API version: 2
+
+isTrackPluginValid(int index, int plugIndex) -> int
+  Arguments: int index, int plugIndex
+  Returns: int
+  Description: Returns True if plugin with plugIndex on the track at index. is valid
+  API version: 1
+
+isTrackRevPolarity(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Returns state of mixer track (index) 'reverse polarity' option.
+  API version: 19
+
+isTrackSelected(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Returns True if the track at index is selected.
+  API version: 1
+
+isTrackSlotsEnabled(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Returns state of mixer track (index) 'Enable effect slots' option.
+  API version: 19
+
+isTrackSolo(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Returns True if the track at index is soloed.
+  API version: 1
+
+isTrackSwapChannels(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Returns state of mixer track (index) 'swap l/r channels' option.
+  API version: 19
+
+linkChannelToTrack(int channel, int track, (int select = 0)) -> None
+  Arguments: int channel, int track, (int select = 0)
+  Returns: -
+  Description: Link channel to track "channel" is channel index respecting groups, set optional 'select' to 1 to make track selected
+  API version: 23
+
+linkTrackToChannel(int mode) -> None
+  Arguments: int mode
+  Returns: -
+  Description: Link track to channel "mode" can be one of the: ROUTE_ToThis = 0, ROUTE_StartingFromThis = 1
+  API version: 1
+
+muteTrack(int index, (int value* = -1)) -> None
+  Arguments: int index, (int value* = -1)
+  Returns: -
+  Description: Toggles the Mute status of the track at index if value is default. Otherwise mutes track if value is 1 and unmutes if value is 0.
+  API version: 2, *30
+
+remoteFindEventValue(int index, (int flags = 0)) -> float
+  Arguments: int index, (int flags = 0)
+  Returns: float
+  Description: Returns event value.
+  API version: 1
+
+revTrackPolarity(int index, (int value = -1)) -> int
+  Arguments: int index, (int value = -1)
+  Returns: int
+  Description: Toggle mixer track (index) 'reverse polarity' option. (value: -1 = toggle, 0 = disable, 1 = enable)
+  API version: 19
+
+selectAll() -> None
+  Arguments: -
+  Returns: -
+  Description: Select all mixer tracks.
+  API version: 1
+
+selectTrack(int index) -> None
+  Arguments: int index
+  Returns: -
+  Description: Toggle selection of the track at index.
+  API version: 1
+
+setActiveTrack(int index) -> None
+  Arguments: int index
+  Returns: -
+  Description: Exclusively select the track at index.
+  API version: 27
+
+setCurrentTempo(float/int tempo, (int asInt = 0)) -> 
+  Arguments: float/int tempo, (int asInt = 0)
+  Returns: 
+  Description: Set current tempo - set optional "asInt" to True to set result as int
+  API version: 38
+
+setEqBandwidth(int index, int band, float value) -> None
+  Arguments: int index, int band, float value
+  Returns: -
+  Description: Set Eq bandwidth for band in track (index) as normalized value.
+  API version: 35
+
+setEqFrequency(int index, int band, float value) -> None
+  Arguments: int index, int band, float value
+  Returns: -
+  Description: Set Eq frequency for band in track (index) as normalized value.
+  API version: 35
+
+setEqGain(int index, int band, float value) -> None
+  Arguments: int index, int band, float value
+  Returns: -
+  Description: Set Eq gain for band in track (index) as normalized value.
+  API version: 35
+
+setPluginMixLevel(int index, int plugIndex, value float, (int pickupMode * = PIM_None)) -> None
+  Arguments: int index, int plugIndex, value float, (int pickupMode * = PIM_None)
+  Returns: -
+  Description: Set value for mix level for plugin at plugIndex on mixer track at index.
+  API version: 37
+
+setRouteTo(int index, int destIndex, int value, (bool updateUI* = False)) -> None
+  Arguments: int index, int destIndex, int value, (bool updateUI* = False)
+  Returns: -
+  Description: Set route for track at index to "destIndex". Set optional updateUI to true to update mixer UI (same as afterRoutingChanged)
+  API version: 1, *36
+
+setRouteToLevel(int index, int destIndex, float level) -> None
+  Arguments: int index, int destIndex, float level
+  Returns: -
+  Description: Set routeTo level, level is normalized value
+  API version: 36
+
+setSlotColor(int index, int slot, int color) -> None
+  Arguments: int index, int slot, int color
+  Returns: -
+  Description: Changes the color of the slot track at index to the value of "color".
+  API version: 32
+
+setTrackColor(int index, int color) -> None
+  Arguments: int index, int color
+  Returns: -
+  Description: Changes the color of the track at index to "color".
+  API version: 1
+
+setTrackName(int index, string name) -> None
+  Arguments: int index, string name
+  Returns: -
+  Description: Changes the name of the track at index to "name".
+  API version: 1
+
+setTrackNumber(int index, (int flags = -1)) -> None
+  Arguments: int index, (int flags = -1)
+  Returns: -
+  Description: Sets the currently selected mixer track.
+  API version: 1
+
+setTrackPan(int index, float pan, (int pickupMode * = PIM_None)) -> None
+  Arguments: int index, float pan, (int pickupMode * = PIM_None)
+  Returns: -
+  Description: Changes the panning for the track at index. pan value is between -1.0 and 1.0 - use optional pickupMode to override FL default pickup option
+  API version: 1, 13(pickup)
+
+setTrackStereoSep(int index, float sep, (int pickupMode = 0)) -> None
+  Arguments: int index, float sep, (int pickupMode = 0)
+  Returns: -
+  Description: Changes the stereo separation for the track at index. sep value is between -1.0 and 1.0.
+  API version: 12
+
+setTrackVolume(int index, float volume, (int pickupMode * = PIM_None)) -> None
+  Arguments: int index, float volume, (int pickupMode * = PIM_None)
+  Returns: -
+  Description: Changes the volume of the track at index - volume is value between 0 and 1.0 use optional pickupMode to override FL default pickup option
+  API version: 1, 13(pickup)
+
+soloTrack(int index, (int value = -1), (int mode = -1)) -> None
+  Arguments: int index, (int value = -1), (int mode = -1)
+  Returns: -
+  Description: without value this function will toggle the solo state of the track at index - set optional 'value' to 1 to solo track or to 0 unsolo track
+  API version: 1
+
+swapTrackChannels(int index, (int value = -1)) -> int
+  Arguments: int index, (int value = -1)
+  Returns: int
+  Description: Toggle mixer track (index) 'swap l/r channels' option. (value: -1 = toggle, 0 = disable, 1 = enable)
+  API version: 19
+
+trackCount() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns the number of tracks including Master track and special "Current" utility track
+  API version: 1
+
+trackNumber() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns the index of the currently selected mixer track.
+  API version: 1
+
+==============================================================================
+MODULE: patterns
+
+burnLoop(int index, (int storeUndo = 1), (int updateUi = 1)) -> None
+  Arguments: int index, (int storeUndo = 1), (int updateUi = 1)
+  Returns: -
+  Description: Returns activity level for channel at "index" - Set Optional storeUndo to 0 to not store undo step. Set Optional updateUi to 0 to not update ui.
+  API version: 9
+
+clearPattern((int index = -1)) -> None
+  Arguments: (int index = -1)
+  Returns: -
+  Description: Clear selected pattern(s), or clean panel specified by index (optional).
+  API version: 44
+
+clonePattern((int index = -1), (int destIndex = -1)*) -> None
+  Arguments: (int index = -1), (int destIndex = -1)*
+  Returns: -
+  Description: Clone selected pattern(s), or clone panel specified by index (optional). Use optional destIndex to clone source pattern to destination pattern.
+  API version: 25, *43
+
+deselectAll() -> None
+  Arguments: -
+  Returns: -
+  Description: Deselect all patterns in Picker panel.
+  API version: 2
+
+ensureValidNoteRecord(int index, (int playNow = 0)) -> None
+  Arguments: int index, (int playNow = 0)
+  Returns: -
+  Description: Ensure valid note of the pattern at "index".
+  API version: 1
+
+findFirstNextEmptyPat(int flags , (int x = -1), (int y = -1)) -> None
+  Arguments: int flags , (int x = -1), (int y = -1)
+  Returns: -
+  Description: Find first empty pattern at position x, y
+  API version: 1
+
+getActivePatternGroup() -> int
+  Arguments: 
+  Returns: int
+  Description: Returns the index of the currently selected pattern group. The default "All patterns" grouping has index -1. User-defined pattern groups have indexes starting from 0.
+  API version: 28
+
+getBlockSetStatus(int left, int top, int right, int bottom) -> int
+  Arguments: int left, int top, int right, int bottom
+  Returns: int
+  Description: Returns the status of the live block - Result is one of the LB_Status_Simplest option constants
+  API version: 1
+
+getPatternColor(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Returns the color of the pattern at "index".
+  API version: 1
+
+getPatternGroupCount() -> int
+  Arguments: 
+  Returns: int
+  Description: Returns the number of user-defined pattern groups. The default "All patterns" grouping is not included.
+  API version: 28
+
+getPatternGroupName(index int) -> str
+  Arguments: index int
+  Returns: str
+  Description: Returns the name of the pattern group at index. The default "All patterns" group's name cannot be accessed.
+  API version: 28
+
+getPatternLength(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Returns the length of the pattern at "index", in beats.
+  API version: 1
+
+getPatternName(int index) -> string
+  Arguments: int index
+  Returns: string
+  Description: Returns the name of the pattern at "index".
+  API version: 1
+
+getPatternsInGroup(int) -> tuple[int, ...]
+  Arguments: int
+  Returns: tuple[int, ...]
+  Description: Returns a tuple containing all the patterns in the group at index. The default "All patterns" group returns a tuple containing all the patterns that haven't been added to any other groups.
+  API version: 28
+
+incrementPatternLength(int index, int offset) -> None
+  Arguments: int index, int offset
+  Returns: -
+  Description: Increment the length of the pattern at "index" by offset, in beats.
+  API version: 39
+
+isPatternDefault(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Returns True if patterns at "index" is default (empty and unchanged by user).
+  API version: 23
+
+isPatternSelected(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Returns True if patterns at "index" is selected in Picker panel.
+  API version: 2
+
+jumpToPattern(int index) -> None
+  Arguments: int index
+  Returns: -
+  Description: Jum to the pattern at "index"
+  API version: 1
+
+movePattern((int direction = 1)) -> None
+  Arguments: (int direction = 1)
+  Returns: -
+  Description: Move selected pattern(s) up (1) or down(-1)
+  API version: 39
+
+patternCount() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns the number of patterns.
+  API version: 1
+
+patternMax() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns the maximum pattern number.
+  API version: 1
+
+patternNumber() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns the current pattern number.
+  API version: 1
+
+selectAll() -> None
+  Arguments: -
+  Returns: -
+  Description: Select all patterns in Picker panel.
+  API version: 2
+
+selectPattern(int index, (int value = -1), (int preview = 0)) -> None
+  Arguments: int index, (int value = -1), (int preview = 0)
+  Returns: -
+  Description: Select pattern at "index" in Picker panel - value: -1 (toggle), 0 (deselect) 1 (select) preview: set to 1 to preview pattern
+  API version: 2
+
+setPatternColor(int index, int color) -> None
+  Arguments: int index, int color
+  Returns: -
+  Description: Changes the color of the pattern at "index" to "color".
+  API version: 1
+
+setPatternLength(int index, int length) -> None
+  Arguments: int index, int length
+  Returns: -
+  Description: Set the length of the pattern at "index", in beats.
+  API version: 39
+
+setPatternName(int index, string name) -> None
+  Arguments: int index, string name
+  Returns: -
+  Description: Changes the name of the pattern at "index" to "name".
+  API version: 1
+
+==============================================================================
+MODULE: playlist
+
+deselectAll() -> None
+  Arguments: -
+  Returns: -
+  Description: Deselect all playlist tracks.
+  API version: 12
+
+getDisplayZone() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns current display zone in the playlist or zero if none.
+  API version: 1
+
+getLiveBlockColor(int index, int blockNum) -> int
+  Arguments: int index, int blockNum
+  Returns: int
+  Description: Get live block color for track at "index" and for block "blockNum"
+  API version: 1
+
+getLiveBlockStatus(int index, int blockNum, (int mode = LB_Status_Default)) -> int
+  Arguments: int index, int blockNum, (int mode = LB_Status_Default)
+  Returns: int
+  Description: Get live block status for track at "index" and for block "blockNum" Result depends on mode -
+  API version: 1
+
+getLiveLoopMode(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Get live loop mode.
+  API version: 1
+
+getLivePosSnap(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Get live pos snap - Result is one of the constants
+  API version: 1
+
+getLiveStatus(int index, (int mode = LB_Status_Default)) -> int
+  Arguments: int index, (int mode = LB_Status_Default)
+  Returns: int
+  Description: Get live status for track at "index" - Result depends on mode.
+  API version: 1
+
+getLiveTrigSnap(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Get live trig snap - Result is one of the constants
+  API version: 1
+
+getLiveTriggerMode(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Get live trigger mode - Result is one of the constants
+  API version: 1
+
+getPerformanceModeState() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns 1 when the PL is in performance mode, 0 when it's not.
+  API version: 21
+
+getTrackActivityLevel(int index) -> float
+  Arguments: int index
+  Returns: float
+  Description: Returns the activity level of the track at "index" (zero if not active, > 0 if active).
+  API version: 1
+
+getTrackActivityLevelVis(int index) -> float
+  Arguments: int index
+  Returns: float
+  Description: Returns the visual activity level of the track at "index" as a normalized value.
+  API version: 1
+
+getTrackColor(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Returns the color of the track at "index" as an RGBA value.
+  API version: 1
+
+getTrackName(int index) -> string
+  Arguments: int index
+  Returns: string
+  Description: Returns the name of the track at "index".
+  API version: 1
+
+getVisTimeBar() -> int
+  Arguments: -
+  Returns: int
+  Description: Get time bar.
+  API version: 1
+
+getVisTimeStep() -> int
+  Arguments: -
+  Returns: int
+  Description: Get time step.
+  API version: 1
+
+getVisTimeTick() -> int
+  Arguments: -
+  Returns: int
+  Description: Get time tick.
+  API version: 1
+
+incLiveLoopMode(int index, int value) -> None
+  Arguments: int index, int value
+  Returns: -
+  Description: Increase live loop mode for track at "index"
+  API version: 1
+
+incLivePosSnap(int index, int value) -> None
+  Arguments: int index, int value
+  Returns: -
+  Description: Increase live pos snap for track at "index"
+  API version: 1
+
+incLiveTrigMode(int index, int value) -> None
+  Arguments: int index, int value
+  Returns: -
+  Description: Increase live trig mode for track at "index"
+  API version: 1
+
+incLiveTrigSnap(int index, int value) -> None
+  Arguments: int index, int value
+  Returns: -
+  Description: Increase live trig snap for track at "index".
+  API version: 1
+
+isTrackMuteLock(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Returns True if the Mute for track at "index" is locked.
+  API version: 2
+
+isTrackMuted(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Returns True if the track at "index" is muted.
+  API version: 1
+
+isTrackSelected(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Returns True if the track at "index" is selected.
+  API version: 12
+
+isTrackSolo(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Returns True if the track at "index" is currently solo'd.
+  API version: 1
+
+liveDisplayZone(int left, int top, int right, int bottom, (int duration = 0)) -> None
+  Arguments: int left, int top, int right, int bottom, (int duration = 0)
+  Returns: -
+  Description: Set the display zone in the playlist to the specified co-ordinates - use optional 'duration' parameter to make display zone temporary
+  API version: 1
+
+lockDisplayZone(int index, int value) -> None
+  Arguments: int index, int value
+  Returns: -
+  Description: Lock display zone at "index".
+  API version: 1
+
+muteTrack(int index, (int value* = -1), (int inGroup** = 0)) -> None
+  Arguments: int index, (int value* = -1), (int inGroup** = 0)
+  Returns: -
+  Description: Toggle whether the track at index is muted. An unmuted track will become muted and a muted track will become unmuted. Set optional value to 1(mute) or to 0(unmute) track. Set optional 'inGroup' to 1 to mute/unmute track group (alt + click in FL)
+  API version: 1, *30, *33
+
+muteTrackLock(int index) -> None
+  Arguments: int index
+  Returns: -
+  Description: Toggles the Mute lock status of the track at "index".
+  API version: 2
+
+refreshLiveClips(int index, int value) -> None
+  Arguments: int index, int value
+  Returns: -
+  Description: Refresh live clips for track at "index".
+  API version: 1
+
+selectAll() -> None
+  Arguments: -
+  Returns: -
+  Description: Select all playlist tracks.
+  API version: 12
+
+selectTool(int index) -> 
+  Arguments: int index
+  Returns: 
+  Description: Select playlist/piano roll tool
+  API version: 40
+
+selectTrack(int index) -> None
+  Arguments: int index
+  Returns: -
+  Description: Toggle selection of the track at "index".
+  API version: 12
+
+setTrackColor(int index, int color) -> None
+  Arguments: int index, int color
+  Returns: -
+  Description: Changes the color of the track at "index" to the value of "color".
+  API version: 1
+
+setTrackName(int index, string name) -> None
+  Arguments: int index, string name
+  Returns: -
+  Description: Changes the name of the track at "index" to "name".
+  API version: 1
+
+soloTrack(int index, (int value = -1), (int inGroup* = 0)) -> None
+  Arguments: int index, (int value = -1), (int inGroup* = 0)
+  Returns: -
+  Description: Toggles the solo state of the track at "index". Set optional 'value' to 1 to solo the track, or 0 to unsolo it. Set optional 'inGroup' to 1 to solo/unsolo the track group (Alt + Right-click in FL Studio).
+  API version: 1, *30
+
+triggerLiveClip(int index, int blockNum, int flags , (float velocity = -1)) -> None
+  Arguments: int index, int blockNum, int flags , (float velocity = -1)
+  Returns: -
+  Description: Trigger live clip for track at "index" and for block "blockNum". Set blockNum to -1 and use the TLC_Fill flag to stop live clips on this track.
+  API version: 1
+
+==============================================================================
+MODULE: plugins
+
+getColor(int index, (int slotIndex = -1), (int flag = GC_BackgroundColor), (int paramIndex = 0), (bool useGlobalIndex* = False)) -> int
+  Arguments: int index, (int slotIndex = -1), (int flag = GC_BackgroundColor), (int paramIndex = 0), (bool useGlobalIndex* = False)
+  Returns: int
+  Description: Returns various plugin color parameter values for plugin at position of index/slotindex
+  API version: 12, *26
+
+getName(int index, (int slotIndex = -1), (int flag = FPN_Param), (int paramIndex = 0), (bool useGlobalIndex* = False)) -> string
+  Arguments: int index, (int slotIndex = -1), (int flag = FPN_Param), (int paramIndex = 0), (bool useGlobalIndex* = False)
+  Returns: string
+  Description: Returns various plugin name parameter values for plugin at position of index/slotindex optional paramIndex depends on flag
+  API version: 13, *26
+
+getPadInfo(int index, (int slotIndex), (int paramOption ), (int paramIndex), (bool useGlobalIndex* = False)) -> int
+  Arguments: int index, (int slotIndex), (int paramOption ), (int paramIndex), (bool useGlobalIndex* = False)
+  Returns: int
+  Description: Returns pad parameters for plugin at position of index/slotindex use PAD_Count as paramOption to get number of pad parameters supported by plugin
+  API version: 19, *26
+
+getParamCount(int index, (int slotIndex = -1), (bool useGlobalIndex* = False)) -> int
+  Arguments: int index, (int slotIndex = -1), (bool useGlobalIndex* = False)
+  Returns: int
+  Description: Returns plugin parameter count for plugin at position of index/slotindex
+  API version: 8, *26
+
+getParamName(int paramIndex, int index, (int slotIndex = -1), (bool useGlobalIndex* = False)) -> string
+  Arguments: int paramIndex, int index, (int slotIndex = -1), (bool useGlobalIndex* = False)
+  Returns: string
+  Description: Returns plugin parameter (paramIndex) name for plugin at position of index/slotindex
+  API version: 8, *26
+
+getParamValue(int paramIndex, int index, (int slotIndex = -1), (bool useGlobalIndex* = False)) -> int
+  Arguments: int paramIndex, int index, (int slotIndex = -1), (bool useGlobalIndex* = False)
+  Returns: int
+  Description: Returns plugin parameter (paramIndex) value for plugin at position of index/slotindex as normalized value
+  API version: 8, *26
+
+getParamValueString(int paramIndex, int index, (int slotIndex = -1), (bool useGlobalIndex* = False)) -> string
+  Arguments: int paramIndex, int index, (int slotIndex = -1), (bool useGlobalIndex* = False)
+  Returns: string
+  Description: Returns plugin parameter (paramIndex) value as string for plugin at position of index/slotindex this function is only supported by some of the plugins, support for more plugins will be added later
+  API version: 8, *26
+
+getPluginName(int index, (int slotIndex = -1), (int userName* = 0), (bool useGlobalIndex** = False)) -> string
+  Arguments: int index, (int slotIndex = -1), (int userName* = 0), (bool useGlobalIndex** = False)
+  Returns: string
+  Description: Returns plugin name for plugin at position of index/slotindex - Set optional userName parameter to 1 to get user name for plugin slot instead of original plugin name (will return plugin name if user didn't change name for slot)
+  API version: 8, *12, **26
+
+getPresetCount(int index, (int slotIndex = -1), (bool useGlobalIndex* = False)) -> int
+  Arguments: int index, (int slotIndex = -1), (bool useGlobalIndex* = False)
+  Returns: int
+  Description: Returns number of presets for plugin at position of index/slotindex
+  API version: 15, *26
+
+isValid(int index, (int slotIndex = -1), (bool useGlobalIndex* = False)) -> int
+  Arguments: int index, (int slotIndex = -1), (bool useGlobalIndex* = False)
+  Returns: int
+  Description: Returns true if there is valid plugin at position of index/slotindex
+  API version: 8, *26
+
+nextPreset(int index, (int slotIndex = -1), (bool useGlobalIndex* = False)) -> None
+  Arguments: int index, (int slotIndex = -1), (bool useGlobalIndex* = False)
+  Returns: -
+  Description: Navigate to next preset in plugin at position of index/slotindex
+  API version: 10, *26
+
+prevPreset(int index, (int slotIndex = -1), (bool useGlobalIndex* = False)) -> None
+  Arguments: int index, (int slotIndex = -1), (bool useGlobalIndex* = False)
+  Returns: -
+  Description: Navigate to previous preset in plugin at position of index/slotindex
+  API version: 10, *26
+
+setParamValue(float value, int paramIndex, int index, (int slotIndex = -1), (int pickupMode * = PIM_None), (bool useGlobalIndex** = False)) -> int
+  Arguments: float value, int paramIndex, int index, (int slotIndex = -1), (int pickupMode * = PIM_None), (bool useGlobalIndex** = False)
+  Returns: int
+  Description: Sets value (normalized) for plugin parameter (paramIndex) for plugin at position of index/slotindex use optional pickupMode to override FL default pickup option
+  API version: 8, *17, **26
+
+==============================================================================
+MODULE: transport
+
+continuousMove(int speed, int startStop) -> None
+  Arguments: int speed, int startStop
+  Returns: -
+  Description: Start Continuous move - This function do same as rewind and fastforward but you can control speed. Set speed (> 0) to move forward and (< 0) to move backward (speed = (1) is normal speed forward) Each call to this function with startStop = SS_Start, must be stopped with startStop = SS_Stop
+  API version: 1
+
+continuousMovePos(int speed, int startStop) -> None
+  Arguments: int speed, int startStop
+  Returns: -
+  Description: Start Continuous move - Set speed (> 0) to move forward and (< 0) to move backward (speed = (1) is normal speed forward). Set startStop to (2) to start and to (0) to stop
+  API version: 2
+
+fastForward(int speed) -> None
+  Arguments: int speed
+  Returns: -
+  Description: Forward the song position
+  API version: 1
+
+getHWBeatLEDState() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns the state of the hardware LED beat indicator.
+  API version: 1
+
+getLoopMode() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns the current looping mode (pattern = 0, song = 1).
+  API version: 1
+
+getSongLength(int mode) -> int
+  Arguments: int mode
+  Returns: int
+  Description: Get the song length.
+  API version: 3
+
+getSongPos((int mode * = -1)) -> float
+  Arguments: (int mode * = -1)
+  Returns: float
+  Description: Returns the song position as a normalized value (0..1) - or in specified format when mode* is set
+  API version: 1, *3
+
+getSongPosHint() -> string
+  Arguments: -
+  Returns: string
+  Description: Returns a hint for the current song position.
+  API version: 1
+
+globalTransport(int command , int value, (int pmeflags = PME_System), (int flags = GT_ALL)) -> int
+  Arguments: int command , int value, (int pmeflags = PME_System), (int flags = GT_ALL)
+  Returns: int
+  Description: Call the GlobalTransport function with the appropriate parameters - Use this function inside one of the eventData script events and pass eventData.pmeflags as "pmeflags" parameter
+  API version: 1
+
+isPlaying() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns True if the program is playing.
+  API version: 1
+
+isRecording() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns True when recording is active.
+  API version: 1
+
+markerJumpJog(int value, (int flags = GT_All)) -> None
+  Arguments: int value, (int flags = GT_All)
+  Returns: -
+  Description: Jump to a marker position - "value" is an increment.
+  API version: 1
+
+markerSelJog(int value, (int flags = GT_All)) -> None
+  Arguments: int value, (int flags = GT_All)
+  Returns: -
+  Description: Select a marker - "value" is an increment.
+  API version: 1
+
+record() -> None
+  Arguments: -
+  Returns: -
+  Description: Toggle recording.
+  API version: 1
+
+rewind(int startStop , (int flags = GT_All)) -> None
+  Arguments: int startStop , (int flags = GT_All)
+  Returns: -
+  Description: Rewind the song position - Each call to this function with startStop = SS_Start, must be stopped with startStop = SS_Stop
+  API version: 1
+
+setLoopMode() -> None
+  Arguments: -
+  Returns: -
+  Description: Toggle loop mode.
+  API version: 1
+
+setPlaybackSpeed(float speedMultiplier) -> None
+  Arguments: float speedMultiplier
+  Returns: -
+  Description: Set a playback speed multiplier - Set speedMultiplier = (1) is normal speed, set to value between (1/4 ... 1) for slower and between (1 ... 4) faster movement
+  API version: 1
+
+setSongPos(float position, (int mode * = -1)) -> None
+  Arguments: float position, (int mode * = -1)
+  Returns: -
+  Description: Set the song position - "position" is a normalized value (0..1) - or in specified format when mode* is set
+  API version: 1, *4
+
+start() -> None
+  Arguments: -
+  Returns: -
+  Description: Start playback.
+  API version: 1
+
+stop() -> None
+  Arguments: -
+  Returns: -
+  Description: Stop playback.
+  API version: 1
+
+==============================================================================
+MODULE: ui
+
+closeActivePopupMenu() -> None
+  Arguments: -
+  Returns: -
+  Description: Close active popup menu
+  API version: 1
+
+copy() -> int
+  Arguments: -
+  Returns: int
+  Description: Copy what is selected, if possible.
+  API version: 1
+
+crDisplayRect(int left, int top, int right, int bottom, int duration, (int flags * = 0)) -> None
+  Arguments: int left, int top, int right, int bottom, int duration, (int flags * = 0)
+  Returns: -
+  Description: Display channel rack selection rectangle - by default selection works on channel rack steps, see flags for additional options set 'duration' in ms, or use duration = midi.MaxInt to set rectangle 'on' and duration = 0 (**) to set rectangle 'off'
+  API version: 1, *14, **16
+
+cut() -> int
+  Arguments: -
+  Returns: int
+  Description: Cut what is selected, if possible.
+  API version: 1
+
+delete() -> int
+  Arguments: -
+  Returns: int
+  Description: Press the delete key.
+  API version: 1
+
+down((int value* = 1)) -> int
+  Arguments: (int value* = 1)
+  Returns: int
+  Description: Generic way to move down.
+  API version: 1, *4
+
+enter() -> int
+  Arguments: -
+  Returns: int
+  Description: Press the enter key.
+  API version: 1
+
+escape() -> int
+  Arguments: -
+  Returns: int
+  Description: Press the escape key.
+  API version: 1
+
+getFocused(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Returns focused state (0 or 1) of window specified by index
+  API version: 1
+
+getFocusedFormCaption() -> string
+  Arguments: -
+  Returns: string
+  Description: Returns caption of focused window
+  API version: 1
+
+getFocusedNodeCaption() -> string
+  Arguments: -
+  Returns: string
+  Description: Return caption for active node or empty string when no node is active
+  API version: 1
+
+getFocusedNodeFileType() -> int
+  Arguments: -
+  Returns: int
+  Description: Return type for active node or -1 when no node is active
+  API version: 1
+
+getFocusedPluginName() -> string
+  Arguments: -
+  Returns: string
+  Description: Returns Original Plugin Name of focused window
+  API version: 5
+
+getHintMsg() -> string
+  Arguments: -
+  Returns: string
+  Description: Returns program hint message
+  API version: 1
+
+getHintValue(int value, int max) -> string
+  Arguments: int value, int max
+  Returns: string
+  Description: Returns hint for value
+  API version: 1
+
+getProgTitle() -> string
+  Arguments: -
+  Returns: string
+  Description: Returns program title
+  API version: 1
+
+getSnapMode() -> int snapMode
+  Arguments: -
+  Returns: int snapMode
+  Description: Returns snap mode.
+  API version: 1
+
+getStepEditMode() -> bool
+  Arguments: -
+  Returns: bool
+  Description: Returns the state of the "step edit mode" control
+  API version: 28
+
+getTimeDispMin() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns True when time display is set to 'minutes'
+  API version: 1
+
+getVersion((int mode* = 4)) -> string / int
+  Arguments: (int mode* = 4)
+  Returns: string / int
+  Description: Returns program version string (or number) optional mode parameter can be one of the following: VER_Major = 0; VER_Minor = 1; VER_Release = 2; VER_Build = 3; VER_VersionAndEdition = 4; VER_FullVersionAndEdition = 5; VER_ArchAndBuild = 6 **
+  API version: 1, *7, **13
+
+getVisible(int index) -> int
+  Arguments: int index
+  Returns: int
+  Description: Returns visible state (0 or 1) of window specified by index
+  API version: 1
+
+hideWindow(int index) -> None
+  Arguments: int index
+  Returns: -
+  Description: Hide window specified by index
+  API version: 5
+
+horZoom(int value) -> int
+  Arguments: int value
+  Returns: int
+  Description: Zoom horizontally by the increment "value".
+  API version: 1
+
+insert() -> int
+  Arguments: -
+  Returns: int
+  Description: Press the insert key.
+  API version: 1
+
+isBrowserAutoHide() -> int
+  Arguments: -
+  Returns: int
+  Description: Return 1 when browser auto-hide option is enabled
+  API version: 1
+
+isClosing() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns True if application is closing
+  API version: 1
+
+isInPopupMenu() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns True when application popup menu is active
+  API version: 1
+
+isLoopRecEnabled() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns True when loop recording is enabled.
+  API version: 1
+
+isMetronomeEnabled() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns True when metronome is enabled.
+  API version: 1
+
+isPrecountEnabled() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns True when precount is enabled.
+  API version: 1
+
+isStartOnInputEnabled() -> int
+  Arguments: -
+  Returns: int
+  Description: Returns True when start on input is enabled.
+  API version: 1
+
+jog(int value) -> int
+  Arguments: int value
+  Returns: int
+  Description: Generic jog control. Can be used to select stuff. "value" is an increment.
+  API version: 1
+
+jog2(int value) -> int
+  Arguments: int value
+  Returns: int
+  Description: Alternate jog control. Can be used to relocate stuff. "value" is an increment.
+  API version: 1
+
+launchAudioEditor(int reuse, string filename, int index, string preset, string presetGUID) -> int
+  Arguments: int reuse, string filename, int index, string preset, string presetGUID
+  Returns: int
+  Description: Launch audio editor for track at "index" and returns editor state set "reuse" to True to reuse opened audio editor (if any) "filename" is path to audio file
+  API version: 1
+
+left((int value* = 1)) -> int
+  Arguments: (int value* = 1)
+  Returns: int
+  Description: Generic way to move left.
+  API version: 1, *4
+
+miDisplayDockRect(int start, int numTrack, int dock, int duration) -> None
+  Arguments: int start, int numTrack, int dock, int duration
+  Returns: -
+  Description: Display selection rectangle in mixer dock- define "start" and "numTrack" track number set dock to 0 for left dock, or to 1 for right dock set 'duration' in ms, or use duration = midi.MaxInt to set rectangle 'on' and duration = 0 (*) to set rectangle 'off'
+  API version: 17
+
+miDisplayRect(int start, int end, int duration, (int flags ** = 0)) -> None
+  Arguments: int start, int end, int duration, (int flags ** = 0)
+  Returns: -
+  Description: Display mixer selection rectangle - define "start" and "end" track number, use 0 for Master track, 126 for Current track set 'duration' in ms, or use duration = midi.MaxInt to set rectangle 'on' and duration = 0 (*) to set rectangle 'off'
+  API version: 13, *16, **17
+
+moveJog(int value) -> int
+  Arguments: int value
+  Returns: int
+  Description: Used to relocate items. "value" is an increment.
+  API version: 1
+
+navigateBrowser(int direction, int shiftHeld*) -> string
+  Arguments: int direction, int shiftHeld*
+  Returns: string
+  Description: Navigate browser nodes or browser menu (right click menu for active node) set direction to one of the FPT_Up, FPT_Down, FPT_Left, FPT_Right constants set shiftHeld to 1 to expand/open browser node function returns caption of active node
+  API version: 22, *31
+
+navigateBrowserTabs(int direction) -> string
+  Arguments: int direction
+  Returns: string
+  Description: Navigate browser tabs set direction to one of the FPT_Left, FPT_Right constants function returns name of the newly selected tab
+  API version: 22
+
+next() -> int
+  Arguments: -
+  Returns: int
+  Description: Generic next control - in mixer: select next mixer track in channel rack: select next channel in browser: scroll to next item in plugin: select next preset*
+  API version: 1, *9
+
+nextWindow() -> int
+  Arguments: -
+  Returns: int
+  Description: Focus the next window.
+  API version: 1
+
+no() -> int
+  Arguments: -
+  Returns: int
+  Description: Press the 'N' key.
+  API version: 1
+
+openEventEditor(int eventId, int mode , (int newWindow = 0)) -> int
+  Arguments: int eventId, int mode , (int newWindow = 0)
+  Returns: int
+  Description: Launch event editor for "eventId" example: openEventEditor(channels.getRecEventId(0) + midi.REC_Chan_PianoRoll, midi.EE_PR) to open piano roll for channel 0
+  API version: 9
+
+paste() -> int
+  Arguments: -
+  Returns: int
+  Description: Paste previously copied data, if possible.
+  API version: 1
+
+previewBrowserMenuItem() -> None
+  Arguments: -
+  Returns: -
+  Description: Start preview of active browser node
+  API version: 1
+
+previous() -> int
+  Arguments: -
+  Returns: int
+  Description: Generic previous control - in mixer: select previous mixer track in channel rack: select previous channel in browser: scroll to previous item in plugin: select previous preset*
+  API version: 1, *9
+
+right((int value* = 1)) -> int
+  Arguments: (int value* = 1)
+  Returns: int
+  Description: Generic way to move right.
+  API version: 1, *4
+
+scrollWindow(int index , int value, (directionFlag* = 0)) -> None
+  Arguments: int index , int value, (directionFlag* = 0)
+  Returns: -
+  Description: Scroll window specified by index value is track number(mixer), channel number(channel rack), playlist track(playlist) or channel step(channel rack), playlist bar(playlist) when directionFlag is set to 1
+  API version: 13, *15
+
+selectBrowserMenuItem() -> None
+  Arguments: -
+  Returns: -
+  Description: Select browser menu item (navigated by navigateBrowser)
+  API version: 1
+
+selectWindow(int shift) -> int
+  Arguments: int shift
+  Returns: int
+  Description: Press the TAB key - set "shift" to True, to make it act as if Shift + TAB is pressed.
+  API version: 1
+
+setBrowserAutoHide(int autoHide) -> None
+  Arguments: int autoHide
+  Returns: -
+  Description: Set autoHide to 1 to enable browser auto-hide option
+  API version: 1
+
+setFocused(int index) -> None
+  Arguments: int index
+  Returns: -
+  Description: Set focused state (0 or 1) of window specified by index
+  API version: 2
+
+setHintMsg(string msg) -> None
+  Arguments: string msg
+  Returns: -
+  Description: Set program hint message
+  API version: 1
+
+setSnapMode(int snapMode) -> None
+  Arguments: int snapMode
+  Returns: -
+  Description: Set snap mode.
+  API version: 24
+
+setStepEditMode(newValue: bool) -> None
+  Arguments: newValue: bool
+  Returns: -
+  Description: Sets the state of the "step edit mode" control
+  API version: 28
+
+setTimeDispMin() -> None
+  Arguments: -
+  Returns: -
+  Description: Set time display to minutes
+  API version: 1
+
+showPicker(int mode, (int category = -1)) -> None
+  Arguments: int mode, (int category = -1)
+  Returns: -
+  Description: Show Plugin picker (mode = 0) or Project picker (mode = 1). To limit picker to specific category, set it to: 0 (Plugin picker generators / Project picker patterns) 1 (Plugin picker effects / Project picker channels)
+  API version: 41
+
+showWindow(int index) -> None
+  Arguments: int index
+  Returns: -
+  Description: Show window specified by index
+  API version: 1
+
+snapMode(int value) -> int
+  Arguments: int value
+  Returns: int
+  Description: Select another snap mode - "value" is an increment: -1 (previous), 1 (next) mode.
+  API version: 1
+
+snapOnOff() -> int
+  Arguments: -
+  Returns: int
+  Description: Toggle the snap value.
+  API version: 1
+
+strip(int value) -> int
+  Arguments: int value
+  Returns: int
+  Description: Touch-sensitive strip. "value" is -midi.FromMIDI_Max (left most) to midi.FromMIDI_Max (right most).
+  API version: 1
+
+stripHold(int value) -> int
+  Arguments: int value
+  Returns: int
+  Description: Touch-sensitive strip in hold mode - "value" is 0 for release, 1 and 2 for 1 or 2 fingers centered mode, -1 and -2 for 1 or 2 fingers jog mode.
+  API version: 1
+
+stripJog(int value) -> int
+  Arguments: int value
+  Returns: int
+  Description: Touch-sensitive strip in jog mode. "value" is an increment.
+  API version: 1
+
+toggleBrowserNode((int value = -1)) -> None
+  Arguments: (int value = -1)
+  Returns: -
+  Description: Toggle whether browser node is expandend. Set optional value to 1(expand) or to 0(collapse) node.
+  API version: 34
+
+up((int value* = 1)) -> int
+  Arguments: (int value* = 1)
+  Returns: int
+  Description: Generic way to move up.
+  API version: 1, *4
+
+verZoom(int value) -> int
+  Arguments: int value
+  Returns: int
+  Description: Zoom vertically by the increment "value".
+  API version: 1
+
+yes() -> int
+  Arguments: -
+  Returns: int
+  Description: Press the 'Y' key.
+  API version: 1
+
+==============================================================================
+RUNTIME-INSPECTED SIGNATURES
+
+midi.EncodeRemoteControlID(PortNum, ChanNum, CCNum)
+
+utils.ColorToHex(Color)
+
+utils.ColorToRGB(Color)
+
+utils.DivModU(A, B)
+
+utils.FadeColor(StartColor, EndColor, Value)
+
+utils.GetNoteName(NoteNum)
+
+utils.HSVtoRGB(H, S, V)
+
+utils.InterNoSwap(X, A, B)
+
+utils.KnobAccelToRes2(Value)
+
+utils.LightenColor(Color, Value)
+
+utils.Limited(Value, Min, Max)
+
+utils.OffsetRect(R, dx, dy)
+
+utils.RGBToColor(R, G, B)
+
+utils.RGBToHSV(R, G, B)
+
+utils.RGBToHSVColor(Color)
+
+utils.RectOverlap(R1, R2)
+
+utils.RectOverlapEqual(R1, R2)
+
+utils.Sign(value)
+
+utils.SignOf(value)
+
+utils.SwapInt(A, B)
+
+utils.TClipLauncherLastClip(trackNum, subNum, flags)
+
+utils.TRect(left, top, right, bottom)
+
+utils.VolTodB(Value)
+
+utils.Zeros(value, nChars, c='0')
+
+utils.Zeros_Strict(value, nChars, c='0')
+
+==============================================================================
+FUNCTIONS WITH NO SIGNATURE METADATA
+
+arrangement.selectionClear
+arrangement.selectionIsActive
+arrangement.selectionSet
+channels.closeGraphEditor
+channels.fillEachNSteps
+channels.getChannelPitch
+channels.getSwing
+channels.isGraphEditorVisible
+channels.processRECEvent
+channels.rerollLoopStarterSample
+channels.rerollLoopStarterSteps
+channels.setSwing
+channels.updateGraphEditor
+device.flrMidiCC
+device.flrMidiNote
+device.getIdleElapsed
+device.isMidiOutAssigned
+device.releaseCC
+device.sendMsgGeneric
+general.processRECEvent
+general.restoreUndo
+mixer.getPluginMuteState
+mixer.setPluginMuteState
+patterns.getChannelLoopStyle
+patterns.setChannelLoop
+patterns.setLoopStarterRootNote
+playlist.getSongStartTickPos
+playlist.liveBlockNumToTime
+playlist.liveTimeToBlockNum
+playlist.scrollTo
+playlist.trackCount
+screen.addMeter
+screen.addTextLine
+screen.animateText
+screen.blank
+screen.deInit
+screen.displayBar
+screen.displayText
+screen.displayTimedText
+screen.drawRect
+screen.drawText
+screen.eraseRect
+screen.fillRect
+screen.findTextLine
+screen.getScreenActiveCounter
+screen.hideMenu
+screen.init
+screen.isBlanked
+screen.isUnBlank
+screen.keepDisplayActive
+screen.menuItemClick
+screen.menuNext
+screen.menuPrev
+screen.menuShowing
+screen.removeTextLine
+screen.setScreenActiveCounter
+screen.setup
+screen.unBlank
+screen.update
+ui.closeAllMenu
+ui.getFocusedFormID
+ui.navigateBrowserMenu
+ui.showNotification
