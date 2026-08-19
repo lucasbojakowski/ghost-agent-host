@@ -21,7 +21,9 @@ pub const DEFAULT_SCRIPTING_BIND: &str = "127.0.0.1:48766";
 pub const BRIDGE_MODULES: &[&str] = &[
     "arrangement",
     "channels",
+    "device",
     "general",
+    "launchMapPages",
     "mixer",
     "patterns",
     "playlist",
@@ -515,6 +517,14 @@ mod tests {
         assert!(!is_safe_identifier("_private"));
         assert!(!is_safe_identifier("getattr(x)"));
         assert!(!is_safe_identifier("a.b"));
+    }
+
+    #[test]
+    fn explicitly_imported_modules_match_runtime_evidence() {
+        assert!(BRIDGE_MODULES.contains(&"device"));
+        assert!(BRIDGE_MODULES.contains(&"launchMapPages"));
+        assert!(!BRIDGE_MODULES.contains(&"screen"));
+        assert!(!BRIDGE_MODULES.contains(&"utils"));
     }
 
     #[test]
