@@ -105,16 +105,16 @@ pub(crate) fn take_frame(buffer: &mut Vec<u8>) -> std::io::Result<Option<Vec<u8>
         return Ok(None);
     };
     if newline > MAX_FRAME_BYTES {
-        buffer.drain(..=newline);
+        let _ = buffer.drain(..=newline);
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidData,
             "FL scripting frame exceeded maximum size",
         ));
     }
     let mut frame: Vec<u8> = buffer.drain(..=newline).collect();
-    frame.pop();
+    let _ = frame.pop();
     if frame.last() == Some(&b'\r') {
-        frame.pop();
+        let _ = frame.pop();
     }
     if frame.is_empty() {
         return Err(std::io::Error::new(
