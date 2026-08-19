@@ -1,4 +1,6 @@
-use std::collections::{BTreeMap, BTreeSet};
+mod gateway;
+mod snapshot;
+
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::Arc;
@@ -6,27 +8,19 @@ use std::time::Duration;
 
 use anyhow::{bail, Context, Result};
 use clap::Parser;
+use gateway::{build_workspace_registry, SCRIPTING_TOOL_NAMES};
 use ghost_codex::{
-    AgentEvent, CodexParallelRuntime, ParallelCodexThread, ParallelThreadConfig, ToolDefinition,
-    ToolError, ToolRegistry, TurnInput, TurnOptions,
+    AgentEvent, CodexParallelRuntime, ParallelCodexThread, ParallelThreadConfig, TurnInput,
+    TurnOptions,
 };
-use ghost_fl_scripting::{
-    FlScriptingAdapter, FlScriptingCatalog, FlScriptingConfig, FlScriptingFunction,
-    FlScriptingStatus,
-};
-use ghost_fl_studio::{
-    FlStudioAdapterConfig, FlStudioManifest, GopherNativeAdapter, NativeToolDefinition,
-};
+use ghost_fl_scripting::{FlScriptingAdapter, FlScriptingConfig, FlScriptingStatus};
+use ghost_fl_studio::{FlStudioAdapterConfig, GopherNativeAdapter};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use snapshot::{capture_workspace_snapshot, WorkspaceSnapshot};
 
 const INDEX_HTML: &str = include_str!("../web/index.html");
 const MAX_REQUEST_BYTES: usize = 2 * 1024 * 1024;
-const SCRIPTING_TOOL_NAMES: [&str; 3] = [
-    "fl_scripting_search",
-    "fl_scripting_describe",
-    "fl_scripting_call",
-];
 
 const SYSTEM_PROMPT: &str = r#"You are Ghost's empirical FL Studio workspace agent. You have two transparent live surfaces over the same FL Studio session:
 
@@ -126,48 +120,6 @@ struct TraceEvent {
     duration_ms: Option<u64>,
 }
 
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct WorkspaceSnapshot {
-    connected: bool,
-    values: BTreeMap<String, Value>,
-    errors: BTreeMap<String, String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct ScriptingSearchArgs {
-    query: String,
-    #[serde(default)]
-    module: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct ScriptingDescribeArgs {
-    module: String,
-    function: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct ScriptingCallArgs {
-    module: String,
-    function: String,
-    args: Vec<Value>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct ScriptingSearchMatch {
-    score: u8,
-    module: String,
-    function: String,
-    signature: Option<String>,
-    returns: Option<String>,
-    description: Option<String>,
-    minimum_api_version: Option<u32>,
-    bridge_callable: bool,
-    unsupported_reason: Option<String>,
-}
-
 struct HttpRequest {
     method: String,
     path: String,
@@ -197,7 +149,6 @@ fn main() -> Result<()> {
         bind: cli.scripting_bind.clone(),
         call_timeout: Duration::from_millis(cli.scripting_timeout_ms),
     })?);
-
     let registry = build_workspace_registry(&manifest, Arc::clone(&gopher), Arc::clone(&scripting))?;
     let total_tool_count = registry.definitions().len();
 
@@ -240,231 +191,6 @@ fn main() -> Result<()> {
     serve(&cli.bind, &mut session)
 }
 
-fn build_workspace_registry(
-    manifest: &FlStudioManifest,
-    gopher: Arc<GopherNativeAdapter>,
-    scripting: Arc<FlScriptingAdapter>,
-) -> Result<ToolRegistry> {
-    for gateway_name in SCRIPTING_TOOL_NAMES {
-        if manifest.tools.iter().any(|tool| tool.name == gateway_name) {
-            bail!("live Gopher catalog collides with workspace gateway tool `{gateway_name}`");
-        }
-    }
-
-    let definitions = workspace_tool_definitions(manifest);
-    let gopher_count = manifest.tools.len();
-    let mut registry = ToolRegistry::default();
-    for (index, definition) in definitions.into_iter().enumerate() {
-        if index < gopher_count {
-            let handler_name = definition.name.clone();
-            let adapter = Arc::clone(&gopher);
-            registry.register(definition, move |arguments| {
-                adapter
-                    .call_native(&handler_name, arguments)
-                    .map(|result| result.raw)
-                    .map_err(|error| ToolError(error.to_string()))
-            })?;
-            continue;
-        }
-
-        match definition.name.as_str() {
-            "fl_scripting_search" => {
-                let catalog = scripting.catalog();
-                registry.register(definition, move |arguments| {
-                    let request: ScriptingSearchArgs = serde_json::from_value(arguments)
-                        .map_err(|error| ToolError(format!("invalid scripting search arguments: {error}")))?;
-                    search_scripting_catalog(&catalog, &request.query, request.module.as_deref())
-                        .map_err(ToolError)
-                })?;
-            }
-            "fl_scripting_describe" => {
-                let catalog = scripting.catalog();
-                registry.register(definition, move |arguments| {
-                    let request: ScriptingDescribeArgs = serde_json::from_value(arguments)
-                        .map_err(|error| ToolError(format!("invalid scripting describe arguments: {error}")))?;
-                    describe_scripting_function(&catalog, &request.module, &request.function)
-                        .map_err(ToolError)
-                })?;
-            }
-            "fl_scripting_call" => {
-                let adapter = Arc::clone(&scripting);
-                registry.register(definition, move |arguments| {
-                    let request: ScriptingCallArgs = serde_json::from_value(arguments)
-                        .map_err(|error| ToolError(format!("invalid scripting call arguments: {error}")))?;
-                    adapter
-                        .call(&request.module, &request.function, request.args)
-                        .map_err(|error| ToolError(error.to_string()))
-                })?;
-            }
-            other => bail!("unexpected workspace tool definition `{other}`"),
-        }
-    }
-    Ok(registry)
-}
-
-fn workspace_tool_definitions(manifest: &FlStudioManifest) -> Vec<ToolDefinition> {
-    let mut definitions: Vec<ToolDefinition> = manifest
-        .tools
-        .iter()
-        .map(gopher_tool_definition)
-        .collect();
-    definitions.extend(scripting_gateway_definitions());
-    definitions
-}
-
-fn gopher_tool_definition(tool: &NativeToolDefinition) -> ToolDefinition {
-    ToolDefinition {
-        name: tool.name.clone(),
-        description: tool.description.clone(),
-        input_schema: tool.input_schema.clone(),
-    }
-}
-
-fn scripting_gateway_definitions() -> Vec<ToolDefinition> {
-    vec![
-        ToolDefinition {
-            name: "fl_scripting_search".into(),
-            description: "Search the checked-in FL MIDI Scripting runtime catalog. Use this before scripting calls when the module/function is not already established.".into(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "query": {"type": "string", "description": "Function/module/signature/description terms"},
-                    "module": {"type": "string", "description": "Optional exact FL scripting module filter"}
-                },
-                "required": ["query"],
-                "additionalProperties": false
-            }),
-        },
-        ToolDefinition {
-            name: "fl_scripting_describe".into(),
-            description: "Return the evidence-backed FL MIDI Scripting metadata for one exact module/function, including overloads and bridge support.".into(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "module": {"type": "string"},
-                    "function": {"type": "string"}
-                },
-                "required": ["module", "function"],
-                "additionalProperties": false
-            }),
-        },
-        ToolDefinition {
-            name: "fl_scripting_call".into(),
-            description: "Invoke one explicitly cataloged FL MIDI Scripting primitive with positional JSON arguments through the live loopback bridge.".into(),
-            input_schema: json!({
-                "type": "object",
-                "properties": {
-                    "module": {"type": "string"},
-                    "function": {"type": "string"},
-                    "args": {"type": "array", "items": {}}
-                },
-                "required": ["module", "function", "args"],
-                "additionalProperties": false
-            }),
-        },
-    ]
-}
-
-fn search_scripting_catalog(
-    catalog: &FlScriptingCatalog,
-    query: &str,
-    module: Option<&str>,
-) -> Result<Value, String> {
-    let query = query.trim();
-    if query.is_empty() {
-        return Err("scripting search query must not be empty".into());
-    }
-    let module = module.map(str::trim).filter(|value| !value.is_empty());
-    let lowered_query = query.to_ascii_lowercase();
-    let terms: Vec<&str> = lowered_query.split_whitespace().collect();
-    let mut matches: Vec<(u8, &FlScriptingFunction)> = catalog
-        .functions()
-        .iter()
-        .filter(|entry| {
-            module.is_none_or(|module| entry.module.eq_ignore_ascii_case(module))
-        })
-        .filter_map(|entry| search_score(entry, &lowered_query, &terms).map(|score| (score, entry)))
-        .collect();
-    matches.sort_by(|(score_a, entry_a), (score_b, entry_b)| {
-        score_b
-            .cmp(score_a)
-            .then_with(|| entry_a.module.cmp(&entry_b.module))
-            .then_with(|| entry_a.function.cmp(&entry_b.function))
-            .then_with(|| entry_a.signature.cmp(&entry_b.signature))
-    });
-
-    let matches: Vec<ScriptingSearchMatch> = matches
-        .into_iter()
-        .take(25)
-        .map(|(score, entry)| ScriptingSearchMatch {
-            score,
-            module: entry.module.clone(),
-            function: entry.function.clone(),
-            signature: entry.signature.clone(),
-            returns: entry.returns.clone(),
-            description: entry.description.clone(),
-            minimum_api_version: entry.minimum_api_version,
-            bridge_callable: entry.bridge_callable,
-            unsupported_reason: entry.unsupported_reason.clone(),
-        })
-        .collect();
-    Ok(json!({
-        "query": query,
-        "module": module,
-        "matches": matches
-    }))
-}
-
-fn search_score(entry: &FlScriptingFunction, query: &str, terms: &[&str]) -> Option<u8> {
-    let signature = entry.signature.as_deref().unwrap_or_default();
-    let description = entry.description.as_deref().unwrap_or_default();
-    let haystack = format!(
-        "{} {} {} {}",
-        entry.module, entry.function, signature, description
-    )
-    .to_ascii_lowercase();
-    if !terms.iter().all(|term| haystack.contains(term)) {
-        return None;
-    }
-    let qualified = format!("{}.{}", entry.module, entry.function).to_ascii_lowercase();
-    let function = entry.function.to_ascii_lowercase();
-    let score = if qualified == query {
-        100
-    } else if function == query {
-        95
-    } else if function.starts_with(query) {
-        85
-    } else if function.contains(query) {
-        75
-    } else if signature.to_ascii_lowercase().contains(query) {
-        65
-    } else {
-        50
-    };
-    Some(score)
-}
-
-fn describe_scripting_function(
-    catalog: &FlScriptingCatalog,
-    module: &str,
-    function: &str,
-) -> Result<Value, String> {
-    let overloads = catalog.describe(module.trim(), function.trim());
-    if overloads.is_empty() {
-        return Err(format!(
-            "FL scripting function `{}.{}` was not found in the checked-in runtime catalog",
-            module.trim(),
-            function.trim()
-        ));
-    }
-    serde_json::to_value(json!({
-        "module": module.trim(),
-        "function": function.trim(),
-        "overloads": overloads
-    }))
-    .map_err(|error| format!("failed to serialize scripting metadata: {error}"))
-}
-
 impl AgentSession {
     fn info(&self) -> InfoResponse {
         InfoResponse {
@@ -483,6 +209,7 @@ impl AgentSession {
         if message.is_empty() {
             bail!("message must not be empty");
         }
+
         let snapshot = capture_workspace_snapshot(&self.scripting);
         let snapshot_text = serde_json::to_string_pretty(&snapshot)?;
         let turn_text = format!(
@@ -540,95 +267,6 @@ impl AgentSession {
             snapshot,
             trace,
         })
-    }
-}
-
-fn capture_workspace_snapshot(scripting: &FlScriptingAdapter) -> WorkspaceSnapshot {
-    let status = scripting.status();
-    let mut snapshot = WorkspaceSnapshot {
-        connected: status.connected,
-        values: BTreeMap::new(),
-        errors: BTreeMap::new(),
-    };
-    if !status.connected {
-        snapshot.errors.insert(
-            "connection".into(),
-            status
-                .last_error
-                .unwrap_or_else(|| format!("waiting for FL scripting device at {}", status.bind)),
-        );
-        return snapshot;
-    }
-
-    for (key, module, function, args) in [
-        ("scriptingApiVersion", "general", "getVersion", vec![]),
-        ("flVersion", "ui", "getVersion", vec![json!(5)]),
-        ("projectTitle", "general", "getProjectTitle", vec![]),
-        ("projectChangedFlag", "general", "getChangedFlag", vec![]),
-        ("safeToEdit", "general", "safeToEdit", vec![]),
-        ("selectedChannel", "channels", "channelNumber", vec![]),
-        ("selectedMixerTrack", "mixer", "trackNumber", vec![]),
-        ("mixerTrackCount", "mixer", "trackCount", vec![]),
-        ("currentPattern", "patterns", "patternNumber", vec![]),
-        ("patternCount", "patterns", "patternCount", vec![]),
-        ("arrangementSelectionStart", "arrangement", "selectionStart", vec![]),
-        ("arrangementSelectionEnd", "arrangement", "selectionEnd", vec![]),
-        ("focusedPluginName", "ui", "getFocusedPluginName", vec![]),
-        ("focusedWindowCaption", "ui", "getFocusedFormCaption", vec![]),
-        ("songPosition", "transport", "getSongPos", vec![]),
-        ("songPositionHint", "transport", "getSongPosHint", vec![]),
-        ("loopMode", "transport", "getLoopMode", vec![]),
-        ("isPlaying", "transport", "isPlaying", vec![]),
-    ] {
-        observe_snapshot(scripting, &mut snapshot, key, module, function, args);
-    }
-
-    if let Some(pattern) = snapshot
-        .values
-        .get("currentPattern")
-        .and_then(Value::as_i64)
-    {
-        observe_snapshot(
-            scripting,
-            &mut snapshot,
-            "currentPatternName",
-            "patterns",
-            "getPatternName",
-            vec![json!(pattern)],
-        );
-    }
-    if let (Some(start), Some(end)) = (
-        snapshot
-            .values
-            .get("arrangementSelectionStart")
-            .and_then(Value::as_i64),
-        snapshot
-            .values
-            .get("arrangementSelectionEnd")
-            .and_then(Value::as_i64),
-    ) {
-        snapshot
-            .values
-            .insert("arrangementSelectionActive".into(), json!(start != end));
-    }
-    snapshot
-}
-
-fn observe_snapshot(
-    scripting: &FlScriptingAdapter,
-    snapshot: &mut WorkspaceSnapshot,
-    key: &str,
-    module: &str,
-    function: &str,
-    args: Vec<Value>,
-) {
-    match scripting.call(module, function, args) {
-        Ok(value) => {
-            snapshot.values.insert(key.into(), value);
-        }
-        Err(error) => {
-            snapshot.errors.insert(key.into(), error.to_string());
-        }
     }
 }
 
@@ -707,6 +345,7 @@ fn handle_connection(stream: &mut TcpStream, session: &mut AgentSession) -> Resu
     let Some(request) = read_request(stream)? else {
         return Ok(());
     };
+
     match (request.method.as_str(), request.path.as_str()) {
         ("GET", "/") => send_response(
             stream,
@@ -833,84 +472,6 @@ fn send_response(
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn fixture_manifest() -> FlStudioManifest {
-        FlStudioManifest {
-            adapter: "gopher-native".into(),
-            target_title: "FL Studio".into(),
-            target_kind: "page".into(),
-            target_id: "fixture".into(),
-            tools: vec![
-                NativeToolDefinition {
-                    name: "native_alpha".into(),
-                    description: "alpha description".into(),
-                    input_schema: json!({
-                        "type": "object",
-                        "properties": {"value": {"type": "number"}},
-                        "required": ["value"]
-                    }),
-                },
-                NativeToolDefinition {
-                    name: "native_beta".into(),
-                    description: "beta description".into(),
-                    input_schema: json!({"type": "object", "properties": {}}),
-                },
-            ],
-        }
-    }
-
-    #[test]
-    fn combined_definition_surface_preserves_every_gopher_definition_then_adds_three_gateways() {
-        let manifest = fixture_manifest();
-        let definitions = workspace_tool_definitions(&manifest);
-        assert_eq!(definitions.len(), manifest.tools.len() + 3);
-        for (definition, native) in definitions.iter().zip(&manifest.tools) {
-            assert_eq!(definition.name, native.name);
-            assert_eq!(definition.description, native.description);
-            assert_eq!(definition.input_schema, native.input_schema);
-        }
-        let gateway_names: Vec<&str> = definitions[manifest.tools.len()..]
-            .iter()
-            .map(|definition| definition.name.as_str())
-            .collect();
-        assert_eq!(gateway_names, SCRIPTING_TOOL_NAMES);
-    }
-
-    #[test]
-    fn gateway_names_do_not_expand_into_per_function_tools() {
-        let names: BTreeSet<&str> = scripting_gateway_definitions()
-            .iter()
-            .map(|definition| definition.name.as_str())
-            .collect();
-        assert_eq!(names.len(), 3);
-        assert_eq!(names, SCRIPTING_TOOL_NAMES.into_iter().collect());
-    }
-
-    #[test]
-    fn scripting_search_is_deterministic_and_module_filterable() {
-        let catalog = FlScriptingCatalog::bundled().unwrap();
-        let first = search_scripting_catalog(&catalog, "pattern name", Some("patterns")).unwrap();
-        let second = search_scripting_catalog(&catalog, "pattern name", Some("patterns")).unwrap();
-        assert_eq!(first, second);
-        let matches = first["matches"].as_array().unwrap();
-        assert!(matches.iter().any(|entry| {
-            entry["module"] == "patterns" && entry["function"] == "getPatternName"
-        }));
-        assert!(matches.iter().all(|entry| entry["module"] == "patterns"));
-    }
-
-    #[test]
-    fn scripting_describe_preserves_overloads() {
-        let catalog = FlScriptingCatalog::bundled().unwrap();
-        let described = describe_scripting_function(&catalog, "device", "midiOutMsg").unwrap();
-        assert_eq!(described["overloads"].as_array().unwrap().len(), 2);
-    }
-
-    #[test]
-    fn empty_scripting_search_is_rejected() {
-        let catalog = FlScriptingCatalog::bundled().unwrap();
-        assert!(search_scripting_catalog(&catalog, "  ", None).is_err());
-    }
 
     #[test]
     fn finds_http_header_boundary() {
