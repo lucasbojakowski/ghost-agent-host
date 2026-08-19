@@ -13,8 +13,10 @@ The current reference slice keeps FL Studio authoritative for processors and rou
 - **ghost-context** represents and compiles provider-neutral reasoning context.
 - **ghost-codex** runs persistent Codex App Server threads and dynamic tools without audio/mixing-domain coupling.
 - **ghost-fl-studio** is a transparent, policy-free mirror of the live FL Studio/Gopher interface.
+- **ghost-fl-scripting** is the independent transparent FL MIDI Scripting adapter promoted from the live-proven scripting bridge experiment.
 - **ghost-workflow** composes the proven capture → analysis → agent → DAW regression experiment.
-- **ghost-fl-agent** is the frozen raw-Gopher behavioral baseline and also hosts the live-proven FL scripting transport/probe on its source branch.
+- **ghost-fl-agent** remains the frozen raw-Gopher Codex baseline; its scripting surface is developer diagnostics only.
+- **ghost-fl-workspace** is the empirical combined Gopher + MIDI Scripting agent harness for this framework branch.
 
 ## Workspace
 
@@ -25,11 +27,13 @@ crates/
   ghost-context/
   ghost-codex/
   ghost-fl-studio/
+  ghost-fl-scripting/
   ghost-application/
 
 apps/
   ghost-workflow/
   ghost-fl-agent/
+  ghost-fl-workspace/
 
 tools/
   analyse-full/
@@ -38,23 +42,11 @@ tools/
 
 Policy starts high in `apps/*` and moves downward only after repeated real workflows demonstrate a reusable requirement.
 
-## Branch plan: promote FL scripting
+## FL scripting framework
 
-`feat/fl-scripting-framework` starts from the live-proven `feat/fl-scripting-bridge` experiment and promotes only the reusable FL-specific scripting boundary.
+`feat/fl-scripting-framework` promotes only the reusable FL-specific scripting boundary from the live-proven `feat/fl-scripting-bridge` experiment.
 
-Target lower layer:
-
-```text
-crates/ghost-fl-scripting/
-```
-
-Target combined research app:
-
-```text
-apps/ghost-fl-workspace/
-```
-
-The intended composition is:
+The resulting composition is:
 
 ```text
                          FL Studio
@@ -69,13 +61,30 @@ The intended composition is:
                     ghost-fl-workspace
 ```
 
-`ghost-fl-studio` remains the frozen transparent Gopher adapter. `ghost-fl-scripting` should become the independent transparent scripting adapter. Product policy and semantic tooling remain above both.
+`ghost-fl-studio` remains the transparent Gopher adapter. `ghost-fl-scripting` owns only the scripting transport/protocol/catalog boundary. `ghost-fl-workspace` composes the complete live Gopher catalog with exactly three progressive-disclosure scripting gateways: search, describe and call.
 
-Read before implementing this branch:
+The frozen `ghost-fl-agent` Codex registry is intentionally unchanged: it still exposes the complete live Gopher catalog and no scripting tools. Its existing scripting status/probe endpoints consume `ghost-fl-scripting` only as a developer regression path.
+
+The scripting runtime preserves the live-proven FL Studio 26.1.3 / MIDI Scripting API 44 topology:
+
+```text
+Rust listener
+  ↕ bounded versioned NDJSON over loopback TCP
+FL controller script
+  ↕
+native CPython 3.12 multi-phase extension
+  ↕ nonblocking WinSock
+Windows loopback
+```
+
+The checked-in FL scripting metadata under `docs/daw-apis/fl-studio/` is the capability evidence. Fully documented, explicitly imported modules may be called through the generic adapter when their argument/return shapes are JSON-compatible. Runtime-inspected or signature-incomplete functions remain discoverable but are not guessed into callable behavior.
+
+Read:
 
 - [FL scripting live journey](docs/FL_SCRIPTING_JOURNEY.md)
 - [FL scripting framework architecture](docs/agent-work/FL_SCRIPTING_FRAMEWORK.md)
 - [FL scripting framework implementation prompt](docs/agent-work/FL_SCRIPTING_FRAMEWORK_IMPLEMENTATION_PROMPT.md)
+- [FL scripting framework validation](docs/agent-work/FL_SCRIPTING_FRAMEWORK_VALIDATION.md)
 
 ## Validation
 
@@ -88,7 +97,9 @@ cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ```
 
-FL Studio, Gopher, Ghost Tap loading, scripting subinterpreter/native-extension behavior, and third-party plugin behavior require the proprietary Windows runtime. See [Windows / FL live validation](docs/WINDOWS_FL_LIVE_VALIDATION.md) for the general regression gate and the branch-specific scripting documents for the scripting gate.
+The Windows CI gate also compiles the promoted FL controller script and rebuilds the CPython 3.12 native extension from `crates/ghost-fl-scripting/fl-native`.
+
+FL Studio, Gopher, Ghost Tap loading, scripting subinterpreter/native-extension behavior, and third-party plugin behavior require the proprietary Windows runtime. See [Windows / FL live validation](docs/WINDOWS_FL_LIVE_VALIDATION.md) for the general regression gate and [FL scripting framework validation](docs/agent-work/FL_SCRIPTING_FRAMEWORK_VALIDATION.md) for the branch-specific extracted-adapter and combined-workspace gates.
 
 ## Design sources
 
