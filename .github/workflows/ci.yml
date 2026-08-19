@@ -29,6 +29,6 @@ jobs:
           python-version: '3.12'
           architecture: 'x64'
       - run: python -m pip install --disable-pip-version-check setuptools
-      - run: python -m py_compile .\apps\ghost-fl-agent\fl-script\device_Ghost.py
+      - run: python -m py_compile .\crates\ghost-fl-scripting\fl-script\device_Ghost.py
       - shell: pwsh
-        run: .\apps\ghost-fl-agent\fl-native\build.ps1 -PythonLauncher python
+        run: .\crates\ghost-fl-scripting\fl-native\build.ps1 -PythonLauncher python

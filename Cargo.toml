@@ -6,6 +6,7 @@ members = [
   "crates/ghost-application",
   "crates/ghost-codex",
   "crates/ghost-fl-studio",
+  "crates/ghost-fl-scripting",
   "apps/ghost-workflow",
   "apps/ghost-fl-agent",
   "tools/fl-gopher-probe",
