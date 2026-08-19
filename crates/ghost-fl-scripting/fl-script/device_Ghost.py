@@ -15,7 +15,9 @@ else:
 
 import arrangement
 import channels
+import device
 import general
+import launchMapPages
 import mixer
 import patterns
 import playlist
@@ -42,7 +44,9 @@ ERROR_REPEAT_SECONDS = 15.0
 ALLOWED_MODULES = {
     "arrangement": arrangement,
     "channels": channels,
+    "device": device,
     "general": general,
+    "launchMapPages": launchMapPages,
     "mixer": mixer,
     "patterns": patterns,
     "playlist": playlist,
