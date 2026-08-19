@@ -298,8 +298,6 @@ fn describe_scripting_function(
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeSet;
-
     use super::*;
 
     fn fixture_manifest() -> FlStudioManifest {
@@ -349,12 +347,11 @@ mod tests {
     #[test]
     fn gateway_names_do_not_expand_into_per_function_tools() {
         let definitions = scripting_gateway_definitions();
-        let names: BTreeSet<&str> = definitions
+        let names: Vec<&str> = definitions
             .iter()
             .map(|definition| definition.name.as_str())
             .collect();
-        assert_eq!(names.len(), 3);
-        assert_eq!(names, SCRIPTING_TOOL_NAMES.into_iter().collect());
+        assert_eq!(names, SCRIPTING_TOOL_NAMES);
     }
 
     #[test]
