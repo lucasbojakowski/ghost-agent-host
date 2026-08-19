@@ -4,6 +4,20 @@ Status for `feat/fl-scripting-framework`.
 
 This file separates what repository CI can establish from what still requires the real FL Studio runtime. Do not treat static success as a substitute for the native/live gate.
 
+## Current validation state
+
+At implementation handoff:
+
+```text
+Rust / cross-platform CI: PENDING
+Python controller syntax CI: PENDING
+crate-owned native rebuild CI: PENDING
+real FL Studio extracted-adapter regression: PENDING
+real FL Studio combined-workspace validation: PENDING
+```
+
+The implementation sandbox does not contain Rust tooling. A draft validation PR was created against the live-proven scripting-bridge branch so GitHub can run the repository workflow, but the available GitHub connector had not surfaced a workflow run at the time this record was written. Therefore this branch does **not** claim a static green gate yet.
+
 ## Static / deterministic gate
 
 The branch must pass the repository CI workflow:
@@ -22,7 +36,7 @@ python -m py_compile crates/ghost-fl-scripting/fl-script/device_Ghost.py
 crates/ghost-fl-scripting/fl-native/build.ps1 -PythonLauncher python
 ```
 
-Focused Rust tests cover the reusable scripting catalog/protocol boundary and the combined app's progressive-disclosure definitions/search behavior. `ghost-fl-agent` must remain Gopher-only at the Codex registry boundary.
+Focused Rust tests cover the reusable scripting catalog/protocol boundary, evidence-backed module exposure, bounded framing, the combined app's progressive-disclosure definitions/search behavior, and the frozen raw-agent registry invariant.
 
 ## Preserved empirical baseline
 
@@ -37,13 +51,21 @@ loopback listener 127.0.0.1:48766
 native transport ghost_native API 1
 ```
 
-The known-good tracked binary remains:
+The known-good tracked distributable binary remains:
 
 ```text
 crates/ghost-fl-scripting/fl-native/ghost_native.cp312-win_amd64.pyd
 ```
 
 Its Git blob is intentionally preserved unchanged during framework extraction.
+
+The source experiment's tracked setuptools build evidence is also retained under:
+
+```text
+crates/ghost-fl-scripting/fl-native/build/
+```
+
+Those files are generated intermediates, **not** the preferred distributable. They remain tracked only because the execution prompt requires native build evidence to be preserved until the new crate-owned build actually succeeds. After the Windows native CI gate and live runtime gate pass, a later cleanup may remove those intermediates while retaining the source, build script and validated distributable `.pyd`.
 
 The prior experiment established that the CPython extension can create/use nonblocking WinSock from FL's subinterpreter, that the Python script can perform bounded `OnIdle` NDJSON dispatch, and that Rust can correlate requests/results and complete a reversible mixer-selection change/verify/restore sequence.
 
@@ -95,10 +117,14 @@ Run `ghost-fl-agent` separately and confirm its Codex dynamic tool definitions r
 
 ## Result record
 
-Fill this section only after the live gate is actually run.
+Fill this section only after the live/static gates are actually run.
 
 ```text
 Date:
+Static CI run / commit:
+Rust matrix: PASS / FAIL
+Python syntax: PASS / FAIL
+Native crate-owned rebuild: PASS / FAIL
 FL Studio version/build:
 MIDI Scripting API version:
 Python runtime:
@@ -110,4 +136,4 @@ Frozen ghost-fl-agent baseline: PASS / FAIL
 Notes / captured evidence:
 ```
 
-Until that record is completed, branch status is **static framework implementation with live framework validation pending**.
+Until that record is completed, branch status is **framework implementation complete in source, with static CI and live framework validation still pending**.
