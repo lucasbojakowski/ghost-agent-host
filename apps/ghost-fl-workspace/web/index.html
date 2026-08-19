@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ghost / FL Workspace</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0c0e11; --panel:#15191e; --line:#2a3038; --text:#edf1f5; --muted:#929ca9; --accent:#d9ff69; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font-family:Inter,ui-sans-serif,system-ui,sans-serif; }
+    header { position:sticky; top:0; z-index:2; display:flex; gap:16px; justify-content:space-between; align-items:center; padding:15px 20px; border-bottom:1px solid var(--line); background:rgba(12,14,17,.94); }
+    .brand { display:flex; gap:10px; align-items:baseline; } .brand span { color:var(--muted); font-size:12px; }
+    .surface { display:flex; gap:12px; flex-wrap:wrap; color:var(--muted); font-size:12px; }
+    .pill { display:flex; gap:7px; align-items:center; } .dot { width:8px; height:8px; border-radius:50%; background:#59616c; } .dot.live { background:var(--accent); box-shadow:0 0 14px rgba(217,255,105,.3); }
+    main { width:min(1040px,100%); margin:0 auto; padding:26px 18px 190px; }
+    .intro, .snapshot { border:1px solid var(--line); background:var(--panel); border-radius:14px; padding:14px 16px; margin-bottom:16px; }
+    .intro { color:var(--muted); line-height:1.5; font-size:13px; } .intro strong { color:var(--text); }
+    .snapshot-head { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:10px; }
+    button { border:1px solid var(--line); background:#1c2128; color:var(--text); border-radius:9px; padding:8px 11px; cursor:pointer; font-weight:650; } button.primary { background:var(--accent); color:#111509; border-color:var(--accent); } button:disabled { opacity:.5; cursor:wait; }
+    pre { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; color:var(--muted); font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; max-height:250px; overflow:auto; }
+    #messages { display:grid; gap:18px; margin-top:24px; } .message { display:grid; gap:7px; } .role { color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.13em; } .bubble { white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.55; padding:14px 16px; } .user .bubble { background:#1a1f25; border:1px solid var(--line); border-radius:13px; } .assistant .bubble { border-left:2px solid var(--accent); }
+    details { border:1px solid var(--line); border-radius:10px; background:var(--panel); } summary { padding:9px 11px; color:var(--muted); cursor:pointer; font-size:11px; } .trace { padding:10px 12px; border-top:1px solid var(--line); color:var(--muted); white-space:pre-wrap; font:11px/1.5 ui-monospace,monospace; }
+    .composer-wrap { position:fixed; left:0; right:0; bottom:0; padding:18px; background:linear-gradient(180deg,rgba(12,14,17,0),var(--bg) 24%); } .composer { width:min(1040px,100%); margin:0 auto; background:var(--panel); border:1px solid var(--line); border-radius:15px; padding:10px; } textarea { width:100%; min-height:78px; max-height:220px; resize:vertical; border:0; outline:0; background:transparent; color:var(--text); font:inherit; padding:8px; } .actions { display:flex; justify-content:flex-end; gap:10px; }
+    @media(max-width:700px){ header{align-items:flex-start;flex-direction:column;} .snapshot-head{align-items:flex-start;flex-direction:column;} }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand"><strong>Ghost</strong><span>FL workspace experiment</span></div>
+    <div class="surface">
+      <div class="pill"><span id="gopher-dot" class="dot"></span><span id="gopher-status">Gopher…</span></div>
+      <div class="pill"><span id="scripting-dot" class="dot"></span><span id="scripting-status">Scripting…</span></div>
+    </div>
+  </header>
+  <main>
+    <section class="intro"><strong>Combined primitive surface.</strong> The agent receives the complete live Gopher catalog unchanged plus only three scripting gateways: search, describe and call. The snapshot below is a point-in-time MIDI Scripting observation and is refreshed before every agent turn.</section>
+    <section class="snapshot">
+      <div class="snapshot-head"><strong>Live scripting snapshot</strong><button id="refresh">Refresh snapshot</button></div>
+      <pre id="snapshot">Waiting for FL scripting bridge…</pre>
+    </section>
+    <section id="messages"></section>
+  </main>
+  <div class="composer-wrap"><div class="composer">
+    <textarea id="prompt" placeholder="Ask Ghost to inspect or operate the live FL Studio workspace…"></textarea>
+    <div class="actions"><button id="send" class="primary">Send</button></div>
+  </div></div>
+<script>
+  const messages=document.querySelector('#messages'), prompt=document.querySelector('#prompt'), send=document.querySelector('#send'), refresh=document.querySelector('#refresh');
+  const gopherDot=document.querySelector('#gopher-dot'), gopherStatus=document.querySelector('#gopher-status'), scriptingDot=document.querySelector('#scripting-dot'), scriptingStatus=document.querySelector('#scripting-status'), snapshot=document.querySelector('#snapshot');
+  let busy=false;
+  async function request(path, init){ const response=await fetch(path,init); const payload=await response.json(); if(!response.ok) throw new Error(payload.error||`HTTP ${response.status}`); return payload; }
+  function setBusy(value){ busy=value; send.disabled=value; refresh.disabled=value; prompt.disabled=value; send.textContent=value?'Working…':'Send'; }
+  function addMessage(role,text,trace=[]){ const wrap=document.createElement('article'); wrap.className=`message ${role}`; const r=document.createElement('div'); r.className='role'; r.textContent=role==='user'?'You':'Ghost'; const b=document.createElement('div'); b.className='bubble'; b.textContent=text; wrap.append(r,b); if(trace.length){ const d=document.createElement('details'); const s=document.createElement('summary'); s.textContent=`${trace.filter(e=>e.kind==='tool_started').length} tool calls`; const t=document.createElement('div'); t.className='trace'; t.textContent=trace.map(e=>e.kind==='tool_started'?`→ ${e.tool} ${JSON.stringify(e.arguments??{})}`:`← ${e.tool} success=${e.success??false} duration=${e.durationMs??0}ms`).join('\n'); d.append(s,t); wrap.append(d); } messages.append(wrap); wrap.scrollIntoView({behavior:'smooth',block:'end'}); }
+  async function refreshInfo(){ try{ const info=await request('/api/info'); gopherDot.classList.add('live'); gopherStatus.textContent=`Gopher ${info.gopherToolCount} tools`; const scripting=info.scripting||{}; scriptingDot.classList.toggle('live',Boolean(scripting.connected)); scriptingStatus.textContent=scripting.connected?`Scripting API ${scripting.hello?.scriptingApiVersion??'?'}`:`Scripting waiting ${scripting.bind??''}`; }catch(error){ gopherDot.classList.remove('live'); gopherStatus.textContent=`Gopher unavailable · ${error.message}`; } }
+  async function refreshSnapshot(){ if(busy) return; try{ const value=await request('/api/snapshot'); scriptingDot.classList.toggle('live',Boolean(value.connected)); snapshot.textContent=JSON.stringify(value,null,2); }catch(error){ snapshot.textContent=`Snapshot unavailable: ${error.message}`; } }
+  async function sendPrompt(){ if(busy) return; const message=prompt.value.trim(); if(!message) return; prompt.value=''; addMessage('user',message); setBusy(true); try{ const result=await request('/api/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({message})}); addMessage('assistant',result.text,result.trace||[]); snapshot.textContent=JSON.stringify(result.snapshot,null,2); }catch(error){ addMessage('assistant',`Request failed: ${error.message}`); }finally{ setBusy(false); prompt.focus(); refreshInfo(); refreshSnapshot(); } }
+  send.addEventListener('click',sendPrompt); refresh.addEventListener('click',refreshSnapshot); prompt.addEventListener('keydown',event=>{ if(event.key==='Enter'&&!event.shiftKey){ event.preventDefault(); sendPrompt(); } });
+  refreshInfo(); refreshSnapshot(); setInterval(refreshInfo,2500);
+  addMessage('assistant','Workspace harness ready. Gopher is the raw native surface; FL MIDI Scripting is available through search / describe / call gateways when the scripting bridge connects.');
+</script>
+</body>
+</html>

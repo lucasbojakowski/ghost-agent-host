@@ -9,6 +9,7 @@ members = [
   "crates/ghost-fl-scripting",
   "apps/ghost-workflow",
   "apps/ghost-fl-agent",
+  "apps/ghost-fl-workspace",
   "tools/fl-gopher-probe",
   "tools/analyse-full",
 ]
