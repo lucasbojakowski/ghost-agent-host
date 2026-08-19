@@ -284,10 +284,7 @@ impl PendingFunction {
     }
 
     fn finish(self) -> FlScriptingFunction {
-        let minimum_api_version = self
-            .api_version
-            .as_deref()
-            .and_then(first_unsigned_integer);
+        let minimum_api_version = self.api_version.as_deref().and_then(first_unsigned_integer);
         let (bridge_callable, unsupported_reason) = if crate::adapter::BRIDGE_MODULES
             .contains(&self.module.as_str())
         {
@@ -391,16 +388,20 @@ mod tests {
     }
 
     #[test]
-    fn preserves_overloads_and_marks_non_bridge_modules() {
+    fn preserves_overloads_and_marks_unsupported_wire_shapes() {
         let catalog = FlScriptingCatalog::bundled().unwrap();
         let midi_out = catalog.describe("device", "midiOutMsg");
         assert_eq!(midi_out.len(), 2);
-        assert!(midi_out.iter().all(|entry| !entry.bridge_callable));
-        assert!(midi_out[0]
+        assert!(midi_out.iter().all(|entry| entry.bridge_callable));
+
+        let direct_feedback = catalog.describe("device", "directFeedback");
+        assert_eq!(direct_feedback.len(), 1);
+        assert!(!direct_feedback[0].bridge_callable);
+        assert!(direct_feedback[0]
             .unsupported_reason
             .as_deref()
             .unwrap()
-            .contains("not imported"));
+            .contains("eventdata"));
     }
 
     #[test]
