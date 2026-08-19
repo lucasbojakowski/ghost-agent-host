@@ -87,6 +87,7 @@ impl FlScriptingCatalog {
         &self,
         module: &str,
         function: &str,
+        scripting_api_version: Option<i64>,
     ) -> Result<(), String> {
         let matches = self.describe(module, function);
         if matches.is_empty() {
@@ -94,16 +95,43 @@ impl FlScriptingCatalog {
                 "FL scripting function `{module}.{function}` is absent from the checked-in runtime metadata"
             ));
         }
-        if matches.iter().any(|entry| entry.bridge_callable) {
-            return Ok(());
+
+        let callable: Vec<&FlScriptingFunction> = matches
+            .into_iter()
+            .filter(|entry| entry.bridge_callable)
+            .collect();
+        if callable.is_empty() {
+            let reason = self
+                .describe(module, function)
+                .into_iter()
+                .find_map(|entry| entry.unsupported_reason.as_deref())
+                .unwrap_or(
+                    "the checked-in metadata does not establish a JSON-compatible call shape",
+                );
+            return Err(format!(
+                "FL scripting function `{module}.{function}` is not callable through the JSON bridge: {reason}"
+            ));
         }
-        let reason = matches
-            .iter()
-            .find_map(|entry| entry.unsupported_reason.as_deref())
-            .unwrap_or("the checked-in metadata does not establish a JSON-compatible call shape");
-        Err(format!(
-            "FL scripting function `{module}.{function}` is not callable through the JSON bridge: {reason}"
-        ))
+
+        if let Some(connected) = scripting_api_version {
+            let supported = callable.iter().any(|entry| {
+                entry
+                    .minimum_api_version
+                    .is_none_or(|minimum| connected >= i64::from(minimum))
+            });
+            if !supported {
+                let required = callable
+                    .iter()
+                    .filter_map(|entry| entry.minimum_api_version)
+                    .min()
+                    .unwrap_or_default();
+                return Err(format!(
+                    "FL scripting function `{module}.{function}` requires scripting API {required}, connected API is {connected}"
+                ));
+            }
+        }
+
+        Ok(())
     }
 
     pub(crate) fn manifest_functions(
@@ -219,24 +247,26 @@ impl FlScriptingCatalog {
                     }
                 }
                 Section::NoSignature => {
-                    if let Some((module, function)) = line.split_once('.') {
-                        if is_identifier(module) && is_identifier(function) {
-                            functions.push(FlScriptingFunction {
-                                module: module.to_owned(),
-                                function: function.to_owned(),
-                                signature: None,
-                                arguments: None,
-                                returns: None,
-                                description: None,
-                                minimum_api_version: None,
-                                api_version: None,
-                                bridge_callable: false,
-                                unsupported_reason: Some(
-                                    "no argument/return signature metadata is available".into(),
-                                ),
-                            });
-                        }
+                    let Some((module, function)) = line.split_once('.') else {
+                        continue;
+                    };
+                    if !is_identifier(module) || !is_identifier(function) {
+                        continue;
                     }
+                    functions.push(FlScriptingFunction {
+                        module: module.to_owned(),
+                        function: function.to_owned(),
+                        signature: None,
+                        arguments: None,
+                        returns: None,
+                        description: None,
+                        minimum_api_version: None,
+                        api_version: None,
+                        bridge_callable: false,
+                        unsupported_reason: Some(
+                            "no argument/return signature metadata is available".into(),
+                        ),
+                    });
                 }
             }
         }
@@ -359,7 +389,11 @@ fn first_unsigned_integer(value: &str) -> Option<u32> {
         .skip_while(|character| !character.is_ascii_digit())
         .take_while(|character| character.is_ascii_digit())
         .collect();
-    (!digits.is_empty()).then(|| digits.parse().ok()).flatten()
+    if digits.is_empty() {
+        None
+    } else {
+        digits.parse().ok()
+    }
 }
 
 fn is_identifier(value: &str) -> bool {
@@ -411,5 +445,17 @@ mod tests {
         assert_eq!(notification.len(), 1);
         assert!(!notification[0].bridge_callable);
         assert!(notification[0].signature.is_none());
+    }
+
+    #[test]
+    fn bridge_calls_honor_known_minimum_api_versions() {
+        let catalog = FlScriptingCatalog::bundled().unwrap();
+        let error = catalog
+            .ensure_bridge_callable("patterns", "clearPattern", Some(43))
+            .unwrap_err();
+        assert!(error.contains("requires scripting API 44"));
+        assert!(catalog
+            .ensure_bridge_callable("patterns", "clearPattern", Some(44))
+            .is_ok());
     }
 }
