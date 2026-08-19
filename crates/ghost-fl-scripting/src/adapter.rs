@@ -164,8 +164,7 @@ impl FlScriptingAdapter {
             .map_err(|error| FlScriptingError::Transport(error.to_string()))?
             .to_string();
         let catalog = Arc::new(
-            FlScriptingCatalog::bundled()
-                .map_err(|error| FlScriptingError::Configuration(error.to_string()))?,
+            FlScriptingCatalog::bundled().map_err(FlScriptingError::Configuration)?,
         );
         let state = Arc::new(Mutex::new(AdapterState {
             connection: None,
@@ -236,8 +235,13 @@ impl FlScriptingAdapter {
                 "function `{function}` is not a public callable identifier"
             )));
         }
+
+        let scripting_api_version = self
+            .status()
+            .hello
+            .and_then(|hello| hello.scripting_api_version);
         self.catalog
-            .ensure_bridge_callable(module, function)
+            .ensure_bridge_callable(module, function, scripting_api_version)
             .map_err(FlScriptingError::UnsupportedCall)?;
 
         let id = self.next_id.fetch_add(1, Ordering::Relaxed);
