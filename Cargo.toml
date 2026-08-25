@@ -10,6 +10,7 @@ members = [
   "apps/ghost-workflow",
   "apps/ghost-fl-agent",
   "apps/ghost-fl-workspace",
+  "apps/ghost-fl-mcp",
   "tools/fl-gopher-probe",
   "tools/analyse-full",
 ]
