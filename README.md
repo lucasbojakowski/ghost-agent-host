@@ -1,94 +1,101 @@
 # Ghost & Guild
 
-Ghost & Guild is an agentic layer for audio workspaces.
+Ghost & Guild is an SDK/runtime for building agentic music-production applications.
+
+The project keeps FL Studio authoritative for the real DAW state and processors while Ghost adds sensing, analysis, agent runtimes and higher-level workspace capabilities.
 
 ```text
 capture → analysis → agent → DAW
 ```
 
-The current reference slice keeps FL Studio authoritative for processors and routing:
+## Repository architecture
 
-- **Ghost Tap** captures a bounded stereo observation from the DAW while remaining a transparent CLAP passthrough.
-- **ghost-audio** turns captured audio into deterministic, inspectable evidence.
-- **ghost-context** represents and compiles provider-neutral reasoning context.
-- **ghost-codex** runs persistent Codex App Server threads and dynamic tools without audio/mixing-domain coupling.
-- **ghost-fl-studio** is a transparent, policy-free mirror of the live FL Studio/Gopher interface.
-- **ghost-fl-scripting** is the independent transparent FL MIDI Scripting adapter promoted from the live-proven scripting bridge experiment.
-- **ghost-workflow** composes the proven capture → analysis → agent → DAW regression experiment.
-- **ghost-fl-agent** remains the frozen raw-Gopher Codex baseline; its scripting surface is developer diagnostics only.
-- **ghost-fl-workspace** is the empirical combined Gopher + MIDI Scripting agent harness for this framework branch.
+The monorepo is intentionally split into two architectural projects:
 
-## Workspace
+```text
+crates/*  = reusable Ghost Core / SDK
+apps/*    = product, harness and UI composition
+```
+
+Core crates own reusable mechanisms and integration invariants. Apps decide what is exposed to humans/agents, how tools and context are composed, which harness/protocol is used, and which product semantics apply.
+
+See [SDK architecture](docs/SDK_ARCHITECTURE.md).
+
+## Core / SDK
 
 ```text
 crates/
-  ghost-audio/
-  ghost-tap/
-  ghost-context/
-  ghost-codex/
-  ghost-fl-studio/
-  ghost-fl-scripting/
-  ghost-application/
+  ghost-audio/          deterministic audio analysis/evidence
+  ghost-tap/            transparent CLAP capture/sensing primitive
+  ghost-context/        provider-neutral context support
+  ghost-codex/          reusable Codex App Server runtime
+  ghost-fl-studio/      transparent FL Studio Gopher/CDP adapter
+  ghost-fl-scripting/   transparent FL MIDI Scripting adapter
+  ghost-application/    reserved promotion boundary
+```
 
+The two FL crates intentionally remain separate. Gopher and MIDI Scripting are different real FL surfaces with different transports, lifecycles and capabilities; applications compose them when needed.
+
+## Current applications
+
+```text
 apps/
-  ghost-workflow/
-  ghost-fl-agent/
-  ghost-fl-workspace/
-
-tools/
-  analyse-full/
-  fl-gopher-probe/
+  ghost-fl-agent/       frozen direct-Codex raw Gopher control group
+  ghost-fl-workspace/   live-proven Codex Gopher + scripting composition
+  ghost-fl-mcp/         live-proven external MCP raw Gopher control group
+  ghost-workflow/       capture → analysis → scoped FL regression workflow
 ```
 
-Policy starts high in `apps/*` and moves downward only after repeated real workflows demonstrate a reusable requirement.
-
-## FL scripting framework
-
-`feat/fl-scripting-framework` promotes only the reusable FL-specific scripting boundary from the live-proven `feat/fl-scripting-bridge` experiment.
-
-The resulting composition is:
+Current harness/control matrix:
 
 ```text
-                         FL Studio
-                      /             \
-                 Gopher/CDP      MIDI Scripting
-                     │                │
-                     ▼                ▼
-           ghost-fl-studio    ghost-fl-scripting
-                     \                /
-                      \              /
-                       ▼            ▼
-                    ghost-fl-workspace
+                         Direct Codex                 External MCP
+Raw Gopher               ghost-fl-agent               ghost-fl-mcp
+                         PROVEN / CONTROL GROUP        PROVEN / CONTROL GROUP
+
+Expanded FL              ghost-fl-workspace           next experiment
+Gopher + Scripting        PROVEN
 ```
 
-`ghost-fl-studio` remains the transparent Gopher adapter. `ghost-fl-scripting` owns only the scripting transport/protocol/catalog boundary. `ghost-fl-workspace` composes the complete live Gopher catalog with exactly three progressive-disclosure scripting gateways: search, describe and call.
+See [FL capability surfaces](docs/FL_CAPABILITY_SURFACES.md).
 
-The frozen `ghost-fl-agent` Codex registry is intentionally unchanged: it still exposes the complete live Gopher catalog and no scripting tools. Its existing scripting status/probe endpoints consume `ghost-fl-scripting` only as a developer regression path.
+## Proven baselines
 
-The scripting runtime preserves the live-proven FL Studio 26.1.3 / MIDI Scripting API 44 topology:
+Do not infer current status from old experiment prompts or branch names. The canonical baseline index is:
+
+- [Proven baselines](docs/PROVEN_BASELINES.md)
+
+Current accepted evidence includes:
+
+- raw live Gopher agent baseline;
+- promoted `ghost-fl-scripting` with live FL context and progressive scripting search/describe/call;
+- live hybrid Gopher + scripting agent behavior;
+- MCP 2026-07-28 stdio executable/harness/tool interoperability.
+
+Historical investigation details remain in [FL scripting journey](docs/FL_SCRIPTING_JOURNEY.md).
+
+## Current integration phase
+
+`phase/workspace-foundation` is the experimental integration spine for the accepted scripting and MCP work. It is not the repository default branch and is not itself considered proven until its combined Cargo workspace and validation gates pass.
+
+The immediate architectural direction is to establish the first app-owned workspace feature slices around:
 
 ```text
-Rust listener
-  ↕ bounded versioned NDJSON over loopback TCP
-FL controller script
-  ↕
-native CPython 3.12 multi-phase extension
-  ↕ nonblocking WinSock
-Windows loopback
+Entity
+Feature
+Relation
+Binding
+Revision
+Diff
 ```
 
-The checked-in FL scripting metadata under `docs/daw-apis/fl-studio/` is the capability evidence. Fully documented, explicitly imported modules may be called through the generic adapter when their argument/return shapes are JSON-compatible. Runtime-inspected or signature-incomplete functions remain discoverable but are not guessed into callable behavior.
+and then derive human UI, agent context/tools and external protocol projections from the same state/capabilities.
 
-Read:
-
-- [FL scripting live journey](docs/FL_SCRIPTING_JOURNEY.md)
-- [FL scripting framework architecture](docs/agent-work/FL_SCRIPTING_FRAMEWORK.md)
-- [FL scripting framework implementation prompt](docs/agent-work/FL_SCRIPTING_FRAMEWORK_IMPLEMENTATION_PROMPT.md)
-- [FL scripting framework validation](docs/agent-work/FL_SCRIPTING_FRAMEWORK_VALIDATION.md)
+See [Workspace foundation phase](docs/agent-work/WORKSPACE_FOUNDATION.md).
 
 ## Validation
 
-Static and deterministic validation:
+Static/deterministic repository gate:
 
 ```bash
 cargo fmt --all -- --check
@@ -97,13 +104,14 @@ cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ```
 
-The Windows CI gate also compiles the promoted FL controller script and rebuilds the CPython 3.12 native extension from `crates/ghost-fl-scripting/fl-native`.
+The promoted FL scripting integration also has a Windows Python/native build gate. Real FL Studio, Gopher, scripting subinterpreter behavior, Ghost Tap loading and third-party plugin behavior require the proprietary Windows runtime.
 
-FL Studio, Gopher, Ghost Tap loading, scripting subinterpreter/native-extension behavior, and third-party plugin behavior require the proprietary Windows runtime. See [Windows / FL live validation](docs/WINDOWS_FL_LIVE_VALIDATION.md) for the general regression gate and [FL scripting framework validation](docs/agent-work/FL_SCRIPTING_FRAMEWORK_VALIDATION.md) for the branch-specific extracted-adapter and combined-workspace gates.
+See:
 
-## Design sources
+- [Windows / FL live validation](docs/WINDOWS_FL_LIVE_VALIDATION.md)
+- [FL scripting framework validation](docs/agent-work/FL_SCRIPTING_FRAMEWORK_VALIDATION.md)
+- [FL MCP 2026 validation](docs/agent-work/FL_MCP_2026_VALIDATION.md)
 
-- [Technical retrospective](docs/TECHNICAL_RETROSPECTIVE.md)
-- [Workspace migration plan](docs/WORKSPACE_MIGRATION_PLAN.md)
-- [ADR 001 — transparent FL Studio adapter](docs/decisions/001-transparent-fl-studio-adapter.md)
-- [Post-reset idea backlog and scorecard](docs/ideas/README.md)
+## Design history
+
+The technical retrospective, migration plan, ADRs and experiment journeys remain valuable historical evidence. Current implementation work should prefer the baseline/SDK/capability/phase documents above when older planning text conflicts with live-proven architecture.
