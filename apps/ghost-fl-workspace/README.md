@@ -1,13 +1,11 @@
 # ghost-fl-workspace
 
-Empirical combined FL Studio research harness for the scripting-framework branch.
-
-This app composes the two transparent FL integration surfaces without introducing the later Ghost skill/tool/intent architecture:
+Live-proven direct-Codex composition of Ghost's two transparent FL Studio integration surfaces.
 
 ```text
 Codex App Server
   |
-  +-- complete live Gopher tool catalog (unchanged)
+  +-- complete live Gopher tool catalog
   |
   +-- fl_scripting_search
   +-- fl_scripting_describe
@@ -20,38 +18,51 @@ Codex App Server
      FL MIDI Scripting API
 ```
 
-`ghost-fl-agent` remains the frozen Gopher-only behavioral baseline. Do not move the scripting gateways into that app.
+Status: **PROVEN as the combined Gopher + scripting primitive harness**.
 
-## Why only three scripting tools
+The accepted live test established real FL context, scripting discovery/description/calls, and agent behavior that combines scripting observations with Gopher operations in one project.
 
-The checked-in FL scripting runtime artifact contains hundreds of functions and overloads. Registering every function as a Codex dynamic tool would create unnecessary context pressure and would blur the primitive adapter with a generated semantic layer.
+`ghost-fl-agent` remains the frozen direct-Codex Gopher-only control group. Do not move the scripting gateways into it.
 
-Instead:
+## Progressive scripting disclosure
 
-- `fl_scripting_search(query, module?)` performs deterministic metadata search;
-- `fl_scripting_describe(module, function)` returns the exact checked-in signature/return/API-version/bridge-support evidence, including overloads;
-- `fl_scripting_call(module, function, args)` invokes one metadata-approved primitive with positional JSON arguments through `ghost-fl-scripting`.
+The checked-in scripting catalog contains hundreds of functions and overloads. This app intentionally exposes only three scripting gateway definitions:
 
-The lower adapter still owns module/function validation and refuses functions whose checked-in metadata does not establish a bridge-compatible wire shape.
+- `fl_scripting_search(query, module?)` — deterministic metadata search;
+- `fl_scripting_describe(module, function)` — exact evidenced metadata, overloads and bridge support;
+- `fl_scripting_call(module, function, args)` — invoke one metadata-approved primitive with positional JSON arguments.
 
-## Point-in-time snapshot
+This keeps the active model tool surface bounded while retaining access to the larger FL scripting API.
 
-Before every Codex turn the app reads a compact MIDI Scripting snapshot containing the currently available project title/changed flag, safe-to-edit state, selected channel and mixer track, mixer count, current pattern/name/count, arrangement selection, focused plugin/window, song position/hint, loop mode and playing state.
+The lower `ghost-fl-scripting` adapter owns module/function validation and rejects calls whose checked-in evidence does not establish a bridge-compatible wire shape.
 
-This snapshot is deliberately treated as stale immediately after capture. It is context for reasoning, not a cached semantic world model. The agent is instructed to re-observe through the live surfaces when correctness depends on current state.
+## Point-in-time FL context
+
+Before every Codex turn the app reads a compact scripting snapshot containing available values for:
+
+- scripting/FL version;
+- project title and changed flag;
+- `safeToEdit`;
+- selected channel and mixer track;
+- mixer track count;
+- current pattern/count/name;
+- arrangement selection;
+- focused plugin/window;
+- song position/hint;
+- loop mode and playback state.
+
+The snapshot is explicitly **not** a durable semantic world model. It is point-in-time reasoning evidence and becomes stale as soon as the producer changes FL. The agent is instructed to re-observe when correctness depends on current state.
 
 ## Run
 
 Prerequisites:
 
-1. FL Studio is running with the WebView2 CDP debugging port enabled and Gopher available.
-2. The promoted `Ghost Bridge` MIDI controller script is installed from `crates/ghost-fl-scripting/fl-script/install.ps1`.
-3. The known-good `ghost_native.cp312-win_amd64.pyd` is installed into FL Studio's shared Python library.
-4. `Ghost Midi` exists as the current temporary virtual-MIDI auto-load bootstrap.
-5. Codex App Server is available through the configured `codex` binary.
-6. The open FL project is disposable or otherwise safe for live writes.
-
-From the repository root:
+1. FL Studio is running with Gopher/CDP enabled.
+2. The promoted controller script from `crates/ghost-fl-scripting/fl-script/` is installed.
+3. The validated `ghost_native.cp312-win_amd64.pyd` is installed into FL Studio's shared Python library.
+4. `Ghost Midi` exists as the current temporary controller-script bootstrap.
+5. Codex App Server is available through the configured binary.
+6. The open FL project is safe for the intended writes.
 
 ```powershell
 cargo run -p ghost-fl-workspace -- --i-accept-live-fl-writes
@@ -60,16 +71,12 @@ cargo run -p ghost-fl-workspace -- --i-accept-live-fl-writes
 Defaults:
 
 ```text
-Gopher CDP:        127.0.0.1:9222
-workspace UI:      127.0.0.1:48775
-scripting listener:127.0.0.1:48766
+Gopher CDP:         127.0.0.1:9222
+workspace UI:       127.0.0.1:48775
+scripting listener: 127.0.0.1:48766
 ```
 
-Open:
-
-```text
-http://127.0.0.1:48775
-```
+Open `http://127.0.0.1:48775`.
 
 Useful options:
 
@@ -84,17 +91,28 @@ Useful options:
 --verbose-agent-events
 ```
 
-## Manual hybrid acceptance gate
+## Control matrix / MCP
 
-The static CI gate cannot prove FL Studio runtime behavior. On a Windows host with FL Studio 26.1.3 / scripting API 44 (or the intended replacement target), use a disposable project and run at least these empirical tasks:
+The corresponding raw external-harness control group is `ghost-fl-mcp`, which currently exports only Gopher through MCP 2026-07-28.
 
-1. **Hybrid task:** ask the agent to identify the current mixer/channel context through scripting, make a reversible or disposable native Gopher mutation that depends on that context, then verify the resulting live state through scripting.
-2. **Scripting gateway task:** ask the agent to discover a known scripting primitive with `fl_scripting_search`, inspect it with `fl_scripting_describe`, invoke it through `fl_scripting_call`, and verify the observed result.
-3. Confirm Gopher still exposes the complete live manifest and that only the three scripting gateway definitions are added in this app.
-4. Confirm `ghost-fl-agent` remains behaviorally Gopher-only.
+The next independent experiment is the missing matrix cell: expose this expanded FL capability meaning to an external MCP harness without changing either raw control group.
 
-Record the exact FL Studio version, scripting API version, native extension artifact and observed pass/fail results before declaring the branch live-complete.
+Recommended first expanded MCP surface:
 
-## Explicitly out of scope
+```text
+complete live Gopher tools
++ fl_scripting_search
++ fl_scripting_describe
++ fl_scripting_call
++ fl_context_snapshot
+```
 
-This app does not add skills, intents, semantic DAW entities, capability profiles, policy-generated tool subsets, generic DAW abstractions, audio analysis, persistent episode storage, or event subscriptions. Those decisions belong after the combined primitive experiment produces evidence.
+See `docs/FL_CAPABILITY_SURFACES.md`.
+
+## Still out of scope
+
+This app is a primitive composition harness. It does not yet define the production workspace model, skills, intents, semantic entity graph, plugin profiles, persistent episode model or dynamic semantic tool compiler.
+
+Those are the next app-layer experiments now that the lower surfaces are proven.
+
+Canonical status: `docs/PROVEN_BASELINES.md`.
