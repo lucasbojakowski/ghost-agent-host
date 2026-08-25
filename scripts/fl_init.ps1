@@ -1,3 +1,8 @@
+[CmdletBinding()]
+param(
+  [string]$app="workspace"
+)
+
 $debugArg = "--remote-debugging-port=9222"
 $existing = $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS
 if ([string]::IsNullOrWhiteSpace($existing)) {
@@ -5,6 +10,7 @@ if ([string]::IsNullOrWhiteSpace($existing)) {
 } elseif ($existing -notmatch "--remote-debugging-port=") {
     $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "$existing $debugArg"
 }
+
 
 & "D:\Image-Line\FL Studio 2026\FL64.exe"
 
@@ -17,7 +23,7 @@ for ($i = 0; $i -lt $tries; $i++) {
         
         if ($check -match "Gopher") {
             Write-Host "FL Studio is running with remote debugging enabled."
-            cargo run -p ghost-fl-agent -- --i-accept-live-fl-writes
+            cargo run -p ghost-fl-$app -- --i-accept-live-fl-writes
             break
         }
     } catch {

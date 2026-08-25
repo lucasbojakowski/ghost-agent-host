@@ -391,9 +391,19 @@ dependencies = [
  "anyhow",
  "clap",
  "ghost-codex",
+ "ghost-fl-scripting",
  "ghost-fl-studio",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "ghost-fl-scripting"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror",
 ]
 
 [[package]]
@@ -405,6 +415,19 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
+]
+
+[[package]]
+name = "ghost-fl-workspace"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "ghost-codex",
+ "ghost-fl-scripting",
+ "ghost-fl-studio",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
