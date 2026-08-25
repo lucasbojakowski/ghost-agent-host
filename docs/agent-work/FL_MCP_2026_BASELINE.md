@@ -1,69 +1,34 @@
-# FL Studio MCP 2026 baseline experiment
+# FL Studio MCP 2026 Raw Parity Baseline
 
-Branch: `feat/fl-mcp-2026`
+Status: **PROVEN FOR MCP/HARNESS INTEROPERABILITY / CONTROL GROUP**
 
-## Purpose
-
-The current raw Gopher agent is runtime-proven and is now frozen as **Raw FL Baseline v1**:
-
-```text
-live Gopher manifest
-+ faithful `ghost-fl-studio` calls
-+ minimal agent instructions
-```
-
-This branch exports that same FL capability surface through the current Model Context Protocol so other providers/harnesses can operate the exact same DAW surface.
-
-The goal is **protocol parity and harness interoperability**, not a new semantic FL API.
-
-Do not combine this branch with the FL Studio MIDI Scripting bridge experiment. That work proceeds independently on `feat/fl-scripting-bridge`.
-
-## Protocol target
-
-Target the current stable MCP protocol release:
-
-```text
-2026-07-28
-```
-
-Use the official Rust SDK (`rmcp`) 3.x. At branch creation/research time, `rmcp` 3.0.1 is the current stable release and the official SDK documents support for MCP `2026-07-28` while retaining compatibility with older protocol versions.
-
-Before implementation, verify the exact current 3.x API against the official `modelcontextprotocol/rust-sdk` repository and MCP specification. Do not hand-write the MCP wire protocol when the official SDK already implements it.
-
-Important 2026-07-28 properties for this branch:
-
-- protocol-level sessions are gone;
-- the old `initialize` / `initialized` lifecycle is gone for 2026-07-28;
-- requests are self-describing and carry protocol/client metadata;
-- `server/discover` is available;
-- normal results have explicit result typing;
-- tool list results are cacheable and should have deterministic ordering;
-- full JSON Schema 2020-12 is supported;
-- Tasks and MCP Apps are official extensions;
-- MRTR exists for multi-round-trip input/confirmation;
-- Streamable HTTP is stateless and no longer uses `Mcp-Session-Id` / `Last-Event-ID` replay.
-
-For **this first parity branch**, only the core tool server is required. Do not add Tasks, MRTR, MCP Apps, resources, subscriptions, authorization, or semantic projections unless the SDK requires minimal declarations. Those features are future experiments after raw parity is proven.
-
-## Architecture for this branch
-
-Create a dedicated local MCP app, tentatively:
+Current app:
 
 ```text
 apps/ghost-fl-mcp/
 ```
 
-with this dependency shape:
+Accepted runtime status is recorded in `FL_MCP_2026_VALIDATION.md`.
+
+## Purpose
+
+This app answers one narrow question:
+
+> Can an external MCP harness operate Ghost's already-proven raw FL Studio/Gopher capability surface without a Ghost-specific semantic redesign?
+
+The answer is yes for executable/harness/tool interoperability.
+
+The app should therefore remain useful as a raw external-harness control group rather than silently absorbing later scripting or semantic workspace capabilities.
+
+## Architecture
 
 ```text
-MCP host
-(ChatGPT / Claude / IDE / harness)
+external MCP host / agent
         │
         │ MCP 2026-07-28 over stdio
         ▼
 apps/ghost-fl-mcp
         │
-        │ direct Rust calls
         ▼
 ghost-fl-studio
         │
@@ -71,23 +36,21 @@ ghost-fl-studio
 Gopher / FL Studio
 ```
 
-Do not route through `ghost-codex`. The point is to let an external harness own the agent loop while Ghost owns the FL capability surface.
+The app does not route through `ghost-codex`. The external harness owns the agent loop.
 
-Do not add MCP behavior to `ghost-fl-studio`; MCP is an edge protocol in this experiment.
+MCP is an edge protocol here, not Ghost's internal bus.
 
-## Why stdio first
-
-Use MCP stdio for the first parity server because this is a local desktop integration and external harnesses can launch the Rust binary directly.
-
-That gives the cleanest first comparison:
+## Protocol target
 
 ```text
-Codex direct baseline
-        vs
-external harness → MCP stdio → same Gopher surface
+MCP: 2026-07-28
+Rust SDK: rmcp 3.0.1
+transport: stdio
 ```
 
-Do not build Streamable HTTP merely because MCP supports it. HTTP can be added later if a persistent Ghost desktop process needs to serve multiple clients.
+The app uses the official Rust SDK rather than hand-writing MCP framing.
+
+Protocol-specific extensions such as Tasks, MRTR, Apps, resources/subscriptions and Streamable HTTP are intentionally absent from this raw control group.
 
 ## Raw tool parity
 
@@ -95,112 +58,87 @@ At startup:
 
 1. connect `GopherNativeAdapter`;
 2. read the live `FlStudioManifest`;
-3. expose every live `NativeToolDefinition` as an MCP tool;
-4. keep the native Gopher tool **name**, **description**, and **input schema**;
-5. handle MCP `tools/call` by invoking `GopherNativeAdapter::call_native(name, arguments)`;
-6. preserve the Gopher adapter's single-flight behavior and argument-order canonicalization;
-7. map results/errors faithfully without inventing semantic DAW behavior.
+3. convert every live `NativeToolDefinition` into an MCP tool;
+4. preserve tool name, description and input schema;
+5. sort tools deterministically at the MCP edge;
+6. forward `tools/call` to `GopherNativeAdapter::call_native`;
+7. preserve native failures as visible failures rather than transport success.
 
-Do not manually duplicate the 48 known tools as Rust functions. The server must remain driven by the **live manifest**, because the current adapter contract is explicitly dynamic/version-probed.
+The known Gopher tool count is not hard-coded. The live manifest is authoritative.
 
-`tools/list` should have deterministic ordering for MCP caching. A stable sort by tool name at the MCP edge is acceptable; do not alter tool semantics or schemas.
-
-## Result mapping
-
-Inspect actual `NativeToolResult` values and use the official `rmcp` result types.
-
-The MCP client should receive the same useful content the direct raw agent sees. Preserve native text results and expose structured native data when it is meaningful, but do not transform results into a new domain model.
-
-Distinguish:
-
-- MCP/protocol errors;
-- invalid tool/arguments;
-- transport failures;
-- FL/Gopher native tool failures.
-
-Do not report a failed FL native operation as a successful MCP tool call merely because JSON-RPC transport succeeded.
+`ghost-fl-studio` remains responsible for Gopher-specific invariants such as schema-order canonicalization, callback normalization, native-error detection and single-flight dispatch.
 
 ## Safety baseline
 
-The raw Gopher catalog includes destructive operations. Preserve a coarse explicit live-write acceptance gate equivalent in spirit to `ghost-fl-agent`'s:
+The raw Gopher surface contains destructive operations, so the app requires explicit operator acceptance:
 
 ```text
 --i-accept-live-fl-writes
 ```
 
-The MCP parity server must not silently become safer or more restrictive than Raw FL Baseline v1, because that would invalidate the harness comparison. Likewise, do not remove the coarse opt-in.
+Do not add hidden semantic restrictions to this control group; doing so would invalidate comparisons with the direct raw baseline. Finer product permission policy belongs in later apps.
 
-Fine-grained permissions, MRTR confirmations, and semantic risk policy are future layers after parity.
+## What is proven
 
-## App-local implementation rule
+The 2026-08-25 user-machine acceptance established:
 
-Do not promote MCP abstractions into `ghost-application` or a new shared crate simply because MCP is useful once.
-
-The first MCP server belongs in `apps/*`. Reuse can be extracted only after another app/provider path proves the boundary.
-
-Do not turn `ghost-codex` into a universal agent runtime on this branch.
-
-## Validation
-
-Static/deterministic:
-
-```bash
-cargo fmt --all -- --check
-cargo check --workspace --all-features
-cargo test --workspace --all-features
-cargo clippy --workspace --all-targets --all-features -- -D warnings
+```text
+standalone executable build          PASS
+external MCP harness connection      PASS
+agent tool discovery/use             PASS
+live FL tool invocation              PASS
 ```
 
-Add focused MCP tests where practical for:
+The acceptance does not claim every broader benchmark or official conformance scenario was rerun. See `FL_MCP_2026_VALIDATION.md` for the exact scope.
 
-- deterministic `tools/list` conversion from a fixture `FlStudioManifest`;
-- exact preservation of name/description/input schema;
-- dynamic dispatch by tool name;
-- result mapping;
-- invalid arguments / unknown tools / native errors;
-- no accidental dependency on `ghost-codex`;
-- protocol server startup over stdio.
+## Historical constraint that is now superseded
 
-If the official MCP conformance tooling is practical for a local Rust server, run the relevant `2026-07-28` server scenarios or at minimum document the exact command and any blocker. Do not claim conformance solely from compilation.
+The original parity experiment explicitly said not to combine MCP with the independent scripting branch. That restriction applied only while both experiments were being isolated.
 
-Live FL validation:
+The experiments are now independently proven and are being integrated on:
 
-1. start FL Studio with Gopher/CDP exactly as for `ghost-fl-agent`;
-2. launch `ghost-fl-mcp` from an MCP 2026-07-28-capable host;
-3. list tools and confirm parity with the current live Gopher manifest;
-4. run the already-proven benchmark-session setup prompt in a fresh/disposable FL project through the external harness;
-5. confirm the same kinds of channel/mixer/routing/color/sequencer operations work;
-6. inspect the MCP tool trace and compare it with the Codex-direct raw baseline.
+```text
+phase/workspace-foundation
+```
 
-## What not to build yet
+Do not interpret the old isolation rule as a current architectural prohibition.
 
-Do not implement in the parity phase:
+The raw `ghost-fl-mcp` app itself should still remain unchanged as a control group. Expanded Gopher + scripting MCP capability belongs in a separate app/experiment.
 
-- semantic tools such as `fl.channel.update` or `fl.mixer.update_track`;
-- a new typed DAW/domain model;
-- MCP resources mirroring the project;
-- Tasks for long-running FL operations;
-- MRTR confirmation flows;
-- MCP App mixer/project UI;
-- subscriptions/live state events;
-- multi-FL instance handles;
-- FL MIDI Scripting/socket RPC;
-- Windows MIDI Services/CoreMIDI;
-- `ghost-application` promotion;
-- a generic multi-provider in-process agent trait.
+## Next experiment
 
-Those are valuable follow-ups, but adding them now would prevent us from answering the first experiment cleanly:
+The missing harness matrix cell is an external MCP projection of the already-proven expanded FL surface:
 
-> Can another harness operate the exact same proven raw FL surface through standards-based MCP with no Ghost-specific semantic redesign?
+```text
+complete live Gopher tools
++ fl_scripting_search
++ fl_scripting_describe
++ fl_scripting_call
++ fl_context_snapshot
+```
 
-## Follow-up sequence after parity
+That work should preserve progressive disclosure rather than generating hundreds of scripting tools.
 
-Once parity is live-proven, the branch findings should distinguish future work into separate experiments:
+It will also provide evidence for the smallest provider-neutral capability/tool contract worth promoting into Ghost Core.
 
-1. **Harness benchmark** — same FL fixture/prompts across Codex direct and external MCP hosts.
-2. **Scripting surface composition** — after the independent scripting bridge is proven, decide whether/how to expose it through MCP.
-3. **MCP 2026 features** — test MRTR for destructive ambiguity, Tasks for long-running/batched operations, resources/subscriptions for observations, and MCP Apps for visual interaction.
-4. **Semantic FL API** — only if the raw benchmark produces evidence that composed tools improve correctness/efficiency.
-5. **Persistent Ghost desktop MCP endpoint** — evaluate Streamable HTTP only when the product runtime needs it.
+See `docs/FL_CAPABILITY_SURFACES.md`.
 
-The raw parity server is the control group for all of those experiments.
+## Ownership rule
+
+The MCP server remains app-owned.
+
+Do not put MCP behavior into `ghost-fl-studio` or `ghost-fl-scripting`. Protocol-only reusable machinery may be promoted into Core only after another MCP app proves real duplication.
+
+## Regression gate
+
+Future raw-MCP changes should preserve:
+
+1. standalone executable build;
+2. stdout reserved for MCP stdio protocol traffic;
+3. external harness connection;
+4. dynamic live-manifest `tools/list`;
+5. exact parity name/description/schema where intended;
+6. real adapter dispatch and error visibility;
+7. explicit live-write acceptance;
+8. no `ghost-codex` dependency;
+9. no scripting/semantic expansion inside this control app.
