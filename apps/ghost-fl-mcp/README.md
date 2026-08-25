@@ -1,9 +1,11 @@
 # ghost-fl-mcp
 
-`ghost-fl-mcp` exports Ghost & Guild's proven raw FL Studio/Gopher capability surface through MCP `2026-07-28` over stdio.
+`ghost-fl-mcp` is the live-proven **raw Gopher MCP control group**.
+
+It exports the same dynamic FL Studio/Gopher capability surface used by the raw direct-Codex baseline through MCP `2026-07-28` over stdio.
 
 ```text
-external MCP host
+external MCP host / agent
         |
         | MCP 2026-07-28 / stdio
         v
@@ -16,23 +18,36 @@ external MCP host
  Gopher / FL Studio
 ```
 
-This is a parity experiment, not a semantic FL API. The app does not depend on `ghost-codex` or `ghost-application`, and it does not add Tasks, MRTR, MCP Apps, resources, subscriptions, Streamable HTTP, scripting-bridge tools, or a generic DAW model.
+Status: **PROVEN for executable/harness/tool interoperability**.
+
+The accepted user-machine validation established that the executable builds, an external MCP harness launches/connects to it, the agent receives the tools, and live FL tool calls succeed.
+
+This app remains a parity/control experiment, not the expanded Gopher + scripting MCP surface.
 
 ## Protocol and SDK
 
 - MCP protocol: `2026-07-28`
 - Rust SDK: `rmcp = 3.0.1`
-- Transport: stdio
+- transport: stdio
 
-The server uses `rmcp::ServerHandler` directly because the live Gopher tool catalog is dynamic. `tools/list` is built from `GopherNativeAdapter::manifest()` at startup and sorted by tool name for deterministic MCP presentation. Each tool preserves the live Gopher name, description and input schema.
+The server uses `rmcp::ServerHandler` directly because the live Gopher catalog is dynamic.
 
-`tools/call` forwards the requested name and JSON object directly to `GopherNativeAdapter::call_native()`. The adapter remains responsible for Gopher schema-order argument canonicalization, recursive callback normalization, native-error detection and single-flight serialization.
+At startup:
 
-Successful native calls preserve Gopher text content as MCP content and expose the unmodified native JSON response as MCP `structuredContent`. FL argument/transport/native failures are returned as visible MCP tool errors. Unknown tools remain MCP protocol errors.
+```text
+GopherNativeAdapter::manifest()
+    -> deterministic MCP tools/list
+```
+
+Each tool preserves the live Gopher name, description and input schema. `tools/call` forwards the requested name and JSON object to `GopherNativeAdapter::call_native()`.
+
+`ghost-fl-studio` continues to own Gopher-specific invariants: live schema lookup, argument-order canonicalization, recursive result normalization, native error detection and single-flight calls.
+
+Successful native calls expose text content when present and the unmodified native JSON response as MCP `structuredContent`. Native adapter failures are visible tool errors; unknown tools remain protocol-level method-not-found failures.
 
 ## Live-write gate
 
-The raw catalog includes destructive operations. The server refuses to start unless the operator explicitly accepts live writes:
+The raw catalog includes destructive operations. The server refuses to start without explicit acceptance:
 
 ```powershell
 cargo run -p ghost-fl-mcp --release -- \
@@ -41,13 +56,13 @@ cargo run -p ghost-fl-mcp --release -- \
   --i-accept-live-fl-writes
 ```
 
-Use a fresh or disposable FL Studio project for broad agent tests.
+Use a disposable FL project for broad tests.
 
 All diagnostics go to stderr. Stdout is reserved for MCP stdio protocol traffic.
 
 ## Host configuration
 
-Build the binary, then configure a current MCP host to launch it as a stdio server. Exact configuration keys vary by host; the command/argument shape is:
+Configure a current MCP host to launch the built executable as a stdio server. Exact host configuration varies; conceptually:
 
 ```json
 {
@@ -60,42 +75,67 @@ Build the binary, then configure a current MCP host to launch it as a stdio serv
 }
 ```
 
-Use an MCP host that speaks the `2026-07-28` discovery/per-request-metadata lifecycle rather than a legacy-only initialize/session implementation.
+Use a host compatible with the targeted MCP lifecycle/version.
 
-## Deterministic validation
+## Validation scope
 
-```bash
-cargo fmt --all -- --check
-cargo check --workspace --all-features
-cargo test --workspace --all-features
-cargo clippy --workspace --all-targets --all-features -- -D warnings
+The accepted baseline proves:
+
+```text
+executable build                         PASS
+external harness connection             PASS
+agent tool discovery/use                PASS
+live FL invocation through MCP          PASS
 ```
 
-The app-local tests cover deterministic tool ordering, exact name/description/schema preservation, dynamic dispatch, unknown-tool rejection, result mapping, native/transport/argument error mapping, and dependency isolation from `ghost-codex`/`ghost-application`.
+It does not claim that every broader evaluation has been rerun. In particular, the latest acceptance record does not separately claim:
 
-### Official conformance tooling
+- full `setup-benchmark-session.md` parity;
+- official MCP conformance-suite completion;
+- performance parity with direct Codex;
+- scripting export through MCP.
 
-The current official `@modelcontextprotocol/conformance` server runner accepts an HTTP `--url`; it does not launch/test a stdio server directly. This phase deliberately does not add Streamable HTTP solely for conformance, so the official URL-based server suite is a documented transport mismatch rather than a claimed pass.
+See `docs/agent-work/FL_MCP_2026_VALIDATION.md`.
 
-For a later HTTP fixture or endpoint, the relevant current suite shape is:
+## Deterministic tests
 
-```bash
-npx -y @modelcontextprotocol/conformance server \
-  --url http://127.0.0.1:8002/mcp \
-  --suite all \
-  --spec-version 2026-07-28
+The app-local tests cover:
+
+- deterministic tool ordering;
+- exact name/description/schema preservation;
+- dynamic dispatch;
+- unknown-tool rejection;
+- result/error mapping;
+- dependency isolation from `ghost-codex` and `ghost-application`.
+
+The combined integration branch must still run the normal repository fmt/check/test/clippy matrix after its Cargo lockfile is reconciled.
+
+## Why this app stays raw
+
+`ghost-fl-workspace` has already proven a richer direct-Codex surface:
+
+```text
+Gopher
++ scripting search/describe/call
++ compact live context
 ```
 
-## Human-only live FL acceptance
+Do **not** silently add those capabilities here. Keeping `ghost-fl-mcp` raw gives us a stable external-harness control group.
 
-The user machine remains authoritative for FL/Gopher runtime behavior.
+The expanded MCP surface should be a separate app/experiment so we can compare:
 
-1. Start FL Studio with Gopher/CDP enabled as for `ghost-fl-agent`.
-2. Launch this server from an MCP `2026-07-28`-capable external host with `--i-accept-live-fl-writes`.
-3. Confirm the host's tool list matches the current live Gopher manifest.
-4. Open a fresh/disposable FL project.
-5. Run `apps/ghost-fl-agent/prompts/setup-benchmark-session.md` through the external MCP harness.
-6. Verify the requested channels, mixer layout, routing, names/colors, buses, playlist organization and other state in FL Studio.
-7. Compare the external harness tool trace with Raw FL Baseline v1.
+```text
+raw vs expanded surface
+and
+Codex vs external MCP harness
+```
 
-Do not claim live parity until this broad real-FL acceptance test passes.
+See `docs/FL_CAPABILITY_SURFACES.md`.
+
+## Ownership boundary
+
+MCP is an app-owned edge protocol. `ghost-fl-studio` remains MCP-agnostic.
+
+If a second MCP app proves reusable conversion/dispatch machinery, the smallest protocol-neutral pieces may later be promoted into Ghost Core. The product-specific server, capability selection and policy should remain app-owned.
+
+Canonical baseline status: `docs/PROVEN_BASELINES.md`.
