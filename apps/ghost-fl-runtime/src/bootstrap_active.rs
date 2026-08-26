@@ -10,7 +10,9 @@
 
 use std::time::Duration;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result};
+#[cfg(not(windows))]
+use anyhow::bail;
 use serde_json::json;
 
 use super::{probe_gopher, wait_for_fl_window, Runtime, RuntimePhase};
