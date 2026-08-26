@@ -14,9 +14,7 @@ fn main() {
     let url = args
         .next()
         .unwrap_or_else(|| "http://127.0.0.1:48750".to_owned());
-    let title = args
-        .next()
-        .unwrap_or_else(|| "Ghost & Guild".to_owned());
+    let title = args.next().unwrap_or_else(|| "Ghost & Guild".to_owned());
     let width = args
         .next()
         .and_then(|value| value.parse::<f64>().ok())
