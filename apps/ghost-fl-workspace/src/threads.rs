@@ -36,10 +36,14 @@ impl WorkspaceThreadStore {
 
     fn open(path: PathBuf) -> Result<Self> {
         let state = if path.is_file() {
-            let bytes = fs::read(&path)
-                .with_context(|| format!("failed to read workspace thread state {}", path.display()))?;
+            let bytes = fs::read(&path).with_context(|| {
+                format!("failed to read workspace thread state {}", path.display())
+            })?;
             serde_json::from_slice(&bytes).with_context(|| {
-                format!("workspace thread state was invalid JSON at {}", path.display())
+                format!(
+                    "workspace thread state was invalid JSON at {}",
+                    path.display()
+                )
             })?
         } else {
             WorkspaceThreadState::default()
@@ -152,12 +156,19 @@ impl WorkspaceThreadStore {
     fn persist(&self) -> Result<()> {
         if let Some(parent) = self.path.parent() {
             fs::create_dir_all(parent).with_context(|| {
-                format!("failed to create workspace state directory {}", parent.display())
+                format!(
+                    "failed to create workspace state directory {}",
+                    parent.display()
+                )
             })?;
         }
         let bytes = serde_json::to_vec_pretty(&self.state)?;
-        fs::write(&self.path, bytes)
-            .with_context(|| format!("failed to write workspace thread state {}", self.path.display()))
+        fs::write(&self.path, bytes).with_context(|| {
+            format!(
+                "failed to write workspace thread state {}",
+                self.path.display()
+            )
+        })
     }
 }
 
@@ -223,7 +234,11 @@ mod tests {
         assert_eq!(first.name.as_deref(), Some("Mix pass"));
         assert!(first.has_turns);
         assert_eq!(
-            reopened.record("thread-b").unwrap().forked_from_id.as_deref(),
+            reopened
+                .record("thread-b")
+                .unwrap()
+                .forked_from_id
+                .as_deref(),
             Some("thread-a")
         );
         let _ = fs::remove_file(path);
