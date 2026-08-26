@@ -966,7 +966,13 @@ impl Runtime {
         while !self.shutdown.load(Ordering::Relaxed) {
             match listener.accept() {
                 Ok((mut stream, _)) => {
-                    if let Err(error) = self.handle_http(&mut stream) {
+                    let request = (|| -> Result<()> {
+                        stream.set_nonblocking(false)?;
+                        stream.set_read_timeout(Some(Duration::from_secs(2)))?;
+                        stream.set_write_timeout(Some(Duration::from_secs(2)))?;
+                        self.handle_http(&mut stream)
+                    })();
+                    if let Err(error) = request {
                         eprintln!("[ghost-fl-runtime] HTTP request failed: {error:#}");
                         let response = json!({"error": error.to_string()});
                         let _ignored =
