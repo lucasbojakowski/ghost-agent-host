@@ -406,12 +406,8 @@ impl Runtime {
             state.fl.window_ready = true;
         }
         self.persist_state()?;
-        self.journal.append(
-            "fl.process",
-            "fl.window_ready",
-            "info",
-            json!({"pid": pid}),
-        )
+        self.journal
+            .append("fl.process", "fl.window_ready", "info", json!({"pid": pid}))
     }
 
     fn complete_bootstrap(&self, manifest: ghost_fl_studio::FlStudioManifest) -> Result<()> {
