@@ -1,4 +1,5 @@
 mod gateway;
+mod history;
 mod snapshot;
 mod threads;
 
@@ -18,6 +19,7 @@ use ghost_codex::{
 };
 use ghost_fl_scripting::{FlScriptingAdapter, FlScriptingConfig, FlScriptingStatus};
 use ghost_fl_studio::{FlStudioAdapterConfig, GopherNativeAdapter};
+use history::ThreadHistoryResponse;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use snapshot::{capture_workspace_snapshot, WorkspaceSnapshot};
@@ -267,6 +269,26 @@ impl AgentSession {
         }
     }
 
+    fn history(&mut self) -> Result<ThreadHistoryResponse> {
+        let Some(thread_id) = self.thread_store.selected_id().map(str::to_owned) else {
+            return Ok(ThreadHistoryResponse::empty());
+        };
+        let result = self.runtime.read_thread(&thread_id, true)?;
+        let history = ThreadHistoryResponse::from_thread_read(&thread_id, &result)?;
+        if !history.messages.is_empty() {
+            self.bootstrapped_threads.insert(thread_id.clone());
+            if !self
+                .thread_store
+                .record(&thread_id)
+                .map(|record| record.has_turns)
+                .unwrap_or(false)
+            {
+                self.thread_store.mark_turn(&thread_id)?;
+            }
+        }
+        Ok(history)
+    }
+
     fn thread_config(&self) -> ParallelThreadConfig {
         ParallelThreadConfig::new(self.model.clone())
             .cwd(self.cwd.clone())
@@ -287,9 +309,11 @@ impl AgentSession {
     }
 
     fn resume_thread(&mut self, thread_id: &str) -> Result<ParallelCodexThread> {
-        if self.thread_store.record(thread_id).is_none() {
-            bail!("unknown workspace thread `{thread_id}`");
-        }
+        let has_turns = self
+            .thread_store
+            .record(thread_id)
+            .with_context(|| format!("unknown workspace thread `{thread_id}`"))?
+            .has_turns;
         let mut thread = self
             .runtime
             .resume_thread(thread_id, self.registry.clone())?;
@@ -297,6 +321,9 @@ impl AgentSession {
             thread.model = self.model.clone();
         }
         self.thread_store.select(thread_id)?;
+        if has_turns {
+            self.bootstrapped_threads.insert(thread_id.to_owned());
+        }
         self.thread = Some(thread.clone());
         Ok(thread)
     }
@@ -335,6 +362,9 @@ impl AgentSession {
         }
         self.thread_store
             .register(fork.id.clone(), Some(source_id.clone()), source_has_turns)?;
+        if source_has_turns {
+            self.bootstrapped_threads.insert(fork.id.clone());
+        }
         self.thread = Some(fork.clone());
         println!(
             "[ghost-fl-workspace] forked workspace thread {} from {}",
@@ -379,7 +409,13 @@ impl AgentSession {
         let turn_text = format!(
             "POINT-IN-TIME FL MIDI SCRIPTING SNAPSHOT (re-observe if correctness depends on it):\n{snapshot_text}\n\nUSER REQUEST:\n{message}"
         );
-        let needs_bootstrap = !self.bootstrapped_threads.contains(&thread.id);
+        let has_persisted_turns = self
+            .thread_store
+            .record(&thread.id)
+            .map(|record| record.has_turns)
+            .unwrap_or(false);
+        let needs_bootstrap =
+            !has_persisted_turns && !self.bootstrapped_threads.contains(&thread.id);
         let input_text = if needs_bootstrap {
             format!("{SYSTEM_PROMPT}\n\n{turn_text}")
         } else {
@@ -529,6 +565,10 @@ fn handle_connection(stream: &mut TcpStream, session: &mut AgentSession) -> Resu
         ),
         ("GET", "/api/info") => send_json(stream, "200 OK", &session.info()),
         ("GET", "/api/threads") => send_json(stream, "200 OK", &session.threads()),
+        ("GET", "/api/history") => {
+            let history = session.history()?;
+            send_json(stream, "200 OK", &history)
+        }
         ("GET", "/api/scripting/status") => {
             send_json(stream, "200 OK", &session.scripting.status())
         }
