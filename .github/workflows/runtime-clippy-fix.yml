@@ -13,32 +13,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Apply cleanup
+        shell: bash
+        run: |
+          python -c 'from pathlib import Path; p=Path("apps/ghost-fl-runtime/src/main.rs"); t=p.read_text(); old="            return Ok(());\n        }\n        #[cfg(windows)]"; new="            Ok(())\n        }\n        #[cfg(windows)]"; assert old in t, "cleanup anchor missing"; p.write_text(t.replace(old, new, 1))'
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
-      - name: Apply cleanup
-        shell: python
-        run: |
-          from pathlib import Path
-          path = Path("apps/ghost-fl-runtime/src/main.rs")
-          text = path.read_text()
-          old = '''        #[cfg(not(windows))]
-        {
-            let _ = (slot, url, title, width, height, kind);
-            return Ok(());
-        }
-'''
-          new = '''        #[cfg(not(windows))]
-        {
-            let _ = (slot, url, title, width, height, kind);
-            Ok(())
-        }
-'''
-          if old in text:
-              text = text.replace(old, new, 1)
-          elif new not in text:
-              raise SystemExit("missing non-Windows webview branch")
-          path.write_text(text)
       - run: cargo fmt --all
       - name: Commit cleanup
         shell: bash
