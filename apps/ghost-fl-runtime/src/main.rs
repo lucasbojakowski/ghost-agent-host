@@ -17,6 +17,9 @@ use serde::Serialize;
 use serde_json::{json, Value};
 use uuid::Uuid;
 
+mod bootstrap_active;
+mod bootstrap_start;
+
 const INDEX_HTML: &str = include_str!("../web/index.html");
 const MAX_HTTP_BYTES: usize = 2 * 1024 * 1024;
 const MAX_RECENT_EVENTS: usize = 500;
@@ -41,6 +44,9 @@ struct Cli {
 
     #[arg(long)]
     no_webviews: bool,
+
+    #[arg(long, value_enum, default_value_t = BootstrapMode::Active)]
+    bootstrap: BootstrapMode,
 
     #[arg(long, value_enum, default_value_t = AppProfile::Workspace)]
     app: AppProfile,
@@ -92,6 +98,22 @@ struct Cli {
 
     #[arg(long = "i-accept-live-fl-writes")]
     i_accept_live_fl_writes: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum BootstrapMode {
+    Active,
+    Start,
+}
+
+impl BootstrapMode {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Active => "active",
+            Self::Start => "start",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum, Serialize)]
@@ -357,24 +379,28 @@ impl Runtime {
     }
 
     fn bootstrap(&self) -> Result<()> {
-        self.transition(
-            RuntimePhase::DiscoveringFl,
-            "fl.discovery_started",
-            json!({}),
+        self.journal.append(
+            "runtime",
+            "bootstrap.selected",
+            "info",
+            json!({"mode": self.cli.bootstrap.as_str()}),
         )?;
-        let (fl_pid, launched_by_ghost) = ensure_fl(&self.cli, &self.journal)?;
+        match self.cli.bootstrap {
+            BootstrapMode::Active => bootstrap_active::run(self),
+            BootstrapMode::Start => bootstrap_start::run(self),
+        }
+    }
+
+    fn record_fl_process(&self, pid: u32, launched_by_ghost: bool) -> Result<()> {
         {
             let mut state = self.state()?;
-            state.fl.pid = Some(fl_pid);
+            state.fl.pid = Some(pid);
             state.fl.launched_by_ghost = launched_by_ghost;
         }
-        self.persist_state()?;
-        self.transition(
-            RuntimePhase::WaitingFlUi,
-            "fl.waiting_for_window",
-            json!({"pid": fl_pid}),
-        )?;
-        wait_for_fl_window(fl_pid, Duration::from_secs(30))?;
+        self.persist_state()
+    }
+
+    fn mark_fl_window_ready(&self, pid: u32) -> Result<()> {
         {
             let mut state = self.state()?;
             state.fl.window_ready = true;
@@ -384,59 +410,11 @@ impl Runtime {
             "fl.process",
             "fl.window_ready",
             "info",
-            json!({"pid": fl_pid}),
-        )?;
+            json!({"pid": pid}),
+        )
+    }
 
-        self.transition(
-            RuntimePhase::WaitingGopher,
-            "gopher.probing",
-            json!({"debugPort": self.cli.debug_port}),
-        )?;
-        let quick_probe = probe_gopher(
-            self.cli.debug_port,
-            &self.cli.target_match,
-            Duration::from_secs(2),
-        );
-        let manifest = match quick_probe {
-            Ok(manifest) => manifest,
-            Err(initial_error) if !self.cli.no_auto_gopher => {
-                self.transition(
-                    RuntimePhase::OpeningGopher,
-                    "gopher.open_attempt",
-                    json!({"initialError": initial_error.to_string()}),
-                )?;
-                if !try_open_gopher(fl_pid)? {
-                    self.journal.append(
-                        "fl.gopher",
-                        "gopher.open_shortcut_failed",
-                        "warn",
-                        json!({"pid": fl_pid}),
-                    )?;
-                }
-                self.transition(
-                    RuntimePhase::WaitingGopher,
-                    "gopher.waiting_after_open",
-                    json!({}),
-                )?;
-                probe_gopher(
-                    self.cli.debug_port,
-                    &self.cli.target_match,
-                    Duration::from_secs(self.cli.gopher_timeout_seconds),
-                )
-                .with_context(|| {
-                    if launched_by_ghost {
-                        "Gopher did not become ready after the one-shot Alt+F1 activation"
-                    } else {
-                        "attached FL instance did not expose a usable Gopher/CDP target; restart FL through Ghost if it was launched without WebView2 debugging"
-                    }
-                })?
-            }
-            Err(error) => {
-                return Err(
-                    error.context("Gopher is not ready and automatic activation is disabled")
-                )
-            }
-        };
+    fn complete_bootstrap(&self, manifest: ghost_fl_studio::FlStudioManifest) -> Result<()> {
         {
             let mut state = self.state()?;
             state.fl.gopher_ready = true;
@@ -1555,6 +1533,12 @@ mod tests {
             append_debug_arg(Some("--remote-debugging-port=9333 --other"), 9222),
             "--remote-debugging-port=9333 --other"
         );
+    }
+
+    #[test]
+    fn bootstrap_modes_are_machine_stable() {
+        assert_eq!(BootstrapMode::Active.as_str(), "active");
+        assert_eq!(BootstrapMode::Start.as_str(), "start");
     }
 
     #[test]
