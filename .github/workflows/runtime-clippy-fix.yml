@@ -1,0 +1,54 @@
+name: Apply runtime clippy cleanup
+
+on:
+  push:
+    branches:
+      - feat/fl-runtime-shell
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Apply cleanup
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path("apps/ghost-fl-runtime/src/main.rs")
+          text = path.read_text()
+          old = '''        #[cfg(not(windows))]
+        {
+            let _ = (slot, url, title, width, height, kind);
+            return Ok(());
+        }
+'''
+          new = '''        #[cfg(not(windows))]
+        {
+            let _ = (slot, url, title, width, height, kind);
+            Ok(())
+        }
+'''
+          if old in text:
+              text = text.replace(old, new, 1)
+          elif new not in text:
+              raise SystemExit("missing non-Windows webview branch")
+          path.write_text(text)
+      - run: cargo fmt --all
+      - name: Commit cleanup
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "already clean"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/ghost-fl-runtime/src/main.rs
+          git commit -m "fix(runtime): satisfy lifecycle clippy"
+          git push origin HEAD:feat/fl-runtime-shell
