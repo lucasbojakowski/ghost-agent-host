@@ -1,8 +1,11 @@
 mod gateway;
 mod snapshot;
+mod threads;
 
+use std::collections::BTreeSet;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -10,14 +13,15 @@ use anyhow::{bail, Context, Result};
 use clap::Parser;
 use gateway::{build_workspace_registry, SCRIPTING_TOOL_NAMES};
 use ghost_codex::{
-    AgentEvent, CodexParallelRuntime, ParallelCodexThread, ParallelThreadConfig, TurnInput,
-    TurnOptions,
+    AgentEvent, CodexParallelRuntime, ParallelCodexThread, ParallelThreadConfig, ToolRegistry,
+    TurnInput, TurnOptions,
 };
 use ghost_fl_scripting::{FlScriptingAdapter, FlScriptingConfig, FlScriptingStatus};
 use ghost_fl_studio::{FlStudioAdapterConfig, GopherNativeAdapter};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use snapshot::{capture_workspace_snapshot, WorkspaceSnapshot};
+use threads::{WorkspaceThreadRecord, WorkspaceThreadStore};
 
 const INDEX_HTML: &str = include_str!("../web/index.html");
 const MAX_REQUEST_BYTES: usize = 2 * 1024 * 1024;
@@ -71,16 +75,39 @@ struct Cli {
 
 struct AgentSession {
     runtime: CodexParallelRuntime,
-    thread: ParallelCodexThread,
+    thread: Option<ParallelCodexThread>,
+    registry: ToolRegistry,
+    thread_store: WorkspaceThreadStore,
+    model: String,
+    cwd: PathBuf,
     scripting: Arc<FlScriptingAdapter>,
     gopher_tool_count: usize,
-    bootstrapped: bool,
+    bootstrapped_threads: BTreeSet<String>,
     verbose_agent_events: bool,
 }
 
 #[derive(Debug, Deserialize)]
 struct ChatRequest {
     message: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ThreadIdRequest {
+    thread_id: String,
+}
+
+#[derive(Debug, Default, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ForkThreadRequest {
+    thread_id: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RenameThreadRequest {
+    thread_id: Option<String>,
+    name: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -96,12 +123,21 @@ struct ChatResponse {
 #[serde(rename_all = "camelCase")]
 struct InfoResponse {
     model: String,
-    thread_id: String,
+    thread_id: Option<String>,
+    thread_name: Option<String>,
+    thread_count: usize,
     gopher_tool_count: usize,
     scripting_tool_count: usize,
     total_tool_count: usize,
     profile: &'static str,
     scripting: FlScriptingStatus,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ThreadListResponse {
+    selected_thread_id: Option<String>,
+    threads: Vec<WorkspaceThreadRecord>,
 }
 
 #[derive(Debug, Serialize)]
@@ -167,36 +203,55 @@ fn main() -> Result<()> {
     let runtime = CodexParallelRuntime::spawn(&cli.codex_binary)
         .context("failed to launch persistent Codex App Server")?;
     let cwd = std::env::current_dir().context("failed to resolve current working directory")?;
-    let thread = runtime.start_thread(
-        ParallelThreadConfig::new(cli.model.clone())
-            .cwd(cwd)
-            .service_name("ghost_fl_workspace"),
-        registry,
-    )?;
-
-    println!(
-        "[ghost-fl-workspace] started persistent thread {} using {} with {} dynamic tools",
-        thread.id, thread.model, total_tool_count
-    );
-    println!("[ghost-fl-workspace] WARNING: Codex turns run with full host filesystem access");
-    println!("[ghost-fl-workspace] WARNING: combined surface can perform live FL Studio writes");
-
+    let thread_store = WorkspaceThreadStore::open_default()?;
     let mut session = AgentSession {
         runtime,
-        thread,
+        thread: None,
+        registry,
+        thread_store,
+        model: cli.model.clone(),
+        cwd,
         scripting,
         gopher_tool_count,
-        bootstrapped: false,
+        bootstrapped_threads: BTreeSet::new(),
         verbose_agent_events: cli.verbose_agent_events,
     };
+
+    if let Some(thread_id) = session.thread_store.selected_id().map(str::to_owned) {
+        match session.resume_thread(&thread_id) {
+            Ok(thread) => println!(
+                "[ghost-fl-workspace] resumed workspace thread {} using {} with {} dynamic tools",
+                thread.id, thread.model, total_tool_count
+            ),
+            Err(error) => eprintln!(
+                "[ghost-fl-workspace] selected thread {} could not be resumed yet: {error:#}",
+                thread_id
+            ),
+        }
+    } else {
+        println!(
+            "[ghost-fl-workspace] no workspace thread selected; no Codex thread will be created until the user starts one or sends a message"
+        );
+    }
+
+    println!("[ghost-fl-workspace] WARNING: Codex turns run with full host filesystem access");
+    println!("[ghost-fl-workspace] WARNING: combined surface can perform live FL Studio writes");
     serve(&cli.bind, &mut session)
 }
 
 impl AgentSession {
     fn info(&self) -> InfoResponse {
+        let selected = self.thread_store.selected_record();
         InfoResponse {
-            model: self.thread.model.clone(),
-            thread_id: self.thread.id.clone(),
+            model: self
+                .thread
+                .as_ref()
+                .map(|thread| thread.model.clone())
+                .filter(|model| !model.is_empty())
+                .unwrap_or_else(|| self.model.clone()),
+            thread_id: self.thread.as_ref().map(|thread| thread.id.clone()),
+            thread_name: selected.and_then(|thread| thread.name.clone()),
+            thread_count: self.thread_store.len(),
             gopher_tool_count: self.gopher_tool_count,
             scripting_tool_count: SCRIPTING_TOOL_NAMES.len(),
             total_tool_count: self.gopher_tool_count + SCRIPTING_TOOL_NAMES.len(),
@@ -205,22 +260,134 @@ impl AgentSession {
         }
     }
 
+    fn threads(&self) -> ThreadListResponse {
+        ThreadListResponse {
+            selected_thread_id: self.thread_store.selected_id().map(str::to_owned),
+            threads: self.thread_store.list(),
+        }
+    }
+
+    fn thread_config(&self) -> ParallelThreadConfig {
+        ParallelThreadConfig::new(self.model.clone())
+            .cwd(self.cwd.clone())
+            .service_name("ghost_fl_workspace")
+    }
+
+    fn create_thread(&mut self) -> Result<ParallelCodexThread> {
+        let thread = self
+            .runtime
+            .start_thread(self.thread_config(), self.registry.clone())?;
+        self.thread_store
+            .register(thread.id.clone(), None, false)?;
+        self.thread = Some(thread.clone());
+        println!(
+            "[ghost-fl-workspace] created workspace thread {} using {}",
+            thread.id, thread.model
+        );
+        Ok(thread)
+    }
+
+    fn resume_thread(&mut self, thread_id: &str) -> Result<ParallelCodexThread> {
+        if self.thread_store.record(thread_id).is_none() {
+            bail!("unknown workspace thread `{thread_id}`");
+        }
+        let mut thread = self
+            .runtime
+            .resume_thread(thread_id, self.registry.clone())?;
+        if thread.model.is_empty() {
+            thread.model = self.model.clone();
+        }
+        self.thread_store.select(thread_id)?;
+        self.thread = Some(thread.clone());
+        Ok(thread)
+    }
+
+    fn ensure_active_thread(&mut self) -> Result<ParallelCodexThread> {
+        if let Some(thread) = &self.thread {
+            return Ok(thread.clone());
+        }
+        if let Some(thread_id) = self.thread_store.selected_id().map(str::to_owned) {
+            return self.resume_thread(&thread_id);
+        }
+        self.create_thread()
+    }
+
+    fn select_thread(&mut self, thread_id: &str) -> Result<ThreadListResponse> {
+        self.resume_thread(thread_id)?;
+        Ok(self.threads())
+    }
+
+    fn fork_thread(&mut self, requested_thread_id: Option<&str>) -> Result<ThreadListResponse> {
+        let source_id = requested_thread_id
+            .map(str::to_owned)
+            .or_else(|| self.thread.as_ref().map(|thread| thread.id.clone()))
+            .or_else(|| self.thread_store.selected_id().map(str::to_owned))
+            .context("there is no workspace thread to fork")?;
+        let source_has_turns = self
+            .thread_store
+            .record(&source_id)
+            .with_context(|| format!("unknown workspace thread `{source_id}`"))?
+            .has_turns;
+        let mut fork = self
+            .runtime
+            .fork_thread(&source_id, self.registry.clone())?;
+        if fork.model.is_empty() {
+            fork.model = self.model.clone();
+        }
+        self.thread_store.register(
+            fork.id.clone(),
+            Some(source_id.clone()),
+            source_has_turns,
+        )?;
+        self.thread = Some(fork.clone());
+        println!(
+            "[ghost-fl-workspace] forked workspace thread {} from {}",
+            fork.id, source_id
+        );
+        Ok(self.threads())
+    }
+
+    fn rename_thread(
+        &mut self,
+        requested_thread_id: Option<&str>,
+        name: &str,
+    ) -> Result<ThreadListResponse> {
+        let thread_id = requested_thread_id
+            .map(str::to_owned)
+            .or_else(|| self.thread_store.selected_id().map(str::to_owned))
+            .context("there is no workspace thread to rename")?;
+        let record = self.thread_store.rename(&thread_id, name)?;
+        if record.has_turns {
+            if let Err(error) = self
+                .runtime
+                .set_thread_name(&thread_id, record.name.as_deref().unwrap_or_default())
+            {
+                eprintln!(
+                    "[ghost-fl-workspace] thread name is saved locally but Codex name sync failed for {}: {error}",
+                    thread_id
+                );
+            }
+        }
+        Ok(self.threads())
+    }
+
     fn run_user_turn(&mut self, message: &str) -> Result<ChatResponse> {
         let message = message.trim();
         if message.is_empty() {
             bail!("message must not be empty");
         }
 
+        let thread = self.ensure_active_thread()?;
         let snapshot = capture_workspace_snapshot(&self.scripting);
         let snapshot_text = serde_json::to_string_pretty(&snapshot)?;
         let turn_text = format!(
             "POINT-IN-TIME FL MIDI SCRIPTING SNAPSHOT (re-observe if correctness depends on it):\n{snapshot_text}\n\nUSER REQUEST:\n{message}"
         );
-        let input_text = if self.bootstrapped {
-            turn_text
-        } else {
-            self.bootstrapped = true;
+        let needs_bootstrap = !self.bootstrapped_threads.contains(&thread.id);
+        let input_text = if needs_bootstrap {
             format!("{SYSTEM_PROMPT}\n\n{turn_text}")
+        } else {
+            turn_text
         };
         let input = TurnInput {
             text: input_text,
@@ -229,7 +396,7 @@ impl AgentSession {
         let mut trace = Vec::new();
         let verbose = self.verbose_agent_events;
         let output = self.runtime.run_turn(
-            &self.thread,
+            &thread,
             &input,
             &full_access_turn_options(),
             &mut |event| {
@@ -262,9 +429,22 @@ impl AgentSession {
             },
         )?;
 
+        if needs_bootstrap {
+            self.bootstrapped_threads.insert(thread.id.clone());
+        }
+        let record = self.thread_store.mark_turn(&thread.id)?;
+        if let Some(name) = record.name.as_deref() {
+            if let Err(error) = self.runtime.set_thread_name(&thread.id, name) {
+                eprintln!(
+                    "[ghost-fl-workspace] thread name is saved locally but Codex name sync failed for {}: {error}",
+                    thread.id
+                );
+            }
+        }
+
         Ok(ChatResponse {
             text: output.text,
-            thread_id: self.thread.id.clone(),
+            thread_id: thread.id,
             snapshot,
             trace,
         })
@@ -355,12 +535,40 @@ fn handle_connection(stream: &mut TcpStream, session: &mut AgentSession) -> Resu
             INDEX_HTML.as_bytes(),
         ),
         ("GET", "/api/info") => send_json(stream, "200 OK", &session.info()),
+        ("GET", "/api/threads") => send_json(stream, "200 OK", &session.threads()),
         ("GET", "/api/scripting/status") => {
             send_json(stream, "200 OK", &session.scripting.status())
         }
         ("GET", "/api/snapshot") => {
             let snapshot = capture_workspace_snapshot(&session.scripting);
             send_json(stream, "200 OK", &snapshot)
+        }
+        ("POST", "/api/threads/new") => {
+            session.create_thread()?;
+            send_json(stream, "201 Created", &session.threads())
+        }
+        ("POST", "/api/threads/select") => {
+            let request: ThreadIdRequest = serde_json::from_slice(&request.body)
+                .context("invalid /api/threads/select JSON body")?;
+            let response = session.select_thread(&request.thread_id)?;
+            send_json(stream, "200 OK", &response)
+        }
+        ("POST", "/api/threads/fork") => {
+            let request = if request.body.is_empty() {
+                ForkThreadRequest::default()
+            } else {
+                serde_json::from_slice(&request.body)
+                    .context("invalid /api/threads/fork JSON body")?
+            };
+            let response = session.fork_thread(request.thread_id.as_deref())?;
+            send_json(stream, "201 Created", &response)
+        }
+        ("POST", "/api/threads/rename") => {
+            let request: RenameThreadRequest = serde_json::from_slice(&request.body)
+                .context("invalid /api/threads/rename JSON body")?;
+            let response =
+                session.rename_thread(request.thread_id.as_deref(), &request.name)?;
+            send_json(stream, "200 OK", &response)
         }
         ("POST", "/api/chat") => {
             let request: ChatRequest =
