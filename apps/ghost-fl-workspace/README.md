@@ -65,7 +65,8 @@ The UI supports:
 - creating a new thread;
 - forking a thread with Codex `thread/fork`;
 - naming/renaming threads;
-- filtering the local workspace thread list by name or id.
+- filtering the local workspace thread list by name or id;
+- rendering the complete persisted conversation when reopening, selecting or forking a thread.
 
 Fresh empty threads can be named locally before their first turn. The name is synchronized to Codex after the first successful turn, because a just-created thread may not yet have a persisted rollout for App Server naming. Existing threads with turns are renamed immediately when possible. A Codex name-sync failure does not discard the local workspace name.
 
@@ -77,7 +78,9 @@ XDG:     $XDG_STATE_HOME/ghost-and-guild/workspace/threads.json
 fallback: ./.ghost-workspace/threads.json
 ```
 
-This registry is lifecycle/UI state only. It is not the future Ghost semantic episode or project-memory model. The current harness also does not render historical turns when switching threads; the selected Codex thread still retains its conversation history for subsequent turns.
+This registry stores lifecycle/UI metadata only: selection, user-facing name, fork ancestry, timestamps and whether the thread has turns. Conversation content is not duplicated into Ghost state. Codex App Server remains authoritative for the transcript.
+
+History hydration follows the App Server history mode. Legacy threads use `thread/read` with turns included. Paginated threads use `thread/read` for metadata and page `thread/items/list` until the complete persisted item timeline is loaded, then the workspace reconstructs chronological turns for rendering. The workspace envelope used to inject the system prompt and point-in-time FL snapshot is stripped from displayed user messages. Resumed threads that already contain turns are treated as already bootstrapped, so reopening a thread does not inject the workspace system prompt a second time.
 
 ## Run
 
