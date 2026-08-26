@@ -1,0 +1,43 @@
+name: Apply runtime clippy fix
+
+on:
+  push:
+    branches:
+      - feat/fl-runtime-shell
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Apply targeted cleanup
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path("apps/ghost-fl-runtime/src/main.rs")
+          text = path.read_text()
+          text = text.replace("    LaunchingFl,\n", "")
+          text = text.replace('            Self::LaunchingFl => "launching_fl",\n', "")
+          marker = "fn append_debug_arg(existing: Option<&str>, port: u16) -> String {"
+          if "#[cfg(any(windows, test))]\n" + marker not in text:
+              text = text.replace(marker, "#[cfg(any(windows, test))]\n" + marker)
+          path.write_text(text)
+      - run: cargo fmt --all
+      - name: Commit fix
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "runtime already fixed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/ghost-fl-runtime/src/main.rs
+          git commit -m "fix(runtime): satisfy cross-platform clippy"
+          git push origin HEAD:feat/fl-runtime-shell
