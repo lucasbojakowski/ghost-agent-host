@@ -23,7 +23,8 @@ for ($i = 0; $i -lt $tries; $i++) {
         
         if ($check -match "Gopher") {
             Write-Host "FL Studio is running with remote debugging enabled."
-            cargo run -p ghost-fl-$app -- --i-accept-live-fl-writes
+            target\release\ghost-fl-runtime.exe --i-accept-live-fl-writes
+            # cargo run -p ghost-fl-$app -- --i-accept-live-fl-writes
             break
         }
     } catch {
