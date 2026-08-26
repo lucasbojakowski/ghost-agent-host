@@ -277,8 +277,7 @@ impl AgentSession {
         let thread = self
             .runtime
             .start_thread(self.thread_config(), self.registry.clone())?;
-        self.thread_store
-            .register(thread.id.clone(), None, false)?;
+        self.thread_store.register(thread.id.clone(), None, false)?;
         self.thread = Some(thread.clone());
         println!(
             "[ghost-fl-workspace] created workspace thread {} using {}",
@@ -334,11 +333,8 @@ impl AgentSession {
         if fork.model.is_empty() {
             fork.model = self.model.clone();
         }
-        self.thread_store.register(
-            fork.id.clone(),
-            Some(source_id.clone()),
-            source_has_turns,
-        )?;
+        self.thread_store
+            .register(fork.id.clone(), Some(source_id.clone()), source_has_turns)?;
         self.thread = Some(fork.clone());
         println!(
             "[ghost-fl-workspace] forked workspace thread {} from {}",
@@ -395,39 +391,36 @@ impl AgentSession {
         };
         let mut trace = Vec::new();
         let verbose = self.verbose_agent_events;
-        let output = self.runtime.run_turn(
-            &thread,
-            &input,
-            &full_access_turn_options(),
-            &mut |event| {
-                if verbose {
-                    println!("[ghost-fl-workspace] agent event: {event:?}");
-                }
-                if let Some(trace_event) = trace_event(&event) {
-                    if !verbose {
-                        match trace_event.kind {
-                            "tool_started" => println!(
-                                "[ghost-fl-workspace] tool -> {} {}",
-                                trace_event.tool,
-                                trace_event
-                                    .arguments
-                                    .as_ref()
-                                    .map(Value::to_string)
-                                    .unwrap_or_else(|| "{}".into())
-                            ),
-                            "tool_completed" => println!(
-                                "[ghost-fl-workspace] tool <- {} success={} duration_ms={}",
-                                trace_event.tool,
-                                trace_event.success.unwrap_or(false),
-                                trace_event.duration_ms.unwrap_or(0)
-                            ),
-                            _ => {}
-                        }
+        let output =
+            self.runtime
+                .run_turn(&thread, &input, &full_access_turn_options(), &mut |event| {
+                    if verbose {
+                        println!("[ghost-fl-workspace] agent event: {event:?}");
                     }
-                    trace.push(trace_event);
-                }
-            },
-        )?;
+                    if let Some(trace_event) = trace_event(&event) {
+                        if !verbose {
+                            match trace_event.kind {
+                                "tool_started" => println!(
+                                    "[ghost-fl-workspace] tool -> {} {}",
+                                    trace_event.tool,
+                                    trace_event
+                                        .arguments
+                                        .as_ref()
+                                        .map(Value::to_string)
+                                        .unwrap_or_else(|| "{}".into())
+                                ),
+                                "tool_completed" => println!(
+                                    "[ghost-fl-workspace] tool <- {} success={} duration_ms={}",
+                                    trace_event.tool,
+                                    trace_event.success.unwrap_or(false),
+                                    trace_event.duration_ms.unwrap_or(0)
+                                ),
+                                _ => {}
+                            }
+                        }
+                        trace.push(trace_event);
+                    }
+                })?;
 
         if needs_bootstrap {
             self.bootstrapped_threads.insert(thread.id.clone());
@@ -566,8 +559,7 @@ fn handle_connection(stream: &mut TcpStream, session: &mut AgentSession) -> Resu
         ("POST", "/api/threads/rename") => {
             let request: RenameThreadRequest = serde_json::from_slice(&request.body)
                 .context("invalid /api/threads/rename JSON body")?;
-            let response =
-                session.rename_thread(request.thread_id.as_deref(), &request.name)?;
+            let response = session.rename_thread(request.thread_id.as_deref(), &request.name)?;
             send_json(stream, "200 OK", &response)
         }
         ("POST", "/api/chat") => {
