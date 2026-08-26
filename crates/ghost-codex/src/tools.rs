@@ -119,7 +119,7 @@ mod tests {
                     description: "echo".into(),
                     input_schema: serde_json::json!({"type": "object"}),
                 },
-                |arguments| Ok(arguments),
+                Ok,
             )
             .unwrap();
         let cloned = registry.clone();
