@@ -228,6 +228,57 @@ impl CodexParallelRuntime {
         )
     }
 
+    /// Read a complete persisted thread timeline across both App Server history modes.
+    ///
+    /// Legacy threads are hydrated through `thread/read(includeTurns: true)`. Paginated threads
+    /// intentionally avoid that deprecated path and instead page `thread/items/list`, then rebuild
+    /// the same `thread.turns[].items` shape for callers that only need a stable transcript view.
+    pub fn read_full_thread_history(&self, thread_id: &str) -> Result<Value, AgentError> {
+        let summary = self.read_thread(thread_id, false)?;
+        if summary
+            .pointer("/thread/historyMode")
+            .and_then(Value::as_str)
+            != Some("paginated")
+        {
+            return self.read_thread(thread_id, true);
+        }
+
+        let mut entries = Vec::new();
+        let mut cursor: Option<String> = None;
+        let mut seen_cursors = BTreeSet::new();
+        loop {
+            let mut params = json!({
+                "threadId": thread_id,
+                "limit": 100,
+                "sortDirection": "desc"
+            });
+            if let Some(cursor) = &cursor {
+                params["cursor"] = Value::String(cursor.clone());
+            }
+            let page = self.request("thread/items/list", params)?;
+            let data = page.get("data").and_then(Value::as_array).ok_or_else(|| {
+                AgentError::Protocol("thread/items/list did not return a data array".into())
+            })?;
+            entries.extend(data.iter().cloned());
+
+            let Some(next_cursor) = page
+                .get("nextCursor")
+                .and_then(Value::as_str)
+                .map(str::to_owned)
+            else {
+                break;
+            };
+            if !seen_cursors.insert(next_cursor.clone()) {
+                return Err(AgentError::Protocol(
+                    "thread/items/list repeated a pagination cursor".into(),
+                ));
+            }
+            cursor = Some(next_cursor);
+        }
+
+        paginated_history_result(summary, entries)
+    }
+
     /// Run a turn on one Codex thread. Separate caller threads may invoke this concurrently for
     /// different `ParallelCodexThread`s. A second turn on the same thread is rejected locally.
     pub fn run_turn(
@@ -349,6 +400,45 @@ impl CodexParallelRuntime {
     fn send(&self, value: Value) -> Result<(), AgentError> {
         write_stdio_message(&self.inner.stdin, &value)
     }
+}
+
+fn paginated_history_result(
+    mut summary: Value,
+    mut entries: Vec<Value>,
+) -> Result<Value, AgentError> {
+    entries.reverse();
+    let mut turns = Vec::<Value>::new();
+    let mut turn_indexes = BTreeMap::<String, usize>::new();
+
+    for entry in entries {
+        let turn_id = entry
+            .get("turnId")
+            .and_then(Value::as_str)
+            .ok_or_else(|| AgentError::Protocol("thread item entry was missing turnId".into()))?
+            .to_owned();
+        let item = entry
+            .get("item")
+            .cloned()
+            .ok_or_else(|| AgentError::Protocol("thread item entry was missing item".into()))?;
+        if let Some(index) = turn_indexes.get(&turn_id).copied() {
+            turns[index]
+                .get_mut("items")
+                .and_then(Value::as_array_mut)
+                .ok_or_else(|| AgentError::Protocol("rebuilt turn items were invalid".into()))?
+                .push(item);
+        } else {
+            let index = turns.len();
+            turn_indexes.insert(turn_id.clone(), index);
+            turns.push(json!({"id": turn_id, "items": [item]}));
+        }
+    }
+
+    let thread = summary
+        .get_mut("thread")
+        .and_then(Value::as_object_mut)
+        .ok_or_else(|| AgentError::Protocol("thread/read did not return a thread object".into()))?;
+    thread.insert("turns".into(), Value::Array(turns));
+    Ok(summary)
 }
 
 fn collect_turn_output(
@@ -706,6 +796,24 @@ mod tests {
             message_turn_id(&json!({"params": {"turn": {"id": "turn-b"}}})),
             Some("turn-b")
         );
+    }
+
+    #[test]
+    fn rebuilds_paginated_items_into_chronological_turns() {
+        let summary = json!({
+            "thread": {"id": "thr-a", "historyMode": "paginated", "turns": []}
+        });
+        let entries = vec![
+            json!({"turnId": "turn-b", "item": {"id": "agent-b", "type": "agentMessage", "text": "b"}}),
+            json!({"turnId": "turn-b", "item": {"id": "user-b", "type": "userMessage", "content": []}}),
+            json!({"turnId": "turn-a", "item": {"id": "agent-a", "type": "agentMessage", "text": "a"}}),
+            json!({"turnId": "turn-a", "item": {"id": "user-a", "type": "userMessage", "content": []}}),
+        ];
+        let result = paginated_history_result(summary, entries).unwrap();
+        assert_eq!(result.pointer("/thread/turns/0/id").and_then(Value::as_str), Some("turn-a"));
+        assert_eq!(result.pointer("/thread/turns/0/items/0/id").and_then(Value::as_str), Some("user-a"));
+        assert_eq!(result.pointer("/thread/turns/1/id").and_then(Value::as_str), Some("turn-b"));
+        assert_eq!(result.pointer("/thread/turns/1/items/1/id").and_then(Value::as_str), Some("agent-b"));
     }
 
     #[test]
