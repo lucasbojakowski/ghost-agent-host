@@ -26,12 +26,13 @@ impl std::error::Error for ToolError {}
 
 type ToolHandler = Arc<dyn Fn(Value) -> Result<Value, ToolError> + Send + Sync>;
 
+#[derive(Clone)]
 struct RegisteredTool {
     definition: ToolDefinition,
     handler: ToolHandler,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct ToolRegistry {
     tools: BTreeMap<String, RegisteredTool>,
 }
@@ -105,6 +106,26 @@ mod tests {
         assert_eq!(
             registry.call("capture_analysis", serde_json::json!({"tap": "input"})),
             Ok(serde_json::json!({"received": {"tap": "input"}}))
+        );
+    }
+
+    #[test]
+    fn registry_clones_share_handlers() {
+        let mut registry = ToolRegistry::default();
+        registry
+            .register(
+                ToolDefinition {
+                    name: "echo".into(),
+                    description: "echo".into(),
+                    input_schema: serde_json::json!({"type": "object"}),
+                },
+                |arguments| Ok(arguments),
+            )
+            .unwrap();
+        let cloned = registry.clone();
+        assert_eq!(
+            cloned.call("echo", serde_json::json!({"ok": true})),
+            Ok(serde_json::json!({"ok": true}))
         );
     }
 
