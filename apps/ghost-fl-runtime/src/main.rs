@@ -1099,7 +1099,7 @@ impl Runtime {
         #[cfg(not(windows))]
         {
             let _ = (slot, url, title, width, height, kind);
-            return Ok(());
+            Ok(())
         }
         #[cfg(windows)]
         {
