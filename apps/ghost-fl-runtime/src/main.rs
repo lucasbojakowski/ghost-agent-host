@@ -350,7 +350,11 @@ impl Runtime {
     }
 
     fn bootstrap(&self) -> Result<()> {
-        self.transition(RuntimePhase::DiscoveringFl, "fl.discovery_started", json!({}))?;
+        self.transition(
+            RuntimePhase::DiscoveringFl,
+            "fl.discovery_started",
+            json!({}),
+        )?;
         let (fl_pid, launched_by_ghost) = ensure_fl(&self.cli, &self.journal)?;
         {
             let mut state = self.state()?;
@@ -421,9 +425,9 @@ impl Runtime {
                 })?
             }
             Err(error) => {
-                return Err(error.context(
-                    "Gopher is not ready and automatic activation is disabled",
-                ))
+                return Err(
+                    error.context("Gopher is not ready and automatic activation is disabled")
+                )
             }
         };
         {
@@ -533,7 +537,10 @@ impl Runtime {
             }
         }
         let filename = format!("{}{}", spec.package, env::consts::EXE_SUFFIX);
-        let path = env::current_dir()?.join("target").join("debug").join(filename);
+        let path = env::current_dir()?
+            .join("target")
+            .join("debug")
+            .join(filename);
         if !path.is_file() {
             bail!(
                 "registered app binary is unavailable at {}; run from the workspace root, build it first, or pass --app-binary",
@@ -574,7 +581,10 @@ impl Runtime {
                 break;
             }
             if Instant::now() >= deadline {
-                bail!("{} did not become healthy before timeout", spec.display_name);
+                bail!(
+                    "{} did not become healthy before timeout",
+                    spec.display_name
+                );
             }
             thread::sleep(Duration::from_millis(300));
         }
@@ -601,12 +611,8 @@ impl Runtime {
                 }
                 self.persist_state()?;
                 if connected {
-                    self.journal.append(
-                        "fl.scripting",
-                        "scripting.connected",
-                        "info",
-                        status,
-                    )?;
+                    self.journal
+                        .append("fl.scripting", "scripting.connected", "info", status)?;
                     return Ok(());
                 }
             }
@@ -650,7 +656,8 @@ impl Runtime {
                 )?;
             }
             if record {
-                self.journal.append("app", "app.stopped", "info", json!({"pid": pid}))?;
+                self.journal
+                    .append("app", "app.stopped", "info", json!({"pid": pid}))?;
             }
         }
         {
@@ -839,8 +846,9 @@ impl Runtime {
     }
 
     fn serve(&self) -> Result<()> {
-        let listener = TcpListener::bind(&self.cli.bind)
-            .with_context(|| format!("failed to bind runtime control panel at {}", self.cli.bind))?;
+        let listener = TcpListener::bind(&self.cli.bind).with_context(|| {
+            format!("failed to bind runtime control panel at {}", self.cli.bind)
+        })?;
         listener.set_nonblocking(true)?;
         println!("[ghost-fl-runtime] control panel: http://{}", self.cli.bind);
         while !self.shutdown.load(Ordering::Relaxed) {
@@ -919,12 +927,8 @@ impl Runtime {
         if self.cli.shutdown_fl_on_exit && fl_state.launched_by_ghost {
             if let Some(pid) = fl_state.pid {
                 terminate_process(pid)?;
-                self.journal.append(
-                    "fl.process",
-                    "fl.terminated",
-                    "info",
-                    json!({"pid": pid}),
-                )?;
+                self.journal
+                    .append("fl.process", "fl.terminated", "info", json!({"pid": pid}))?;
             }
         }
         self.transition(RuntimePhase::Stopped, "runtime.stopped", json!({}))
@@ -961,12 +965,7 @@ fn ensure_fl(cli: &Cli, journal: &EventJournal) -> Result<(u32, bool)> {
     #[cfg(windows)]
     {
         if let Some(pid) = discover_fl_pid()? {
-            journal.append(
-                "fl.process",
-                "fl.attached",
-                "info",
-                json!({"pid": pid}),
-            )?;
+            journal.append("fl.process", "fl.attached", "info", json!({"pid": pid}))?;
             return Ok((pid, false));
         }
         if cli.no_launch {
@@ -986,12 +985,7 @@ fn ensure_fl(cli: &Cli, journal: &EventJournal) -> Result<(u32, bool)> {
             .with_context(|| format!("failed to launch {}", cli.fl_executable.display()))?;
         let pid = child.id();
         drop(child);
-        journal.append(
-            "fl.process",
-            "fl.launched",
-            "info",
-            json!({"pid": pid}),
-        )?;
+        journal.append("fl.process", "fl.launched", "info", json!({"pid": pid}))?;
         Ok((pid, true))
     }
 }
@@ -1147,12 +1141,7 @@ fn http_get_json(address: &str, path: &str) -> Result<Value> {
     let (headers, body) = response
         .split_once("\r\n\r\n")
         .context("app returned malformed HTTP response")?;
-    if !headers
-        .lines()
-        .next()
-        .unwrap_or_default()
-        .contains(" 200 ")
-    {
+    if !headers.lines().next().unwrap_or_default().contains(" 200 ") {
         bail!(
             "app health request failed: {}",
             headers.lines().next().unwrap_or_default()
@@ -1253,10 +1242,7 @@ mod tests {
 
     #[test]
     fn debug_argument_is_added_once() {
-        assert_eq!(
-            append_debug_arg(None, 9222),
-            "--remote-debugging-port=9222"
-        );
+        assert_eq!(append_debug_arg(None, 9222), "--remote-debugging-port=9222");
         assert_eq!(
             append_debug_arg(Some("--disable-features=Example"), 9222),
             "--disable-features=Example --remote-debugging-port=9222"

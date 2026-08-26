@@ -512,6 +512,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "ghost-fl-runtime"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "ghost-fl-studio",
+ "serde",
+ "serde_json",
+ "uuid",
+]
+
+[[package]]
 name = "ghost-fl-scripting"
 version = "0.1.0"
 dependencies = [
