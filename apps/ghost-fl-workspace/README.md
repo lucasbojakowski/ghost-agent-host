@@ -53,6 +53,32 @@ Before every Codex turn the app reads a compact scripting snapshot containing av
 
 The snapshot is explicitly **not** a durable semantic world model. It is point-in-time reasoning evidence and becomes stale as soon as the producer changes FL. The agent is instructed to re-observe when correctness depends on current state.
 
+## Workspace thread lifecycle
+
+Thread lifecycle is workspace-owned. Starting `ghost-fl-workspace` no longer calls `thread/start` unconditionally, so opening and closing the app does not create a new empty Codex thread every session.
+
+The workspace keeps a small local registry with the selected thread and user-facing names. On startup it tries to resume the previously selected workspace thread. If no thread is selected, the first chat message creates one lazily. A new empty thread is created only when the user explicitly chooses **New** or when a real first turn needs a thread.
+
+The UI supports:
+
+- selecting and resuming a known workspace thread;
+- creating a new thread;
+- forking a thread with Codex `thread/fork`;
+- naming/renaming threads;
+- filtering the local workspace thread list by name or id.
+
+Fresh empty threads can be named locally before their first turn. The name is synchronized to Codex after the first successful turn, because a just-created thread may not yet have a persisted rollout for App Server naming. Existing threads with turns are renamed immediately when possible. A Codex name-sync failure does not discard the local workspace name.
+
+Workspace thread state is stored at:
+
+```text
+Windows: %LOCALAPPDATA%\Konko\Ghost\workspace\threads.json
+XDG:     $XDG_STATE_HOME/ghost-and-guild/workspace/threads.json
+fallback: ./.ghost-workspace/threads.json
+```
+
+This registry is lifecycle/UI state only. It is not the future Ghost semantic episode or project-memory model. The current harness also does not render historical turns when switching threads; the selected Codex thread still retains its conversation history for subsequent turns.
+
 ## Run
 
 Prerequisites:
@@ -111,7 +137,7 @@ See `docs/FL_CAPABILITY_SURFACES.md`.
 
 ## Still out of scope
 
-This app is a primitive composition harness. It does not yet define the production workspace model, skills, intents, semantic entity graph, plugin profiles, persistent episode model or dynamic semantic tool compiler.
+This app is a primitive composition harness. It does not yet define the production workspace model, skills, intents, semantic entity graph, plugin profiles, persistent semantic episode model or dynamic semantic tool compiler.
 
 Those are the next app-layer experiments now that the lower surfaces are proven.
 
