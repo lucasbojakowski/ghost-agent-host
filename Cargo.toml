@@ -11,6 +11,7 @@ members = [
   "apps/ghost-fl-agent",
   "apps/ghost-fl-workspace",
   "apps/ghost-fl-mcp",
+  "apps/ghost-fl-runtime",
   "tools/fl-gopher-probe",
   "tools/analyse-full",
 ]
