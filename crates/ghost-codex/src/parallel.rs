@@ -221,6 +221,13 @@ impl CodexParallelRuntime {
         )
     }
 
+    pub fn read_thread(&self, thread_id: &str, include_turns: bool) -> Result<Value, AgentError> {
+        self.request(
+            "thread/read",
+            json!({"threadId": thread_id, "includeTurns": include_turns}),
+        )
+    }
+
     /// Run a turn on one Codex thread. Separate caller threads may invoke this concurrently for
     /// different `ParallelCodexThread`s. A second turn on the same thread is rejected locally.
     pub fn run_turn(
