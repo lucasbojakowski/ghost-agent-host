@@ -75,9 +75,7 @@ pub(super) fn run(runtime: &Runtime) -> Result<()> {
             })?
         }
         Err(error) => {
-            return Err(
-                error.context("Gopher is not ready and automatic activation is disabled")
-            )
+            return Err(error.context("Gopher is not ready and automatic activation is disabled"))
         }
     };
 
