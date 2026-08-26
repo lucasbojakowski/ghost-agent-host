@@ -43,8 +43,11 @@ apps/
   ghost-fl-agent/       frozen direct-Codex raw Gopher control group
   ghost-fl-workspace/   live-proven Codex Gopher + scripting composition
   ghost-fl-mcp/         live-proven external MCP raw Gopher control group
+  ghost-fl-runtime/     experimental FL/session/app lifecycle supervisor
   ghost-workflow/       capture → analysis → scoped FL regression workflow
 ```
+
+`ghost-fl-runtime` is intentionally app-owned while lifecycle supervision is still being proven. It attaches to or launches one FL Studio session, establishes Gopher readiness, supervises registered Ghost app fixtures, records structured operational state/events and exposes a small diagnostic control panel without moving product orchestration into `ghost-application` prematurely.
 
 Current harness/control matrix:
 
@@ -76,9 +79,9 @@ Historical investigation details remain in [FL scripting journey](docs/FL_SCRIPT
 
 ## Current integration phase
 
-`phase/workspace-foundation` is the experimental integration spine for the accepted scripting and MCP work. It is not the repository default branch and is not itself considered proven until its combined Cargo workspace and validation gates pass.
+`phase/workspace-foundation` is the experimental integration spine for the accepted scripting and MCP work. The `feat/fl-runtime-shell` experiment adds an operational shell above those primitives without changing the frozen baseline applications or promoting new orchestration into Core.
 
-The immediate architectural direction is to establish the first app-owned workspace feature slices around:
+The immediate architectural direction remains to establish the first app-owned workspace feature slices around:
 
 ```text
 Entity
