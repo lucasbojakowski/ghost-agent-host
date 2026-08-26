@@ -39,6 +39,9 @@ struct Cli {
     #[arg(long, default_value = "127.0.0.1:48750")]
     bind: String,
 
+    #[arg(long)]
+    no_webviews: bool,
+
     #[arg(long, value_enum, default_value_t = AppProfile::Workspace)]
     app: AppProfile,
 
@@ -274,6 +277,9 @@ struct Runtime {
     cli: Arc<Cli>,
     state: Arc<Mutex<RuntimeState>>,
     app_child: Arc<Mutex<Option<Child>>>,
+    runtime_ui_child: Arc<Mutex<Option<Child>>>,
+    app_ui_child: Arc<Mutex<Option<Child>>>,
+    bootstrap_active: Arc<AtomicBool>,
     journal: EventJournal,
     session_path: PathBuf,
     shutdown: Arc<AtomicBool>,
@@ -333,6 +339,9 @@ impl Runtime {
             cli: Arc::new(cli),
             state: Arc::new(Mutex::new(state)),
             app_child: Arc::new(Mutex::new(None)),
+            runtime_ui_child: Arc::new(Mutex::new(None)),
+            app_ui_child: Arc::new(Mutex::new(None)),
+            bootstrap_active: Arc::new(AtomicBool::new(false)),
             journal,
             session_path,
             shutdown: Arc::new(AtomicBool::new(false)),
@@ -448,6 +457,7 @@ impl Runtime {
         }
         self.start_app()?;
         self.wait_for_app_ready()?;
+        self.open_app_webview();
         self.transition(
             RuntimePhase::Ready,
             "runtime.ready",
@@ -458,6 +468,14 @@ impl Runtime {
     fn start_app(&self) -> Result<()> {
         if self.cli.no_app {
             bail!("runtime was started with --no-app");
+        }
+        {
+            let state = self.state()?;
+            if state.fl.pid.is_none() || !state.fl.gopher_ready {
+                bail!(
+                    "FL Studio and Gopher must be ready before starting the registered Ghost app"
+                );
+            }
         }
         self.stop_app(false)?;
         let spec = self.cli.app.spec();
@@ -622,12 +640,38 @@ impl Runtime {
     }
 
     fn ensure_app_still_running(&self) -> Result<()> {
-        let mut slot = lock(&self.app_child, "app child")?;
-        let child = slot
-            .as_mut()
-            .ok_or_else(|| anyhow!("registered app process is not running"))?;
-        if let Some(status) = child.try_wait()? {
-            *slot = None;
+        let exited = {
+            let mut slot = lock(&self.app_child, "app child")?;
+            let child = slot
+                .as_mut()
+                .ok_or_else(|| anyhow!("registered app process is not running"))?;
+            match child.try_wait()? {
+                Some(status) => {
+                    let pid = child.id();
+                    *slot = None;
+                    Some((pid, status))
+                }
+                None => None,
+            }
+        };
+        if let Some((pid, status)) = exited {
+            {
+                let mut state = self.state()?;
+                state.app.pid = None;
+                state.app.healthy = false;
+                state.app.thread_id = None;
+                state.app.last_error = Some(format!("registered app exited with {status}"));
+                if state.app.scripting_connected.is_some() {
+                    state.app.scripting_connected = Some(false);
+                }
+            }
+            self.persist_state()?;
+            self.journal.append(
+                "app",
+                "app.exited",
+                "error",
+                json!({"pid": pid, "status": status.to_string()}),
+            )?;
             bail!("registered app exited with {status}");
         }
         Ok(())
@@ -674,11 +718,15 @@ impl Runtime {
         self.stop_app(true)?;
         self.start_app()?;
         self.wait_for_app_ready()?;
+        self.open_app_webview();
         self.transition(RuntimePhase::Ready, "app.restart_complete", json!({}))
     }
 
     fn refresh_health(&self) -> Result<()> {
         if self.cli.no_app {
+            return Ok(());
+        }
+        if self.state()?.app.pid.is_none() {
             return Ok(());
         }
         if let Err(error) = self.ensure_app_still_running() {
@@ -738,6 +786,75 @@ impl Runtime {
             )?;
         }
         Ok(())
+    }
+
+    fn refresh_fl_health(&self) -> Result<()> {
+        let fl = self.state()?.fl.clone();
+        let Some(pid) = fl.pid else {
+            return Ok(());
+        };
+        if !process_is_running(pid)? {
+            return self.handle_fl_exit(pid);
+        }
+        if fl.gopher_ready
+            && probe_gopher(
+                self.cli.debug_port,
+                &self.cli.target_match,
+                Duration::from_millis(750),
+            )
+            .is_err()
+        {
+            let changed = {
+                let mut state = self.state()?;
+                if !state.fl.gopher_ready {
+                    false
+                } else {
+                    state.fl.gopher_ready = false;
+                    state.fl.gopher_target = None;
+                    state.fl.gopher_tool_count = None;
+                    if matches!(state.phase, RuntimePhase::Ready | RuntimePhase::Degraded) {
+                        state.phase = RuntimePhase::Degraded;
+                        state.last_error = Some("FL Studio Gopher target is unavailable".into());
+                    }
+                    state.updated_at_unix_ms = unix_ms();
+                    true
+                }
+            };
+            if changed {
+                self.persist_state()?;
+                self.journal
+                    .append("fl.gopher", "gopher.lost", "warn", json!({"pid": pid}))?;
+            }
+        }
+        Ok(())
+    }
+
+    fn handle_fl_exit(&self, pid: u32) -> Result<()> {
+        self.stop_app(false)?;
+        self.stop_webview(&self.app_ui_child, "app")?;
+        let error = format!("FL Studio process {pid} exited");
+        {
+            let mut state = self.state()?;
+            state.fl.pid = None;
+            state.fl.launched_by_ghost = false;
+            state.fl.window_ready = false;
+            state.fl.gopher_ready = false;
+            state.fl.gopher_target = None;
+            state.fl.gopher_tool_count = None;
+            state.app.last_error = Some("FL Studio is unavailable".into());
+            if !matches!(state.phase, RuntimePhase::Stopping | RuntimePhase::Stopped) {
+                state.phase = RuntimePhase::Degraded;
+            }
+            state.last_error = Some(error.clone());
+            state.updated_at_unix_ms = unix_ms();
+        }
+        self.persist_state()?;
+        self.journal.append(
+            "fl.process",
+            "fl.exited",
+            "error",
+            json!({"pid": pid, "error": error}),
+        )
     }
 
     fn mark_degraded(&self, error: String) -> Result<()> {
@@ -805,8 +922,16 @@ impl Runtime {
             .name("ghost-fl-runtime-monitor".into())
             .spawn(move || {
                 while !runtime.shutdown.load(Ordering::Relaxed) {
-                    if let Err(error) = runtime.refresh_health() {
-                        runtime.fail(&error);
+                    for result in [runtime.refresh_fl_health(), runtime.refresh_health()] {
+                        if let Err(error) = result {
+                            eprintln!("[ghost-fl-runtime] monitor warning: {error:#}");
+                            let _ignored = runtime.journal.append(
+                                "runtime",
+                                "monitor.warning",
+                                "warn",
+                                json!({"error": format!("{error:#}")}),
+                            );
+                        }
                     }
                     thread::sleep(Duration::from_secs(1));
                 }
@@ -843,12 +968,27 @@ impl Runtime {
         )
     }
 
-    fn serve(&self) -> Result<()> {
+    fn start_server(&self) -> Result<()> {
         let listener = TcpListener::bind(&self.cli.bind).with_context(|| {
             format!("failed to bind runtime control panel at {}", self.cli.bind)
         })?;
         listener.set_nonblocking(true)?;
         println!("[ghost-fl-runtime] control panel: http://{}", self.cli.bind);
+        let runtime = self.clone();
+        thread::Builder::new()
+            .name("ghost-fl-runtime-http".into())
+            .spawn(move || {
+                if let Err(error) = runtime.serve_listener(listener) {
+                    eprintln!("[ghost-fl-runtime] HTTP server failed: {error:#}");
+                    runtime.fail(&error);
+                    runtime.shutdown.store(true, Ordering::Relaxed);
+                }
+            })
+            .context("failed to spawn runtime HTTP server")?;
+        Ok(())
+    }
+
+    fn serve_listener(&self, listener: TcpListener) -> Result<()> {
         while !self.shutdown.load(Ordering::Relaxed) {
             match listener.accept() {
                 Ok((mut stream, _)) => {
@@ -865,7 +1005,152 @@ impl Runtime {
                 Err(error) => return Err(error.into()),
             }
         }
+        Ok(())
+    }
+
+    fn start_bootstrap(&self) -> Result<()> {
+        if self.bootstrap_active.swap(true, Ordering::AcqRel) {
+            return Ok(());
+        }
+        let runtime = self.clone();
+        let spawn = thread::Builder::new()
+            .name("ghost-fl-runtime-bootstrap".into())
+            .spawn(move || {
+                if let Err(error) = runtime.bootstrap() {
+                    eprintln!("[ghost-fl-runtime] FL bootstrap failed: {error:#}");
+                    runtime.fail(&error);
+                }
+                runtime.bootstrap_active.store(false, Ordering::Release);
+            });
+        if let Err(error) = spawn {
+            self.bootstrap_active.store(false, Ordering::Release);
+            return Err(error).context("failed to spawn runtime bootstrap thread");
+        }
+        Ok(())
+    }
+
+    fn run(&self) -> Result<()> {
+        self.start_server()?;
+        self.open_runtime_webview();
+        self.start_monitor();
+        self.start_bootstrap()?;
+        while !self.shutdown.load(Ordering::Relaxed) {
+            thread::sleep(Duration::from_millis(100));
+        }
         self.teardown()
+    }
+
+    fn open_runtime_webview(&self) {
+        let url = format!("http://{}", self.cli.bind);
+        if let Err(error) = self.spawn_webview(
+            &self.runtime_ui_child,
+            &url,
+            "Ghost & Guild · FL Runtime",
+            1180,
+            820,
+            "runtime",
+        ) {
+            eprintln!("[ghost-fl-runtime] runtime webview failed: {error:#}");
+            let _ignored = self.journal.append(
+                "ui",
+                "ui.webview_failed",
+                "warn",
+                json!({"kind": "runtime", "error": format!("{error:#}")}),
+            );
+        }
+    }
+
+    fn open_app_webview(&self) {
+        if self.cli.no_app {
+            return;
+        }
+        let endpoint = match self.state() {
+            Ok(state) => state.app.endpoint.clone(),
+            Err(error) => {
+                eprintln!("[ghost-fl-runtime] app webview state read failed: {error:#}");
+                return;
+            }
+        };
+        let url = format!("http://{endpoint}");
+        let title = format!("Ghost & Guild · {}", self.cli.app.spec().display_name);
+        if let Err(error) = self.spawn_webview(&self.app_ui_child, &url, &title, 1280, 900, "app") {
+            eprintln!("[ghost-fl-runtime] app webview failed: {error:#}");
+            let _ignored = self.journal.append(
+                "ui",
+                "ui.webview_failed",
+                "warn",
+                json!({"kind": "app", "error": format!("{error:#}")}),
+            );
+        }
+    }
+
+    fn spawn_webview(
+        &self,
+        slot: &Arc<Mutex<Option<Child>>>,
+        url: &str,
+        title: &str,
+        width: u32,
+        height: u32,
+        kind: &str,
+    ) -> Result<()> {
+        if self.cli.no_webviews {
+            return Ok(());
+        }
+        #[cfg(not(windows))]
+        {
+            let _ = (slot, url, title, width, height, kind);
+            return Ok(());
+        }
+        #[cfg(windows)]
+        {
+            self.stop_webview(slot, kind)?;
+            let helper = env::current_exe()?.with_file_name(format!(
+                "ghost-fl-runtime-webview{}",
+                env::consts::EXE_SUFFIX
+            ));
+            if !helper.is_file() {
+                bail!(
+                    "runtime webview helper is unavailable at {}",
+                    helper.display()
+                );
+            }
+            let child = Command::new(&helper)
+                .arg(url)
+                .arg(title)
+                .arg(width.to_string())
+                .arg(height.to_string())
+                .spawn()
+                .with_context(|| {
+                    format!("failed to spawn {} webview at {}", kind, helper.display())
+                })?;
+            let pid = child.id();
+            *lock(slot, "webview child")? = Some(child);
+            self.journal.append(
+                "ui",
+                "ui.webview_started",
+                "info",
+                json!({"kind": kind, "pid": pid, "url": url}),
+            )?;
+            Ok(())
+        }
+    }
+
+    fn stop_webview(&self, slot: &Arc<Mutex<Option<Child>>>, kind: &str) -> Result<()> {
+        let mut slot = lock(slot, "webview child")?;
+        if let Some(mut child) = slot.take() {
+            let pid = child.id();
+            if child.try_wait()?.is_none() {
+                let _ignored = child.kill();
+                let _ignored = child.wait();
+            }
+            self.journal.append(
+                "ui",
+                "ui.webview_stopped",
+                "info",
+                json!({"kind": kind, "pid": pid}),
+            )?;
+        }
+        Ok(())
     }
 
     fn handle_http(&self, stream: &mut TcpStream) -> Result<()> {
@@ -890,6 +1175,7 @@ impl Runtime {
             ("POST", "/api/app/start") => {
                 self.start_app()?;
                 self.wait_for_app_ready()?;
+                self.open_app_webview();
                 self.transition(RuntimePhase::Ready, "app.start_complete", json!({}))?;
                 let state = self.state()?.clone();
                 send_json(stream, "200 OK", &state)
@@ -910,6 +1196,11 @@ impl Runtime {
                 let state = self.state()?.clone();
                 send_json(stream, "200 OK", &state)
             }
+            ("POST", "/api/fl/retry") => {
+                self.start_bootstrap()?;
+                let state = self.state()?.clone();
+                send_json(stream, "202 Accepted", &state)
+            }
             ("POST", "/api/shutdown") => {
                 self.shutdown.store(true, Ordering::Relaxed);
                 send_json(stream, "200 OK", &json!({"stopping": true}))
@@ -920,6 +1211,7 @@ impl Runtime {
 
     fn teardown(&self) -> Result<()> {
         self.transition(RuntimePhase::Stopping, "runtime.stopping", json!({}))?;
+        self.stop_webview(&self.app_ui_child, "app")?;
         self.stop_app(true)?;
         let fl_state = self.state()?.fl.clone();
         if self.cli.shutdown_fl_on_exit && fl_state.launched_by_ghost {
@@ -929,6 +1221,7 @@ impl Runtime {
                     .append("fl.process", "fl.terminated", "info", json!({"pid": pid}))?;
             }
         }
+        self.stop_webview(&self.runtime_ui_child, "runtime")?;
         self.transition(RuntimePhase::Stopped, "runtime.stopped", json!({}))
     }
 }
@@ -1013,6 +1306,20 @@ fn discover_fl_pid() -> Result<Option<u32>> {
     ))
 }
 
+#[cfg(windows)]
+fn process_is_running(pid: u32) -> Result<bool> {
+    let output = powershell_output(&format!(
+        "$p = Get-Process -Id {pid} -ErrorAction SilentlyContinue; if ($p) {{ '1' }}"
+    ))?;
+    Ok(output.trim() == "1")
+}
+
+#[cfg(not(windows))]
+fn process_is_running(pid: u32) -> Result<bool> {
+    let _ = pid;
+    Ok(false)
+}
+
 fn wait_for_fl_window(pid: u32, timeout: Duration) -> Result<()> {
     #[cfg(not(windows))]
     {
@@ -1024,6 +1331,9 @@ fn wait_for_fl_window(pid: u32, timeout: Duration) -> Result<()> {
     {
         let deadline = Instant::now() + timeout;
         while Instant::now() < deadline {
+            if !process_is_running(pid)? {
+                bail!("FL Studio process {pid} exited while waiting for its main window");
+            }
             let script = format!(
                 "$p = Get-Process -Id {pid} -ErrorAction SilentlyContinue; if ($p -and $p.MainWindowHandle -ne 0) {{ $p.MainWindowHandle }}"
             );
@@ -1227,12 +1537,7 @@ fn lock<'a, T>(mutex: &'a Mutex<T>, name: &str) -> Result<MutexGuard<'a, T>> {
 
 fn main() -> Result<()> {
     let runtime = Runtime::new(Cli::parse())?;
-    if let Err(error) = runtime.bootstrap() {
-        runtime.fail(&error);
-        return Err(error);
-    }
-    runtime.start_monitor();
-    runtime.serve()
+    runtime.run()
 }
 
 #[cfg(test)]
