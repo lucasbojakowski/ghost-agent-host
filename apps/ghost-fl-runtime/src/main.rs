@@ -122,7 +122,6 @@ impl AppProfile {
 enum RuntimePhase {
     Booting,
     DiscoveringFl,
-    LaunchingFl,
     WaitingFlUi,
     WaitingGopher,
     OpeningGopher,
@@ -141,7 +140,6 @@ impl RuntimePhase {
         match self {
             Self::Booting => "booting",
             Self::DiscoveringFl => "discovering_fl",
-            Self::LaunchingFl => "launching_fl",
             Self::WaitingFlUi => "waiting_fl_ui",
             Self::WaitingGopher => "waiting_gopher",
             Self::OpeningGopher => "opening_gopher",
@@ -990,6 +988,7 @@ fn ensure_fl(cli: &Cli, journal: &EventJournal) -> Result<(u32, bool)> {
     }
 }
 
+#[cfg(any(windows, test))]
 fn append_debug_arg(existing: Option<&str>, port: u16) -> String {
     let debug_arg = format!("--remote-debugging-port={port}");
     match existing.map(str::trim).filter(|value| !value.is_empty()) {
