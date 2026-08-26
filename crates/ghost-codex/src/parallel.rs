@@ -810,10 +810,26 @@ mod tests {
             json!({"turnId": "turn-a", "item": {"id": "user-a", "type": "userMessage", "content": []}}),
         ];
         let result = paginated_history_result(summary, entries).unwrap();
-        assert_eq!(result.pointer("/thread/turns/0/id").and_then(Value::as_str), Some("turn-a"));
-        assert_eq!(result.pointer("/thread/turns/0/items/0/id").and_then(Value::as_str), Some("user-a"));
-        assert_eq!(result.pointer("/thread/turns/1/id").and_then(Value::as_str), Some("turn-b"));
-        assert_eq!(result.pointer("/thread/turns/1/items/1/id").and_then(Value::as_str), Some("agent-b"));
+        assert_eq!(
+            result.pointer("/thread/turns/0/id").and_then(Value::as_str),
+            Some("turn-a")
+        );
+        assert_eq!(
+            result
+                .pointer("/thread/turns/0/items/0/id")
+                .and_then(Value::as_str),
+            Some("user-a")
+        );
+        assert_eq!(
+            result.pointer("/thread/turns/1/id").and_then(Value::as_str),
+            Some("turn-b")
+        );
+        assert_eq!(
+            result
+                .pointer("/thread/turns/1/items/1/id")
+                .and_then(Value::as_str),
+            Some("agent-b")
+        );
     }
 
     #[test]
