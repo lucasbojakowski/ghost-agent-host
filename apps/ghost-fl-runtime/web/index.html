@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ghost FL Runtime</title>
+<style>
+:root { color-scheme: dark; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; background: #101114; color: #e9edf1; }
+body { margin: 0; padding: 24px; }
+main { max-width: 1100px; margin: 0 auto; }
+h1 { font-size: 20px; margin: 0 0 4px; }
+.sub { color: #8e98a3; margin-bottom: 22px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.card { border: 1px solid #2a2e35; border-radius: 10px; padding: 14px; background: #16181d; }
+.row { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; }
+.label { color: #9099a5; }
+.ok { color: #7ee787; } .bad { color: #ff7b72; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+button { background: #23262d; color: #e9edf1; border: 1px solid #3a4049; padding: 8px 11px; border-radius: 7px; cursor: pointer; }
+button:hover { background: #2c3139; }
+pre { height: 430px; overflow: auto; white-space: pre-wrap; border: 1px solid #2a2e35; background: #0c0d10; padding: 12px; border-radius: 10px; font-size: 12px; }
+#error { color: #ff7b72; min-height: 20px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Ghost &amp; Guild · FL Runtime</h1>
+  <div class="sub" id="session">connecting…</div>
+  <div class="grid">
+    <section class="card">
+      <strong>FL Studio</strong>
+      <div class="row"><span class="label">Process</span><span id="flProcess">—</span></div>
+      <div class="row"><span class="label">Window</span><span id="flWindow">—</span></div>
+      <div class="row"><span class="label">Gopher</span><span id="gopher">—</span></div>
+      <div class="row"><span class="label">Tools</span><span id="tools">—</span></div>
+    </section>
+    <section class="card">
+      <strong>Ghost app</strong>
+      <div class="row"><span class="label">Phase</span><span id="phase">—</span></div>
+      <div class="row"><span class="label">Process</span><span id="appProcess">—</span></div>
+      <div class="row"><span class="label">Health</span><span id="health">—</span></div>
+      <div class="row"><span class="label">Scripting</span><span id="scripting">—</span></div>
+      <div class="row"><span class="label">Thread</span><span id="thread">—</span></div>
+    </section>
+  </div>
+  <div class="controls">
+    <button onclick="post('/api/fl/retry')">Retry FL flow</button>
+    <button onclick="post('/api/app/start')">Start app</button>
+    <button onclick="post('/api/app/restart')">Restart app</button>
+    <button onclick="post('/api/app/stop')">Stop app</button>
+    <button onclick="post('/api/gopher/open')">Open Gopher</button>
+    <button onclick="post('/api/shutdown')">Shutdown Ghost</button>
+  </div>
+  <div id="error"></div>
+  <pre id="events"></pre>
+</main>
+<script>
+const el = id => document.getElementById(id);
+const mark = value => value ? '<span class="ok">● ready</span>' : '<span class="bad">● not ready</span>';
+async function post(path) {
+  el('error').textContent = '';
+  try {
+    const response = await fetch(path, {method: 'POST'});
+    const body = await response.json();
+    if (!response.ok) throw new Error(body.error || response.statusText);
+    await refresh();
+  } catch (error) { el('error').textContent = error.message; }
+}
+async function refresh() {
+  try {
+    const [stateResponse, eventsResponse] = await Promise.all([fetch('/api/state'), fetch('/api/events')]);
+    const state = await stateResponse.json();
+    const events = await eventsResponse.json();
+    el('session').textContent = `session ${state.sessionId}`;
+    el('phase').textContent = state.phase;
+    el('flProcess').innerHTML = state.fl.pid ? `<span class="ok">● PID ${state.fl.pid}</span>` : '<span class="bad">● absent</span>';
+    el('flWindow').innerHTML = mark(state.fl.windowReady);
+    el('gopher').innerHTML = mark(state.fl.gopherReady);
+    el('tools').textContent = state.fl.gopherToolCount ?? '—';
+    el('appProcess').innerHTML = state.app.pid ? `<span class="ok">● PID ${state.app.pid}</span>` : '<span class="bad">● stopped</span>';
+    el('health').innerHTML = mark(state.app.healthy);
+    el('scripting').innerHTML = state.app.scriptingConnected == null ? 'n/a' : mark(state.app.scriptingConnected);
+    el('thread').textContent = state.app.threadId || '—';
+    el('error').textContent = state.lastError || state.app.lastError || '';
+    el('events').textContent = events.map(e => `${String(e.sequence).padStart(4, '0')} ${e.component} ${e.event} ${JSON.stringify(e.data)}`).join('\n');
+    el('events').scrollTop = el('events').scrollHeight;
+  } catch (error) { el('error').textContent = error.message; }
+}
+refresh();
+setInterval(refresh, 1000);
+</script>
+</body>
+</html>
