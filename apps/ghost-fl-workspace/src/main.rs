@@ -273,7 +273,7 @@ impl AgentSession {
         let Some(thread_id) = self.thread_store.selected_id().map(str::to_owned) else {
             return Ok(ThreadHistoryResponse::empty());
         };
-        let result = self.runtime.read_thread(&thread_id, true)?;
+        let result = self.runtime.read_full_thread_history(&thread_id)?;
         let history = ThreadHistoryResponse::from_thread_read(&thread_id, &result)?;
         if !history.messages.is_empty() {
             self.bootstrapped_threads.insert(thread_id.clone());
