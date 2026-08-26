@@ -10,7 +10,6 @@ permissions:
 
 jobs:
   reconcile:
-    if: github.event.head_commit.message != 'build: reconcile runtime workspace'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
