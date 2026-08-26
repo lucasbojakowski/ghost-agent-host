@@ -174,6 +174,34 @@ impl CodexParallelRuntime {
         Ok(ParallelCodexThread { id, model })
     }
 
+    pub fn fork_thread(
+        &self,
+        thread_id: &str,
+        tools: ToolRegistry,
+    ) -> Result<ParallelCodexThread, AgentError> {
+        let result = self.request("thread/fork", json!({"threadId": thread_id}))?;
+        let id = result
+            .pointer("/thread/id")
+            .and_then(Value::as_str)
+            .ok_or_else(|| AgentError::Protocol("thread/fork did not return a thread ID".into()))?
+            .to_owned();
+        let model = result
+            .pointer("/thread/model")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_owned();
+        self.set_thread_tools(&id, tools)?;
+        Ok(ParallelCodexThread { id, model })
+    }
+
+    pub fn set_thread_name(&self, thread_id: &str, name: &str) -> Result<(), AgentError> {
+        self.request(
+            "thread/name/set",
+            json!({"threadId": thread_id, "name": name}),
+        )?;
+        Ok(())
+    }
+
     pub fn loaded_thread_ids(&self) -> Result<Vec<String>, AgentError> {
         let result = self.request("thread/loaded/list", json!({}))?;
         Ok(result
