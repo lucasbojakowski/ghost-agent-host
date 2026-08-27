@@ -12,7 +12,7 @@ use ghost_tap::{
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
-use crate::project::{normalize_path, AssetRequest, WorkspaceProjectHub};
+use crate::project::{normalize_path, WorkspaceProjectHub};
 
 #[derive(Clone)]
 pub(crate) struct AudioToolState {
@@ -167,7 +167,11 @@ impl AudioToolState {
             .map(str::trim)
             .filter(|value| !value.is_empty())
             .map(str::to_owned)
-            .or_else(|| path.file_name().and_then(|value| value.to_str()).map(str::to_owned))
+            .or_else(|| {
+                path.file_name()
+                    .and_then(|value| value.to_str())
+                    .map(str::to_owned)
+            })
             .unwrap_or_else(|| "Audio asset".into());
 
         let existing_analysis_id = {
@@ -192,12 +196,8 @@ impl AudioToolState {
 
         let audio = read_audio(&path)
             .with_context(|| format!("failed to decode audio file {}", path.display()))?;
-        let analysis = analyze_audio(
-            path.to_string_lossy(),
-            &audio,
-            &AnalysisConfig::maximum(),
-        )
-        .context("maximum-quality Ghost audio analysis failed")?;
+        let analysis = analyze_audio(path.to_string_lossy(), &audio, &AnalysisConfig::maximum())
+            .context("maximum-quality Ghost audio analysis failed")?;
         let analysis_id = analysis.capture.content_hash.clone();
         let acoustic = serde_json::to_value(&analysis)?;
         let musical = analyze_musical_projection(&audio, request.tempo_bpm, &role);
@@ -278,7 +278,10 @@ impl AudioToolState {
             ("centroidHz", "/signal/spectrum/centroid_hz"),
             ("rolloff85Hz", "/signal/spectrum/rolloff_85_hz"),
             ("spectralFlatness", "/signal/spectrum/flatness"),
-            ("transientDensityHz", "/signal/dynamics/transient_density_hz"),
+            (
+                "transientDensityHz",
+                "/signal/dynamics/transient_density_hz",
+            ),
             ("attackStrengthP90", "/signal/dynamics/attack_strength_p90"),
             ("stereoCorrelation", "/signal/stereo/broadband_correlation"),
             ("midSideRatioDb", "/signal/stereo/mid_side_ratio_db"),
@@ -355,8 +358,7 @@ impl AudioToolState {
     }
 
     pub(crate) fn collect_tap(&self, request: TapCollectRequest) -> Result<Value> {
-        if !request.timeout_seconds.is_finite()
-            || !(0.1..=120.0).contains(&request.timeout_seconds)
+        if !request.timeout_seconds.is_finite() || !(0.1..=120.0).contains(&request.timeout_seconds)
         {
             bail!("timeoutSeconds must be between 0.1 and 120 seconds");
         }
@@ -372,8 +374,8 @@ impl AudioToolState {
     fn load(&self, analysis_id: &str) -> Result<StoredAudioAnalysis> {
         validate_analysis_id(analysis_id)?;
         let path = self.analysis_root.join(format!("{analysis_id}.json"));
-        let bytes = fs::read(&path)
-            .with_context(|| format!("unknown audio analysis `{analysis_id}`"))?;
+        let bytes =
+            fs::read(&path).with_context(|| format!("unknown audio analysis `{analysis_id}`"))?;
         serde_json::from_slice(&bytes)
             .with_context(|| format!("invalid cached audio analysis {}", path.display()))
     }
@@ -614,7 +616,11 @@ fn pitch_projection(samples: &[f32], sample_rate: u32, bpm: Option<f64>) -> Vec<
     }
     let downsample = (sample_rate / 8_000).max(1) as usize;
     let rate = sample_rate as f64 / downsample as f64;
-    let reduced = samples.iter().step_by(downsample).copied().collect::<Vec<_>>();
+    let reduced = samples
+        .iter()
+        .step_by(downsample)
+        .copied()
+        .collect::<Vec<_>>();
     let window = (rate * 0.08).round() as usize;
     let hop = (rate * 0.25).round() as usize;
     if window < 32 || reduced.len() < window {
@@ -628,7 +634,10 @@ fn pitch_projection(samples: &[f32], sample_rate: u32, bpm: Option<f64>) -> Vec<
         let frame = &reduced[start..start + window];
         if gain_to_db(rms(frame)) > -48.0 {
             if let Some((frequency, confidence)) = estimate_pitch(frame, rate, min_lag, max_lag) {
-                if confidence >= 0.55 && frequency.is_finite() && (45.0..=1_000.0).contains(&frequency) {
+                if confidence >= 0.55
+                    && frequency.is_finite()
+                    && (45.0..=1_000.0).contains(&frequency)
+                {
                     let midi = (69.0 + 12.0 * (frequency / 440.0).log2()).round() as i32;
                     frames.push((start as f64 / rate, midi, confidence));
                 }
@@ -702,10 +711,13 @@ fn section_candidates(timeline: &[TimelinePoint], bpm: Option<f64>) -> Vec<Secti
         .map(|pair| {
             let rms_delta = (pair[1].rms_dbfs - pair[0].rms_dbfs).abs() / 6.0;
             let transient_scale = pair[0].transient_proxy.abs().max(1.0e-6);
-            let transient_delta = (pair[1].transient_proxy - pair[0].transient_proxy).abs()
-                / transient_scale;
+            let transient_delta =
+                (pair[1].transient_proxy - pair[0].transient_proxy).abs() / transient_scale;
             let zcr_delta = (pair[1].zero_crossing_rate - pair[0].zero_crossing_rate).abs() * 8.0;
-            (pair[1].time_seconds, rms_delta + transient_delta + zcr_delta)
+            (
+                pair[1].time_seconds,
+                rms_delta + transient_delta + zcr_delta,
+            )
         })
         .collect::<Vec<_>>();
     let mean = scored.iter().map(|(_, score)| *score).sum::<f64>() / scored.len() as f64;
@@ -763,7 +775,11 @@ fn midi_name(midi: i32) -> String {
 }
 
 fn validate_analysis_id(analysis_id: &str) -> Result<()> {
-    if analysis_id.len() != 64 || !analysis_id.chars().all(|character| character.is_ascii_hexdigit()) {
+    if analysis_id.len() != 64
+        || !analysis_id
+            .chars()
+            .all(|character| character.is_ascii_hexdigit())
+    {
         bail!("invalid audio analysis id");
     }
     Ok(())
