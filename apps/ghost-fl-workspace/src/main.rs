@@ -25,9 +25,7 @@ use ghost_codex::{
 use ghost_fl_scripting::{FlScriptingAdapter, FlScriptingConfig, FlScriptingStatus};
 use ghost_fl_studio::{FlStudioAdapterConfig, GopherNativeAdapter};
 use history::ThreadHistoryResponse;
-use project::{
-    AssetIdRequest, AssetRequest, ProjectContext, ProjectUpdate, WorkspaceProjectHub,
-};
+use project::{AssetIdRequest, AssetRequest, ProjectContext, ProjectUpdate, WorkspaceProjectHub};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use snapshot::{capture_workspace_snapshot, WorkspaceSnapshot};
