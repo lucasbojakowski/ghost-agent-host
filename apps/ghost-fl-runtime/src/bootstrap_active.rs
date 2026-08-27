@@ -55,7 +55,7 @@ pub(super) fn run(runtime: &Runtime) -> Result<()> {
         Duration::from_secs(2),
     )
     .context(
-        "active bootstrap requires an already-visible Gopher session; start FL through scripts/fl_init.ps1 and open Gopher before launching the runtime, or use --bootstrap start to exercise runtime-owned startup",
+        "active bootstrap requires an already-visible Gopher session; start FL through scripts/fl_init.ps1 and open Gopher before launching the runtime",
     )?;
 
     runtime.complete_bootstrap(manifest)

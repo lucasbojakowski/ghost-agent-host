@@ -1,3 +1,4 @@
+use std::ffi::OsStr;
 use std::io::{BufRead, BufReader, Write};
 use std::path::Path;
 #[cfg(target_os = "windows")]
@@ -24,7 +25,12 @@ impl SplitStdioTransport {
             .args(["app-server", "--listen", "stdio://"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::inherit())
+            // App Server stderr contains its internal tracing stream, including ERROR-level
+            // diagnostics for recoverable events such as a search command returning no matches.
+            // Ghost consumes operational failures through JSON-RPC instead of presenting those
+            // implementation logs as application errors. Developers can opt back into the raw
+            // stream with GHOST_CODEX_STDERR=inherit.
+            .stderr(codex_stderr())
             .spawn()?;
         let stdin = child
             .stdin
@@ -40,6 +46,23 @@ impl SplitStdioTransport {
             child: Arc::new(Mutex::new(child)),
         })
     }
+}
+
+fn codex_stderr() -> Stdio {
+    if inherit_codex_stderr(std::env::var_os("GHOST_CODEX_STDERR").as_deref()) {
+        Stdio::inherit()
+    } else {
+        Stdio::null()
+    }
+}
+
+fn inherit_codex_stderr(value: Option<&OsStr>) -> bool {
+    value.is_some_and(|value| {
+        matches!(
+            value.to_string_lossy().trim().to_ascii_lowercase().as_str(),
+            "1" | "true" | "inherit"
+        )
+    })
 }
 
 pub(crate) fn write_stdio_message(
@@ -104,5 +127,13 @@ mod tests {
         assert!(is_windows_command_shim(Path::new(r"C:\tools\codex.BAT")));
         assert!(!is_windows_command_shim(Path::new(r"C:\tools\codex.exe")));
         assert!(!is_windows_command_shim(Path::new(r"C:\tools\codex")));
+    }
+
+    #[test]
+    fn raw_codex_stderr_is_opt_in() {
+        assert!(!inherit_codex_stderr(None));
+        assert!(!inherit_codex_stderr(Some(OsStr::new("off"))));
+        assert!(inherit_codex_stderr(Some(OsStr::new("inherit"))));
+        assert!(inherit_codex_stderr(Some(OsStr::new("TRUE"))));
     }
 }

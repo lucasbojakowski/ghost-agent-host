@@ -12,6 +12,10 @@ ghost-fl-studio = { path = "../../crates/ghost-fl-studio" }
 serde.workspace = true
 serde_json.workspace = true
 uuid.workspace = true
+mime_guess = "2.0.5"
+rust-embed = "8.12.0"
+ts-rs = { version = "12.0.1", features = ["serde-json-impl"] }
+tungstenite = "0.30.0"
 
 [target.'cfg(windows)'.dependencies]
 tao = "0.37.0"

@@ -1,6 +1,7 @@
 /target/
 /dist/
 /.ghost/
+**/node_modules/
 
 # Rust tooling and temporary files
 **/*.rs.bk

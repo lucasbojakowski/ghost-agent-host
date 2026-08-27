@@ -66,14 +66,41 @@ pub fn resolve_codex_binary(binary: &str) -> Result<PathBuf, AgentError> {
 
 #[cfg(target_os = "windows")]
 fn preferred_windows_candidate(candidates: &[PathBuf]) -> Option<PathBuf> {
-    candidates
-        .iter()
-        .find(|path| {
-            path.extension()
-                .is_some_and(|extension| extension.eq_ignore_ascii_case("exe"))
-        })
-        .or_else(|| candidates.first())
-        .cloned()
+    // `where.exe` returns candidates in PATH precedence order. Keep that order instead of
+    // preferring an arbitrary later `.exe`: npm installs expose an extensionless launcher and a
+    // sibling `.cmd`, while editor extensions may append their own bundled `codex.exe` to PATH.
+    // `transport::windows_command_shim` resolves the sibling `.cmd` when the first candidate is
+    // the npm launcher.
+    candidates.first().cloned()
+}
+
+#[cfg(all(test, target_os = "windows"))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn codex_resolution_preserves_path_precedence() {
+        let candidates = vec![
+            PathBuf::from(r"C:\npm\codex"),
+            PathBuf::from(r"C:\npm\codex.cmd"),
+            PathBuf::from(r"C:\editor\codex.exe"),
+        ];
+
+        assert_eq!(
+            preferred_windows_candidate(&candidates),
+            Some(PathBuf::from(r"C:\npm\codex"))
+        );
+    }
+
+    #[test]
+    fn codex_resolution_accepts_a_direct_executable() {
+        let candidates = vec![PathBuf::from(r"C:\tools\codex.exe")];
+
+        assert_eq!(
+            preferred_windows_candidate(&candidates),
+            Some(PathBuf::from(r"C:\tools\codex.exe"))
+        );
+    }
 }
 
 pub(crate) fn normalize_output_schema(value: &mut Value) {

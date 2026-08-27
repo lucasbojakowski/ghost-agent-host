@@ -1,0 +1,15 @@
+{
+  "name": "@ghost/web-workspace",
+  "private": true,
+  "packageManager": "bun@1.4.0",
+  "workspaces": [
+    "*",
+    "packages/*"
+  ],
+  "scripts": {
+    "check": "bun run --cwd runtime check",
+    "test": "bun run --cwd runtime test",
+    "build": "bun run --cwd runtime build",
+    "test:e2e": "bun run --cwd runtime test:e2e"
+  }
+}

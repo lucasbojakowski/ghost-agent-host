@@ -45,9 +45,14 @@ apps/
   ghost-fl-mcp/         live-proven external MCP raw Gopher control group
   ghost-fl-runtime/     experimental FL/session/app lifecycle supervisor
   ghost-workflow/       capture → analysis → scoped FL regression workflow
+web/
+  runtime/              Bun + SvelteKit runtime shell and routed app host
+  packages/             generated runtime contracts and shared UI primitives
 ```
 
 `ghost-fl-runtime` is intentionally app-owned while lifecycle supervision is still being proven. It attaches to or launches one FL Studio session, establishes Gopher readiness, supervises registered Ghost app fixtures, records structured operational state/events and exposes a small diagnostic control panel without moving product orchestration into `ghost-application` prematurely.
+
+The runtime web workspace is a projection of that Rust-owned lifecycle, not a TypeScript server or workspace-kernel implementation. Rust serves its optimized static assets, streams state over WebSockets, and exposes registered applications through shell routes. Use `cargo xtask web` to generate Rust-derived TypeScript contracts, validate the frontend and build the embedded bundle.
 
 Current harness/control matrix:
 

@@ -1,0 +1,11 @@
+[package]
+name = "ghost-xtask"
+version.workspace = true
+edition.workspace = true
+license-file.workspace = true
+publish = false
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+ghost-fl-runtime = { path = "../../apps/ghost-fl-runtime" }

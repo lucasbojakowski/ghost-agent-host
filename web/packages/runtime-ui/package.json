@@ -1,0 +1,13 @@
+{
+  "name": "@ghost/runtime-ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./StatusBadge.svelte": "./src/StatusBadge.svelte",
+    "./MetricCard.svelte": "./src/MetricCard.svelte"
+  },
+  "peerDependencies": {
+    "svelte": "^5.0.0"
+  }
+}
