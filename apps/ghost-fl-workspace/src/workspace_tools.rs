@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use anyhow::Result;
 use ghost_codex::{ToolDefinition, ToolError, ToolRegistry};
 use serde::Deserialize;
-use serde_json::{json, Value};
+use serde_json::json;
 
 use crate::audio_tools::{
     AnalyzeAudioRequest, AudioToolState, CompareAudioRequest, ReadAudioRequest, TapArmRequest,
