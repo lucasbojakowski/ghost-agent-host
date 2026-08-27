@@ -119,7 +119,9 @@ mod tests {
         for skill in SKILLS {
             assert!(names.insert(skill.summary.name));
             assert!(skill.content.starts_with("---\n"));
-            assert!(skill.content.contains(&format!("name: {}", skill.summary.name)));
+            assert!(skill
+                .content
+                .contains(&format!("name: {}", skill.summary.name)));
         }
     }
 
