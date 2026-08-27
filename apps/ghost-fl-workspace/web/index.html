@@ -1,110 +1,154 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Ghost / FL Workspace</title>
-  <style>
-    :root { color-scheme: dark; --bg:#0c0e11; --panel:#15191e; --line:#2a3038; --text:#edf1f5; --muted:#929ca9; --accent:#d9ff69; }
-    * { box-sizing:border-box; }
-    body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font-family:Inter,ui-sans-serif,system-ui,sans-serif; }
-    header { position:sticky; top:0; z-index:2; display:flex; gap:16px; justify-content:space-between; align-items:center; padding:15px 20px; border-bottom:1px solid var(--line); background:rgba(12,14,17,.94); }
-    .brand { display:flex; gap:10px; align-items:baseline; } .brand span { color:var(--muted); font-size:12px; }
-    .surface { display:flex; gap:12px; flex-wrap:wrap; color:var(--muted); font-size:12px; }
-    .pill { display:flex; gap:7px; align-items:center; } .dot { width:8px; height:8px; border-radius:50%; background:#59616c; } .dot.live { background:var(--accent); box-shadow:0 0 14px rgba(217,255,105,.3); }
-    main { width:min(1040px,100%); margin:0 auto; padding:26px 18px 190px; }
-    .intro, .threads, .snapshot { border:1px solid var(--line); background:var(--panel); border-radius:14px; padding:14px 16px; margin-bottom:16px; }
-    .intro { color:var(--muted); line-height:1.5; font-size:13px; } .intro strong { color:var(--text); }
-    .section-head, .snapshot-head { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:10px; }
-    .thread-meta { color:var(--muted); font-size:11px; overflow-wrap:anywhere; }
-    .thread-controls { display:grid; grid-template-columns:minmax(150px,.7fr) minmax(240px,1.3fr) auto auto auto auto; gap:8px; align-items:center; }
-    button, input, select { border:1px solid var(--line); background:#1c2128; color:var(--text); border-radius:9px; padding:8px 11px; font:inherit; }
-    input, select { min-width:0; outline:none; } input:focus, select:focus { border-color:#59616c; }
-    button { cursor:pointer; font-weight:650; } button.primary { background:var(--accent); color:#111509; border-color:var(--accent); } button:disabled, input:disabled, select:disabled { opacity:.5; cursor:wait; }
-    pre { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; color:var(--muted); font:11px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; max-height:250px; overflow:auto; }
-    #messages { display:grid; gap:18px; margin-top:24px; } .message { display:grid; gap:7px; } .role { color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.13em; } .bubble { white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.55; padding:14px 16px; } .user .bubble { background:#1a1f25; border:1px solid var(--line); border-radius:13px; } .assistant .bubble { border-left:2px solid var(--accent); }
-    details { border:1px solid var(--line); border-radius:10px; background:var(--panel); } summary { padding:9px 11px; color:var(--muted); cursor:pointer; font-size:11px; } .trace { padding:10px 12px; border-top:1px solid var(--line); color:var(--muted); white-space:pre-wrap; font:11px/1.5 ui-monospace,monospace; }
-    .composer-wrap { position:fixed; left:0; right:0; bottom:0; padding:18px; background:linear-gradient(180deg,rgba(12,14,17,0),var(--bg) 24%); } .composer { width:min(1040px,100%); margin:0 auto; background:var(--panel); border:1px solid var(--line); border-radius:15px; padding:10px; } textarea { width:100%; min-height:78px; max-height:220px; resize:vertical; border:0; outline:0; background:transparent; color:var(--text); font:inherit; padding:8px; } .actions { display:flex; justify-content:flex-end; gap:10px; }
-    @media(max-width:850px){ .thread-controls{grid-template-columns:1fr 1fr;}.thread-controls input,.thread-controls select{grid-column:span 2;} }
-    @media(max-width:700px){ header{align-items:flex-start;flex-direction:column;} .section-head,.snapshot-head{align-items:flex-start;flex-direction:column;} }
-  </style>
-</head>
-<body>
-  <header>
-    <div class="brand"><strong>Ghost</strong><span>FL workspace experiment</span></div>
-    <div class="surface">
-      <div class="pill"><span id="gopher-dot" class="dot"></span><span id="gopher-status">Gopher…</span></div>
-      <div class="pill"><span id="scripting-dot" class="dot"></span><span id="scripting-status">Scripting…</span></div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark" />
+    <title>Ghost Workspace</title>
+    <link href="/src/style.css" rel="stylesheet" />
+  </head>
+  <body>
+    <div id="app" class="workspace-shell">
+      <aside class="left-rail">
+        <section class="rail-section project-summary">
+          <button id="project-edit" class="project-title-button" type="button">
+            <span class="eyebrow">PROJECT</span>
+            <strong id="project-title">Untitled production</strong>
+            <span id="project-meta" class="subtle">No thread selected</span>
+          </button>
+        </section>
+
+        <section class="rail-section grow">
+          <div class="rail-heading">
+            <span>References</span>
+            <button id="add-asset" class="icon-button" type="button" aria-label="Add audio path">+</button>
+          </div>
+          <div id="asset-list" class="asset-list"></div>
+        </section>
+
+        <section class="rail-section rail-actions">
+          <button id="open-plan" class="rail-action" type="button"><span>Production plan</span><span>›</span></button>
+          <button id="open-skills" class="rail-action" type="button"><span>Skills</span><span>›</span></button>
+          <button id="open-threads" class="rail-action" type="button"><span>Threads</span><span id="thread-count" class="count-badge">0</span></button>
+        </section>
+      </aside>
+
+      <main class="conversation-column">
+        <header class="conversation-header">
+          <button id="thread-button" class="thread-button" type="button">
+            <span id="active-thread-name">New workspace</span>
+            <span class="chevron">⌄</span>
+          </button>
+          <div id="turn-status" class="turn-status"></div>
+        </header>
+
+        <section id="messages" class="messages" aria-live="polite"></section>
+
+        <div class="composer-dock">
+          <div id="composer-assets" class="composer-assets"></div>
+          <div class="composer">
+            <textarea id="prompt" rows="1" placeholder="Ask Ghost to analyze, plan, inspect or build…"></textarea>
+            <div class="composer-footer">
+              <div class="composer-tools">
+                <button id="composer-add-asset" class="composer-tool-button" type="button" title="Add reference or stem path">＋</button>
+                <select id="model-select" class="composer-select" aria-label="Model"></select>
+                <select id="effort-select" class="composer-select" aria-label="Reasoning effort">
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high" selected>High</option>
+                  <option value="xhigh">XHigh</option>
+                </select>
+              </div>
+              <button id="send" class="send-button" type="button">Send</button>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <aside class="right-rail">
+        <div class="inspector-tabs" role="tablist">
+          <button class="inspector-tab active" data-tab="fl" type="button">FL</button>
+          <button class="inspector-tab" data-tab="analysis" type="button">Analysis</button>
+          <button class="inspector-tab" data-tab="plan" type="button">Plan</button>
+        </div>
+        <div id="inspector-fl" class="inspector-panel active"></div>
+        <div id="inspector-analysis" class="inspector-panel"></div>
+        <div id="inspector-plan" class="inspector-panel"></div>
+      </aside>
     </div>
-  </header>
-  <main>
-    <section class="intro"><strong>Combined primitive surface.</strong> The agent receives the complete live Gopher catalog unchanged plus only three scripting gateways: search, describe and call. Workspace threads and their Codex history persist across app sessions; starting the app alone no longer creates an empty Codex thread.</section>
-    <section class="threads">
-      <div class="section-head">
-        <strong>Workspace thread</strong>
-        <span id="thread-meta" class="thread-meta">Loading threads…</span>
+
+    <dialog id="thread-dialog" class="workspace-dialog">
+      <form method="dialog" class="dialog-card large-dialog">
+        <div class="dialog-header">
+          <div><span class="eyebrow">WORKSPACE</span><h2>Threads</h2></div>
+          <button class="icon-button" value="cancel" aria-label="Close">×</button>
+        </div>
+        <input id="thread-filter" class="field" type="search" placeholder="Filter by name or id…" />
+        <div id="thread-list" class="thread-list"></div>
+        <div class="dialog-actions split-actions">
+          <button id="new-thread" type="button">New thread</button>
+          <div>
+            <button id="fork-thread" type="button">Fork</button>
+            <button id="rename-thread" type="button">Rename</button>
+          </div>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="asset-dialog" class="workspace-dialog">
+      <form id="asset-form" method="dialog" class="dialog-card">
+        <div class="dialog-header">
+          <div><span class="eyebrow">REFERENCE</span><h2>Add audio path</h2></div>
+          <button class="icon-button" value="cancel" aria-label="Close">×</button>
+        </div>
+        <label class="field-label">Path<input id="asset-path" class="field" autocomplete="off" placeholder="D:\\client\\reference.wav" /></label>
+        <label class="field-label">Label<input id="asset-label" class="field" autocomplete="off" placeholder="Reference mix" /></label>
+        <label class="field-label">Role
+          <select id="asset-role" class="field">
+            <option value="reference_mix">Reference mix</option>
+            <option value="drums">Drums</option>
+            <option value="kick">Kick</option>
+            <option value="snare">Snare</option>
+            <option value="hihat">Hi-hat</option>
+            <option value="percussion">Percussion</option>
+            <option value="bass">Bass</option>
+            <option value="music">Music</option>
+            <option value="vocals">Vocals</option>
+            <option value="fx">FX</option>
+            <option value="other">Other</option>
+          </select>
+        </label>
+        <div class="dialog-actions"><button value="cancel">Cancel</button><button id="save-asset" class="primary-button" value="default">Add</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="project-dialog" class="workspace-dialog">
+      <form id="project-form" method="dialog" class="dialog-card">
+        <div class="dialog-header">
+          <div><span class="eyebrow">PROJECT</span><h2>Production context</h2></div>
+          <button class="icon-button" value="cancel" aria-label="Close">×</button>
+        </div>
+        <label class="field-label">Title<input id="project-title-input" class="field" /></label>
+        <div class="field-row">
+          <label class="field-label">Tempo<input id="project-tempo" class="field" type="number" step="0.01" min="20" max="400" placeholder="128" /></label>
+          <label class="field-label">Time signature<input id="project-time-signature" class="field" placeholder="4/4" /></label>
+        </div>
+        <label class="field-label">Producer description<textarea id="project-description" class="field description-field" rows="8" placeholder="Describe the reference, client direction, aesthetic, instrumentation, timbral language, structure, and anything the audio cannot tell Ghost by itself."></textarea></label>
+        <div class="dialog-actions"><button value="cancel">Cancel</button><button id="save-project" class="primary-button" value="default">Save</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="skills-dialog" class="workspace-dialog">
+      <div class="dialog-card large-dialog">
+        <div class="dialog-header">
+          <div><span class="eyebrow">WORKFLOWS</span><h2>Skills</h2></div>
+          <button id="close-skills" class="icon-button" type="button" aria-label="Close">×</button>
+        </div>
+        <div id="skill-list" class="skill-list"></div>
+        <article id="skill-content" class="skill-content markdown-body"></article>
       </div>
-      <div class="thread-controls">
-        <input id="thread-filter" type="search" placeholder="Filter by thread name or id…" />
-        <select id="thread-select" aria-label="Workspace thread"></select>
-        <button id="select-thread">Select</button>
-        <button id="new-thread">New</button>
-        <button id="fork-thread">Fork</button>
-        <button id="rename-thread">Rename</button>
-      </div>
-    </section>
-    <section class="snapshot">
-      <div class="snapshot-head"><strong>Live scripting snapshot</strong><button id="refresh">Refresh snapshot</button></div>
-      <pre id="snapshot">Waiting for FL scripting bridge…</pre>
-    </section>
-    <section id="messages"></section>
-  </main>
-  <div class="composer-wrap"><div class="composer">
-    <textarea id="prompt" placeholder="Ask Ghost to inspect or operate the live FL Studio workspace…"></textarea>
-    <div class="actions"><button id="send" class="primary">Send</button></div>
-  </div></div>
-<script>
-  const messages=document.querySelector('#messages'), prompt=document.querySelector('#prompt'), send=document.querySelector('#send'), refresh=document.querySelector('#refresh');
-  const gopherDot=document.querySelector('#gopher-dot'), gopherStatus=document.querySelector('#gopher-status'), scriptingDot=document.querySelector('#scripting-dot'), scriptingStatus=document.querySelector('#scripting-status'), snapshot=document.querySelector('#snapshot');
-  const threadFilter=document.querySelector('#thread-filter'), threadSelect=document.querySelector('#thread-select'), threadMeta=document.querySelector('#thread-meta'), selectThreadButton=document.querySelector('#select-thread'), newThreadButton=document.querySelector('#new-thread'), forkThreadButton=document.querySelector('#fork-thread'), renameThreadButton=document.querySelector('#rename-thread');
-  let busy=false, threadState={selectedThreadId:null,threads:[]};
-  async function request(path, init){ const response=await fetch(path,init); const payload=await response.json(); if(!response.ok) throw new Error(payload.error||`HTTP ${response.status}`); return payload; }
-  function post(path, body={}){ return request(path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}); }
-  function setBusy(value){ busy=value; [send,refresh,threadSelect,selectThreadButton,newThreadButton,forkThreadButton,renameThreadButton].forEach(control=>control.disabled=value); prompt.disabled=value; send.textContent=value?'Working…':'Send'; renderThreads(); }
-  function addMessage(role,text,trace=[],scroll=true){ const wrap=document.createElement('article'); wrap.className=`message ${role}`; const r=document.createElement('div'); r.className='role'; r.textContent=role==='user'?'You':'Ghost'; const b=document.createElement('div'); b.className='bubble'; b.textContent=text; wrap.append(r,b); if(trace.length){ const d=document.createElement('details'); const s=document.createElement('summary'); s.textContent=`${trace.filter(e=>e.kind==='tool_started').length} tool calls`; const t=document.createElement('div'); t.className='trace'; t.textContent=trace.map(e=>e.kind==='tool_started'?`→ ${e.tool} ${JSON.stringify(e.arguments??{})}`:`← ${e.tool} success=${e.success??false} duration=${e.durationMs??0}ms`).join('\n'); d.append(s,t); wrap.append(d); } messages.append(wrap); if(scroll) wrap.scrollIntoView({behavior:'smooth',block:'end'}); }
-  function renderHistory(history){ messages.innerHTML=''; for(const message of history.messages||[]) addMessage(message.role,message.text,message.trace||[],false); messages.lastElementChild?.scrollIntoView({block:'end'}); }
-  async function loadHistory(){ if(!threadState.selectedThreadId){ renderHistory({messages:[]}); return; } try{ const history=await request('/api/history'); renderHistory(history); }catch(error){ renderHistory({messages:[]}); addMessage('assistant',`Thread history unavailable: ${error.message}`); } }
-  function shortId(id){ return id ? (id.length>18?`${id.slice(0,8)}…${id.slice(-6)}`:id) : ''; }
-  function threadLabel(thread){ return `${thread.name||'Untitled'} · ${shortId(thread.id)}`; }
-  function renderThreads(){
-    const query=threadFilter.value.trim().toLowerCase();
-    const visible=threadState.threads.filter(thread=>`${thread.name||''} ${thread.id}`.toLowerCase().includes(query));
-    const previous=threadSelect.value;
-    threadSelect.innerHTML='';
-    if(!visible.length){ const option=document.createElement('option'); option.value=''; option.textContent=threadState.threads.length?'No matching threads':'No workspace threads yet'; threadSelect.append(option); }
-    for(const thread of visible){ const option=document.createElement('option'); option.value=thread.id; option.textContent=threadLabel(thread); threadSelect.append(option); }
-    const preferred=[previous,threadState.selectedThreadId].find(id=>id&&visible.some(thread=>thread.id===id));
-    if(preferred) threadSelect.value=preferred;
-    const selected=threadState.threads.find(thread=>thread.id===threadState.selectedThreadId);
-    threadMeta.textContent=selected?`${selected.name||'Untitled'} · ${selected.id}${selected.hasTurns?'':' · no turns yet'}`:'No thread selected — the first message will create one.';
-    const hasTarget=Boolean(threadSelect.value);
-    selectThreadButton.disabled=busy||!hasTarget||threadSelect.value===threadState.selectedThreadId;
-    forkThreadButton.disabled=busy||!hasTarget;
-    renameThreadButton.disabled=busy||!hasTarget;
-    newThreadButton.disabled=busy;
-  }
-  async function refreshThreads(){ try{ threadState=await request('/api/threads'); renderThreads(); return true; }catch(error){ threadMeta.textContent=`Threads unavailable: ${error.message}`; return false; } }
-  async function chooseThread(){ if(busy||!threadSelect.value) return; setBusy(true); try{ threadState=await post('/api/threads/select',{threadId:threadSelect.value}); await loadHistory(); }catch(error){ addMessage('assistant',`Thread selection failed: ${error.message}`); }finally{ setBusy(false); refreshInfo(); } }
-  async function newThread(){ if(busy) return; setBusy(true); try{ threadState=await post('/api/threads/new'); renderHistory({messages:[]}); }catch(error){ addMessage('assistant',`Thread creation failed: ${error.message}`); }finally{ setBusy(false); refreshInfo(); } }
-  async function forkThread(){ if(busy||!threadSelect.value) return; setBusy(true); try{ const source=threadSelect.value; threadState=await post('/api/threads/fork',{threadId:source}); await loadHistory(); }catch(error){ addMessage('assistant',`Thread fork failed: ${error.message}`); }finally{ setBusy(false); refreshInfo(); } }
-  async function renameThread(){ if(busy||!threadSelect.value) return; const current=threadState.threads.find(thread=>thread.id===threadSelect.value); const name=window.prompt('Thread name',current?.name||''); if(name===null) return; if(!name.trim()) return; setBusy(true); try{ threadState=await post('/api/threads/rename',{threadId:threadSelect.value,name:name.trim()}); }catch(error){ addMessage('assistant',`Thread rename failed: ${error.message}`); }finally{ setBusy(false); refreshInfo(); } }
-  async function refreshInfo(){ try{ const info=await request('/api/info'); gopherDot.classList.add('live'); gopherStatus.textContent=`Gopher ${info.gopherToolCount} tools`; const scripting=info.scripting||{}; scriptingDot.classList.toggle('live',Boolean(scripting.connected)); scriptingStatus.textContent=scripting.connected?`Scripting API ${scripting.hello?.scriptingApiVersion??'?'}`:`Scripting waiting ${scripting.bind??''}`; }catch(error){ gopherDot.classList.remove('live'); gopherStatus.textContent=`Gopher unavailable · ${error.message}`; } }
-  async function refreshSnapshot(){ if(busy) return; try{ const value=await request('/api/snapshot'); scriptingDot.classList.toggle('live',Boolean(value.connected)); snapshot.textContent=JSON.stringify(value,null,2); }catch(error){ snapshot.textContent=`Snapshot unavailable: ${error.message}`; } }
-  async function sendPrompt(){ if(busy) return; const message=prompt.value.trim(); if(!message) return; prompt.value=''; addMessage('user',message); setBusy(true); try{ const result=await post('/api/chat',{message}); addMessage('assistant',result.text,result.trace||[]); snapshot.textContent=JSON.stringify(result.snapshot,null,2); await refreshThreads(); }catch(error){ addMessage('assistant',`Request failed: ${error.message}`); }finally{ setBusy(false); prompt.focus(); refreshInfo(); refreshSnapshot(); } }
-  async function bootstrap(){ await refreshThreads(); await loadHistory(); refreshInfo(); refreshSnapshot(); }
-  send.addEventListener('click',sendPrompt); refresh.addEventListener('click',refreshSnapshot); prompt.addEventListener('keydown',event=>{ if(event.key==='Enter'&&!event.shiftKey){ event.preventDefault(); sendPrompt(); } });
-  threadFilter.addEventListener('input',renderThreads); threadSelect.addEventListener('change',renderThreads); selectThreadButton.addEventListener('click',chooseThread); newThreadButton.addEventListener('click',newThread); forkThreadButton.addEventListener('click',forkThread); renameThreadButton.addEventListener('click',renameThread);
-  bootstrap(); setInterval(refreshInfo,2500);
-</script>
-</body>
+    </dialog>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
 </html>
