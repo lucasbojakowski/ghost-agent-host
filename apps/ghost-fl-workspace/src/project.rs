@@ -89,8 +89,12 @@ pub(crate) struct WorkspaceProjectHub {
 impl WorkspaceProjectHub {
     pub(crate) fn open_default() -> Result<Self> {
         let root = workspace_state_root()?.join("projects");
-        fs::create_dir_all(&root)
-            .with_context(|| format!("failed to create workspace project directory {}", root.display()))?;
+        fs::create_dir_all(&root).with_context(|| {
+            format!(
+                "failed to create workspace project directory {}",
+                root.display()
+            )
+        })?;
         Ok(Self {
             root,
             active_thread_id: None,
@@ -98,10 +102,7 @@ impl WorkspaceProjectHub {
     }
 
     pub(crate) fn analysis_root(&self) -> PathBuf {
-        self.root
-            .parent()
-            .unwrap_or(&self.root)
-            .join("analysis")
+        self.root.parent().unwrap_or(&self.root).join("analysis")
     }
 
     pub(crate) fn activate(&mut self, thread_id: impl Into<String>) -> Result<ProjectContext> {
@@ -155,11 +156,25 @@ impl WorkspaceProjectHub {
         let mut project = self.current()?;
         let path = normalize_path(&request.path)?;
         let path_text = path.to_string_lossy().into_owned();
-        if let Some(existing) = project.assets.iter_mut().find(|asset| asset.path == path_text) {
-            if let Some(label) = request.label.as_deref().map(str::trim).filter(|value| !value.is_empty()) {
+        if let Some(existing) = project
+            .assets
+            .iter_mut()
+            .find(|asset| asset.path == path_text)
+        {
+            if let Some(label) = request
+                .label
+                .as_deref()
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+            {
                 existing.label = label.to_owned();
             }
-            if let Some(role) = request.role.as_deref().map(str::trim).filter(|value| !value.is_empty()) {
+            if let Some(role) = request
+                .role
+                .as_deref()
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+            {
                 existing.role = role.to_owned();
             }
             return self.save(project);
@@ -171,7 +186,11 @@ impl WorkspaceProjectHub {
             .map(str::trim)
             .filter(|value| !value.is_empty())
             .map(str::to_owned)
-            .or_else(|| path.file_name().and_then(|value| value.to_str()).map(str::to_owned))
+            .or_else(|| {
+                path.file_name()
+                    .and_then(|value| value.to_str())
+                    .map(str::to_owned)
+            })
             .unwrap_or_else(|| "Audio asset".into());
         let role = request
             .role
@@ -210,7 +229,11 @@ impl WorkspaceProjectHub {
     ) -> Result<ProjectAsset> {
         let path_text = path.to_string_lossy().into_owned();
         let mut project = self.current()?;
-        if let Some(index) = project.assets.iter().position(|asset| asset.path == path_text) {
+        if let Some(index) = project
+            .assets
+            .iter()
+            .position(|asset| asset.path == path_text)
+        {
             if let Some(label) = label.map(str::trim).filter(|value| !value.is_empty()) {
                 project.assets[index].label = label.to_owned();
             }
@@ -228,7 +251,11 @@ impl WorkspaceProjectHub {
                 .map(str::trim)
                 .filter(|value| !value.is_empty())
                 .map(str::to_owned)
-                .or_else(|| path.file_name().and_then(|value| value.to_str()).map(str::to_owned))
+                .or_else(|| {
+                    path.file_name()
+                        .and_then(|value| value.to_str())
+                        .map(str::to_owned)
+                })
                 .unwrap_or_else(|| "Audio asset".into()),
             role: role
                 .map(str::trim)
@@ -409,7 +436,10 @@ mod tests {
     #[test]
     fn empty_project_has_semantic_plan_shape() {
         let project = ProjectContext::empty("thread-test");
-        assert_eq!(project.production_plan["schemaVersion"], "ghost.production-plan/1");
+        assert_eq!(
+            project.production_plan["schemaVersion"],
+            "ghost.production-plan/1"
+        );
         assert!(project.production_plan["sections"].is_array());
     }
 
