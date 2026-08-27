@@ -26,15 +26,13 @@ use ghost_fl_scripting::{FlScriptingAdapter, FlScriptingConfig, FlScriptingStatu
 use ghost_fl_studio::{FlStudioAdapterConfig, GopherNativeAdapter};
 use history::ThreadHistoryResponse;
 use project::{
-    AssetIdRequest, AssetRequest, PlanUpdate, ProjectContext, ProjectUpdate, WorkspaceProjectHub,
+    AssetIdRequest, AssetRequest, ProjectContext, ProjectUpdate, WorkspaceProjectHub,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use snapshot::{capture_workspace_snapshot, WorkspaceSnapshot};
 use threads::{WorkspaceThreadRecord, WorkspaceThreadStore};
-use workspace_tools::{
-    register_workspace_tools, WorkspaceToolState, WORKSPACE_TOOL_NAMES,
-};
+use workspace_tools::{register_workspace_tools, WorkspaceToolState, WORKSPACE_TOOL_NAMES};
 
 const INDEX_HTML: &str = include_str!("../web/index.html");
 const MAIN_TS: &str = include_str!("../web/src/main.ts");
@@ -385,9 +383,9 @@ impl AgentSession {
     }
 
     fn ensure_active_thread(&mut self) -> Result<ParallelCodexThread> {
-        if let Some(thread) = &self.thread {
-            self.activate_project(&thread.id.clone())?;
-            return Ok(thread.clone());
+        if let Some(thread) = self.thread.clone() {
+            self.activate_project(&thread.id)?;
+            return Ok(thread);
         }
         if let Some(thread_id) = self.thread_store.selected_id().map(str::to_owned) {
             return self.resume_thread(&thread_id);
@@ -768,8 +766,8 @@ fn handle_connection(stream: &mut TcpStream, session: &mut AgentSession) -> Resu
         }
         ("GET", "/api/project") => send_json(stream, "200 OK", &session.project_json()?),
         ("PUT", "/api/project") => {
-            let request: ProjectUpdate = serde_json::from_slice(&request.body)
-                .context("invalid /api/project JSON body")?;
+            let request: ProjectUpdate =
+                serde_json::from_slice(&request.body).context("invalid /api/project JSON body")?;
             send_json(stream, "200 OK", &session.update_project(request)?)
         }
         ("POST", "/api/project/assets") => {
