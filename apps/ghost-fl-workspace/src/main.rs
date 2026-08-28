@@ -31,9 +31,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use snapshot::{capture_workspace_snapshot, WorkspaceSnapshot};
 use threads::{WorkspaceThreadRecord, WorkspaceThreadStore};
-use turn_stream::{
-    agent_event_value, finish_chunked_json, send_chunked_json, start_chunked_json,
-};
+use turn_stream::{agent_event_value, finish_chunked_json, send_chunked_json, start_chunked_json};
 use workspace_tools::{register_workspace_tools, WorkspaceToolState, WORKSPACE_TOOL_NAMES};
 
 const INDEX_HTML: &str = include_str!("../web/index.html");
