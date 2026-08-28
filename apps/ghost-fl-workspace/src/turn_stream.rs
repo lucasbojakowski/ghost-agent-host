@@ -56,9 +56,9 @@ pub(crate) fn agent_event_value(event: &AgentEvent) -> Option<Value> {
         })),
         // Raw reasoning text is intentionally not exposed to the workspace UI. The readable
         // reasoning-summary stream above is the presentation contract.
-        AgentEvent::Other { .. } | AgentEvent::ItemStarted { .. } | AgentEvent::ItemCompleted { .. } => {
-            None
-        }
+        AgentEvent::Other { .. }
+        | AgentEvent::ItemStarted { .. }
+        | AgentEvent::ItemCompleted { .. } => None,
     }
 }
 
