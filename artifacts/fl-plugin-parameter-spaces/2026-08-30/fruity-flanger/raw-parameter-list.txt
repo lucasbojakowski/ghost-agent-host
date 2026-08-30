@@ -1,0 +1,13 @@
+Parameters for 'Fruity Flanger':
+  Index 1: Delay
+  Index 2: Depth
+  Index 3: Rate
+  Index 4: Phase
+  Index 5: Damp
+  Index 6: Shape
+  Index 7: Feed
+  Index 8: Invert feedback
+  Index 9: Invert wet
+  Index 10: Dry
+  Index 11: Wet
+  Index 12: Cross

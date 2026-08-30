@@ -1,0 +1,242 @@
+{
+  "browser_enumeration": {
+    "error": "skipped in-process because an external get_browser_names preflight already failed",
+    "required_external_call": {
+      "fullRecursive": 1,
+      "name": "Plugin database"
+    },
+    "status": "skipped_after_external_failure"
+  },
+  "cleanup_failures": [],
+  "completed_unix_ms": 1788066895666,
+  "context_snapshot": {
+    "fl_version": "Producer Edition v26.1.3 [build 5570]",
+    "provenance": "request_context_snapshot; not re-observed by this Gopher exporter"
+  },
+  "duration_ms": 56210,
+  "live_adapter": {
+    "adapter": "gopher_native",
+    "target_kind": "page",
+    "target_title": "Gopher",
+    "tool_count": 48
+  },
+  "output_directory": "D:\\konko\\ghost\\ghost-agent-host\\artifacts\\fl-plugin-parameter-spaces\\2026-08-30",
+  "plugin_resolution": {
+    "Fruity Chorus": {
+      "paths": [
+        "D:\\Image-Line\\FL Studio 2026\\Data\\Patches\\Plugin database\\Effects\\Flanger\\Fruity Chorus.fst"
+      ],
+      "source": "installed_plugin_database_fst",
+      "status": "resolved"
+    },
+    "Fruity Compressor": {
+      "paths": [
+        "D:\\Image-Line\\FL Studio 2026\\Data\\Patches\\Plugin database\\Effects\\Dynamics\\Fruity Compressor.fst"
+      ],
+      "source": "installed_plugin_database_fst",
+      "status": "resolved"
+    },
+    "Fruity Delay 3": {
+      "paths": [
+        "D:\\Image-Line\\FL Studio 2026\\Data\\Patches\\Plugin database\\Effects\\Delay reverb\\Fruity Delay 3.fst"
+      ],
+      "source": "installed_plugin_database_fst",
+      "status": "resolved"
+    },
+    "Fruity Filter": {
+      "paths": [
+        "D:\\Image-Line\\FL Studio 2026\\Data\\Patches\\Plugin database\\Effects\\Filter\\Fruity Filter.fst"
+      ],
+      "source": "installed_plugin_database_fst",
+      "status": "resolved"
+    },
+    "Fruity Flanger": {
+      "paths": [
+        "D:\\Image-Line\\FL Studio 2026\\Data\\Patches\\Plugin database\\Effects\\Flanger\\Fruity Flanger.fst"
+      ],
+      "source": "installed_plugin_database_fst",
+      "status": "resolved"
+    },
+    "Fruity Multiband Compressor": {
+      "paths": [
+        "D:\\Image-Line\\FL Studio 2026\\Data\\Patches\\Plugin database\\Effects\\Dynamics\\Fruity Multiband Compressor.fst"
+      ],
+      "source": "installed_plugin_database_fst",
+      "status": "resolved"
+    },
+    "Fruity Parametric EQ 2": {
+      "paths": [
+        "D:\\Image-Line\\FL Studio 2026\\Data\\Patches\\Plugin database\\Effects\\Filter\\Fruity Parametric EQ 2.fst"
+      ],
+      "source": "installed_plugin_database_fst",
+      "status": "resolved"
+    },
+    "Fruity Phaser": {
+      "paths": [
+        "D:\\Image-Line\\FL Studio 2026\\Data\\Patches\\Plugin database\\Effects\\Flanger\\Fruity Phaser.fst"
+      ],
+      "source": "installed_plugin_database_fst",
+      "status": "resolved"
+    },
+    "Fruity Reeverb 2": {
+      "paths": [
+        "D:\\Image-Line\\FL Studio 2026\\Data\\Patches\\Plugin database\\Effects\\Delay reverb\\Fruity Reeverb 2.fst"
+      ],
+      "source": "installed_plugin_database_fst",
+      "status": "resolved"
+    },
+    "Fruity Soft Clipper": {
+      "paths": [
+        "D:\\Image-Line\\FL Studio 2026\\Data\\Patches\\Plugin database\\Effects\\Dynamics\\Fruity Soft Clipper.fst",
+        "D:\\Image-Line\\FL Studio 2026\\Data\\Patches\\Plugin database\\Effects\\Distortion\\Fruity Soft Clipper.fst"
+      ],
+      "source": "installed_plugin_database_fst",
+      "status": "resolved"
+    },
+    "Patcher": {
+      "paths": [
+        "D:\\Image-Line\\FL Studio 2026\\Data\\Patches\\Plugin database\\Generators\\Patcher\\Patcher.fst",
+        "D:\\Image-Line\\FL Studio 2026\\Data\\Patches\\Plugin database\\Effects\\Patcher\\Patcher.fst"
+      ],
+      "source": "installed_plugin_database_fst",
+      "status": "resolved"
+    },
+    "Soundgoodizer": {
+      "paths": [
+        "D:\\Image-Line\\FL Studio 2026\\Data\\Patches\\Plugin database\\Effects\\Dynamics\\Soundgoodizer.fst"
+      ],
+      "source": "installed_plugin_database_fst",
+      "status": "resolved"
+    },
+    "Spreader": {
+      "paths": [
+        "D:\\Image-Line\\FL Studio 2026\\Data\\Patches\\Plugin database\\Effects\\Gain\\Spreader.fst"
+      ],
+      "source": "installed_plugin_database_fst",
+      "status": "resolved"
+    }
+  },
+  "plugins": [
+    {
+      "parameter_count": 36,
+      "plugin": "Fruity Parametric EQ 2",
+      "slug": "fruity-parametric-eq-2",
+      "status": "complete",
+      "validation_ok": true
+    },
+    {
+      "parameter_count": 15,
+      "plugin": "Fruity Reeverb 2",
+      "slug": "fruity-reeverb-2",
+      "status": "complete",
+      "validation_ok": true
+    },
+    {
+      "parameter_count": 26,
+      "plugin": "Fruity Delay 3",
+      "slug": "fruity-delay-3",
+      "status": "complete",
+      "validation_ok": true
+    },
+    {
+      "parameter_count": 6,
+      "plugin": "Fruity Compressor",
+      "slug": "fruity-compressor",
+      "status": "complete",
+      "validation_ok": true
+    },
+    {
+      "parameter_count": 28,
+      "plugin": "Fruity Multiband Compressor",
+      "slug": "fruity-multiband-compressor",
+      "status": "complete",
+      "validation_ok": true
+    },
+    {
+      "parameter_count": 2,
+      "plugin": "Fruity Soft Clipper",
+      "slug": "fruity-soft-clipper",
+      "status": "complete",
+      "validation_ok": true
+    },
+    {
+      "parameter_count": 0,
+      "plugin": "Soundgoodizer",
+      "slug": "soundgoodizer",
+      "status": "complete",
+      "validation_ok": true
+    },
+    {
+      "parameter_count": 6,
+      "plugin": "Fruity Filter",
+      "slug": "fruity-filter",
+      "status": "complete",
+      "validation_ok": true
+    },
+    {
+      "parameter_count": 12,
+      "plugin": "Fruity Chorus",
+      "slug": "fruity-chorus",
+      "status": "complete",
+      "validation_ok": true
+    },
+    {
+      "parameter_count": 9,
+      "plugin": "Fruity Phaser",
+      "slug": "fruity-phaser",
+      "status": "complete",
+      "validation_ok": true
+    },
+    {
+      "parameter_count": 12,
+      "plugin": "Fruity Flanger",
+      "slug": "fruity-flanger",
+      "status": "complete",
+      "validation_ok": true
+    },
+    {
+      "parameter_count": 5,
+      "plugin": "Spreader",
+      "slug": "spreader",
+      "status": "complete",
+      "validation_ok": true
+    },
+    {
+      "parameter_count": 4096,
+      "plugin": "Patcher",
+      "slug": "patcher",
+      "status": "complete",
+      "validation_ok": true
+    }
+  ],
+  "probe": {
+    "mixer_track": 47,
+    "visual_slot": 10
+  },
+  "sampling": {
+    "anchor_points": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "method": "fresh default instance; read default; set/read five anchors one parameter at a time; restore/read default; remove instance",
+    "normalized_domain": [
+      0.0,
+      1.0
+    ]
+  },
+  "schema_version": 1,
+  "started_unix_ms": 1788066839456,
+  "status": "complete",
+  "transport": {
+    "stop_call": "Playback stopped ."
+  },
+  "validation": {
+    "all_plugins_complete": true,
+    "artifact_plugin_count": 13,
+    "probe_slot_empty_after_run": true,
+    "requested_plugin_count": 13
+  }
+}

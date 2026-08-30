@@ -1,0 +1,7 @@
+Parameters for 'Fruity Filter':
+  Index 1: Cutoff frequency
+  Index 2: Resonance
+  Index 3: Low pass
+  Index 4: Band pass
+  Index 5: High pass
+  Index 6: X 2

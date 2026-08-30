@@ -1,0 +1,10 @@
+Parameters for 'Fruity Phaser':
+  Index 1: Sweep frequency
+  Index 2: Minimum depth
+  Index 3: Maximum depth
+  Index 4: Frequency range
+  Index 5: Stereo
+  Index 6: Number of stages
+  Index 7: Feedback
+  Index 8: Dry - Wet
+  Index 9: Output gain

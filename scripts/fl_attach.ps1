@@ -1,21 +1,4 @@
-[CmdletBinding()]
-param(
-  [string]$app="workspace"
-)
-
-$debugArg = "--remote-debugging-port=9222"
-$existing = $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS
-if ([string]::IsNullOrWhiteSpace($existing)) {
-    $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = $debugArg
-} elseif ($existing -notmatch "--remote-debugging-port=") {
-    $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "$existing $debugArg"
-}
-
-
-& "D:\Image-Line\FL Studio 2026\FL64.exe"
-
-Start-Sleep -Seconds 5
-$tries = 5
+$tries = 20
 
 for ($i = 0; $i -lt $tries; $i++) {
     try {
@@ -32,4 +15,3 @@ for ($i = 0; $i -lt $tries; $i++) {
     }
     Start-Sleep -Seconds 2
 }
-

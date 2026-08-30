@@ -1,0 +1,3 @@
+Parameters for 'Fruity soft clipper':
+  Index 1: Threshold
+  Index 2: Post gain

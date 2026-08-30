@@ -1,0 +1,16 @@
+Parameters for 'Fruity Reeverb 2':
+  Index 1: Low cut
+  Index 2: High cut
+  Index 3: Predelay
+  Index 4: Room size
+  Index 5: Diffusion
+  Index 6: Decay time
+  Index 7: High damping
+  Index 8: Bass multiplier
+  Index 9: Crossover
+  Index 10: Stereo separation
+  Index 11: Dry level
+  Index 12: Early reflection level
+  Index 13: Wet level
+  Index 14: Mod Speed
+  Index 15: Mod Depth

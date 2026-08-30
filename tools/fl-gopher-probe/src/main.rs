@@ -3,6 +3,8 @@ use clap::{Parser, Subcommand};
 use ghost_fl_studio::{FlStudioAdapterConfig, GopherNativeAdapter};
 use serde_json::Value;
 
+mod parameter_export;
+
 #[derive(Debug, Parser)]
 #[command(
     name = "fl-gopher-probe",
@@ -29,26 +31,33 @@ enum Command {
         #[arg(long, default_value = "{}")]
         arguments: String,
     },
+    /// Empirically export normalized/display parameter-space samples for mixer effects.
+    ExportParameterSpaces(parameter_export::ExportArgs),
 }
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
-    let adapter = GopherNativeAdapter::connect(FlStudioAdapterConfig {
+    let adapter_config = FlStudioAdapterConfig {
         debug_port: cli.debug_port,
         target_match: cli.target_match,
         ..Default::default()
-    })
-    .context("failed to connect to the FL Studio Gopher target")?;
-
+    };
     match cli.command {
         Command::Catalog => {
+            let adapter = GopherNativeAdapter::connect(adapter_config)
+                .context("failed to connect to the FL Studio Gopher target")?;
             println!("{}", serde_json::to_string_pretty(&adapter.manifest()?)?);
         }
         Command::Call { tool, arguments } => {
+            let adapter = GopherNativeAdapter::connect(adapter_config)
+                .context("failed to connect to the FL Studio Gopher target")?;
             let arguments: Value = serde_json::from_str(&arguments)
                 .context("--arguments must be valid JSON, normally an object")?;
             let result = adapter.call_native(&tool, arguments)?;
             println!("{}", serde_json::to_string_pretty(&result.raw)?);
+        }
+        Command::ExportParameterSpaces(args) => {
+            parameter_export::run(adapter_config, args)?;
         }
     }
     Ok(())

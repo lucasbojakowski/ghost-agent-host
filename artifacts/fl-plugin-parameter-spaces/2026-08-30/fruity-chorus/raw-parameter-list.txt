@@ -1,0 +1,13 @@
+Parameters for 'Fruity Chorus':
+  Index 1: Delay
+  Index 2: Depth
+  Index 3: Stereo
+  Index 4: LFO 1 Frequency
+  Index 5: LFO 2 Frequency
+  Index 6: LFO 3 Frequency
+  Index 7: LFO 1 Wave
+  Index 8: LFO 2 Wave
+  Index 9: LFO 3 Wave
+  Index 10: Cross Type
+  Index 11: Cross Cutoff
+  Index 12: Wet only

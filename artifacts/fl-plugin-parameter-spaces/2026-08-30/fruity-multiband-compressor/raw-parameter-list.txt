@@ -1,0 +1,29 @@
+Parameters for 'Fruity Multiband Compressor':
+  Index 1: Master volume
+  Index 2: Limiter
+  Index 3: Filter type
+  Index 4: High band state
+  Index 5: H Freq
+  Index 6: H Output
+  Index 7: H Threshold
+  Index 8: H Ratio
+  Index 9: H Attack
+  Index 10: H Release
+  Index 11: H Knee
+  Index 12: Mid band state
+  Index 13: M Freq H
+  Index 14: M Freq L
+  Index 15: M Output
+  Index 16: M Threshold
+  Index 17: M Ratio
+  Index 18: M Attack
+  Index 19: M Release
+  Index 20: M Knee
+  Index 21: Low band state
+  Index 22: L Freq
+  Index 23: L Output
+  Index 24: L Threshold
+  Index 25: L Ratio
+  Index 26: L Attack
+  Index 27: L Release
+  Index 28: L Knee

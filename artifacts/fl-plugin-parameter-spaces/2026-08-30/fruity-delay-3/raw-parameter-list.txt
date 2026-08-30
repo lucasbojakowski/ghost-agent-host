@@ -1,0 +1,27 @@
+Parameters for 'Fruity Delay 3':
+  Index 1: Input wet
+  Index 2: Delay type
+  Index 3: Tempo sync
+  Index 4: Keep pitch
+  Index 5: Time
+  Index 6: Delay time R/L offset
+  Index 7: Time smooth
+  Index 8: Stereo spread
+  Index 9: Modulation rate
+  Index 10: Modulation time
+  Index 11: Modulation cutoff
+  Index 12: Diffusion level
+  Index 13: Diffusion spread
+  Index 14: Distortion type
+  Index 15: Feedback level
+  Index 16: Filter mode
+  Index 17: Feedback cutoff
+  Index 18: Feedback resonance
+  Index 19: Distortion
+  Index 20: Distortion
+  Index 21: Distortion
+  Index 22: Rate reduction
+  Index 23: Bits reduction
+  Index 24: Output wet
+  Index 25: Output tone
+  Index 26: Output dry

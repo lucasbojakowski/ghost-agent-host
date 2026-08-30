@@ -1,0 +1,7 @@
+Parameters for 'Fruity Compressor':
+  Index 1: Threshold
+  Index 2: Ratio
+  Index 3: Gain
+  Index 4: Attack
+  Index 5: Release
+  Index 6: Type

@@ -1,0 +1,440 @@
+{
+  "cleanup": {
+    "status": "succeeded",
+    "text": "Removed effects from slot(s) [10] for 1 track(s): [47].",
+    "verified_empty": true
+  },
+  "evidence": {
+    "add_effect_result": "Added effect 'Fruity Filter' to visual slot 10 for 1 track(s): [47].",
+    "kind": "live FL Studio Gopher observations from a fresh temporary effect instance",
+    "parameter_list_result": "Parameters for 'Fruity Filter':\n  Index 1: Cutoff frequency\n  Index 2: Resonance\n  Index 3: Low pass\n  Index 4: Band pass\n  Index 5: High pass\n  Index 6: X 2",
+    "plugin_resolution": {
+      "paths": [
+        "D:\\Image-Line\\FL Studio 2026\\Data\\Patches\\Plugin database\\Effects\\Filter\\Fruity Filter.fst"
+      ],
+      "source": "installed_plugin_database_fst",
+      "status": "resolved"
+    }
+  },
+  "limitations": [
+    "Continuous domains cannot be exhaustively enumerated; five normalized anchors were measured.",
+    "Discrete controls may contain states between sampled anchors.",
+    "Display strings can be tempo-, mode-, or neighboring-parameter-dependent.",
+    "Patcher exposes only parameters currently published by a fresh empty Patcher instance."
+  ],
+  "parameter_count": 6,
+  "parameter_space": {
+    "anchor_points": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "authoritative_automation_domain": "normalized 0.0..1.0",
+    "display_mapping": "empirical five-anchor sampling; not a proof of every intermediate or context-dependent display value"
+  },
+  "parameters": [
+    {
+      "default_observation": {
+        "display": null,
+        "normalized": 1.0,
+        "raw_text": "Value for 'Cutoff frequency' (Visual Index 1): Normalized Value: 1.0000"
+      },
+      "index": 1,
+      "name": "Cutoff frequency",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 0,
+      "restore": {
+        "error": null,
+        "observed_display": null,
+        "observed_normalized": 1.0,
+        "set_text": "Set 'Cutoff frequency' (Visual Index 1) to 1.0000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": null,
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Cutoff frequency' (Visual Index 1): Normalized Value: 0.0000",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Cutoff frequency' (Visual Index 1) to 0.0000"
+        },
+        {
+          "display": null,
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Cutoff frequency' (Visual Index 1): Normalized Value: 0.2500",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Cutoff frequency' (Visual Index 1) to 0.2500"
+        },
+        {
+          "display": null,
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Cutoff frequency' (Visual Index 1): Normalized Value: 0.5000",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Cutoff frequency' (Visual Index 1) to 0.5000"
+        },
+        {
+          "display": null,
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Cutoff frequency' (Visual Index 1): Normalized Value: 0.7500",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Cutoff frequency' (Visual Index 1) to 0.7500"
+        },
+        {
+          "display": null,
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Cutoff frequency' (Visual Index 1): Normalized Value: 1.0000",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Cutoff frequency' (Visual Index 1) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": null,
+        "normalized": 0.2002,
+        "raw_text": "Value for 'Resonance' (Visual Index 2): Normalized Value: 0.2002"
+      },
+      "index": 2,
+      "name": "Resonance",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 0,
+      "restore": {
+        "error": null,
+        "observed_display": null,
+        "observed_normalized": 0.2002,
+        "set_text": "Set 'Resonance' (Visual Index 2) to 0.2002",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": null,
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Resonance' (Visual Index 2): Normalized Value: 0.0000",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Resonance' (Visual Index 2) to 0.0000"
+        },
+        {
+          "display": null,
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Resonance' (Visual Index 2): Normalized Value: 0.2500",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Resonance' (Visual Index 2) to 0.2500"
+        },
+        {
+          "display": null,
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Resonance' (Visual Index 2): Normalized Value: 0.5000",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Resonance' (Visual Index 2) to 0.5000"
+        },
+        {
+          "display": null,
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Resonance' (Visual Index 2): Normalized Value: 0.7500",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Resonance' (Visual Index 2) to 0.7500"
+        },
+        {
+          "display": null,
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Resonance' (Visual Index 2): Normalized Value: 1.0000",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Resonance' (Visual Index 2) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": null,
+        "normalized": 1.0,
+        "raw_text": "Value for 'Low pass' (Visual Index 3): Normalized Value: 1.0000"
+      },
+      "index": 3,
+      "name": "Low pass",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 0,
+      "restore": {
+        "error": null,
+        "observed_display": null,
+        "observed_normalized": 1.0,
+        "set_text": "Set 'Low pass' (Visual Index 3) to 1.0000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": null,
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Low pass' (Visual Index 3): Normalized Value: 0.0000",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Low pass' (Visual Index 3) to 0.0000"
+        },
+        {
+          "display": null,
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Low pass' (Visual Index 3): Normalized Value: 0.2500",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Low pass' (Visual Index 3) to 0.2500"
+        },
+        {
+          "display": null,
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Low pass' (Visual Index 3): Normalized Value: 0.5000",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Low pass' (Visual Index 3) to 0.5000"
+        },
+        {
+          "display": null,
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Low pass' (Visual Index 3): Normalized Value: 0.7500",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Low pass' (Visual Index 3) to 0.7500"
+        },
+        {
+          "display": null,
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Low pass' (Visual Index 3): Normalized Value: 1.0000",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Low pass' (Visual Index 3) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": null,
+        "normalized": 0.0,
+        "raw_text": "Value for 'Band pass' (Visual Index 4): Normalized Value: 0.0000"
+      },
+      "index": 4,
+      "name": "Band pass",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 0,
+      "restore": {
+        "error": null,
+        "observed_display": null,
+        "observed_normalized": 0.0,
+        "set_text": "Set 'Band pass' (Visual Index 4) to 0.0000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": null,
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band pass' (Visual Index 4): Normalized Value: 0.0000",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band pass' (Visual Index 4) to 0.0000"
+        },
+        {
+          "display": null,
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Band pass' (Visual Index 4): Normalized Value: 0.2500",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band pass' (Visual Index 4) to 0.2500"
+        },
+        {
+          "display": null,
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band pass' (Visual Index 4): Normalized Value: 0.5000",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band pass' (Visual Index 4) to 0.5000"
+        },
+        {
+          "display": null,
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Band pass' (Visual Index 4): Normalized Value: 0.7500",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band pass' (Visual Index 4) to 0.7500"
+        },
+        {
+          "display": null,
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band pass' (Visual Index 4): Normalized Value: 1.0000",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band pass' (Visual Index 4) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": null,
+        "normalized": 0.5,
+        "raw_text": "Value for 'High pass' (Visual Index 5): Normalized Value: 0.5000"
+      },
+      "index": 5,
+      "name": "High pass",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 0,
+      "restore": {
+        "error": null,
+        "observed_display": null,
+        "observed_normalized": 0.5,
+        "set_text": "Set 'High pass' (Visual Index 5) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": null,
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'High pass' (Visual Index 5): Normalized Value: 0.0000",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'High pass' (Visual Index 5) to 0.0000"
+        },
+        {
+          "display": null,
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'High pass' (Visual Index 5): Normalized Value: 0.2500",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'High pass' (Visual Index 5) to 0.2500"
+        },
+        {
+          "display": null,
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'High pass' (Visual Index 5): Normalized Value: 0.5000",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'High pass' (Visual Index 5) to 0.5000"
+        },
+        {
+          "display": null,
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'High pass' (Visual Index 5): Normalized Value: 0.7500",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'High pass' (Visual Index 5) to 0.7500"
+        },
+        {
+          "display": null,
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'High pass' (Visual Index 5): Normalized Value: 1.0000",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'High pass' (Visual Index 5) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": null,
+        "normalized": 0.0,
+        "raw_text": "Value for 'X 2' (Visual Index 6): Normalized Value: 0.0000"
+      },
+      "index": 6,
+      "name": "X 2",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 0,
+      "restore": {
+        "error": null,
+        "observed_display": null,
+        "observed_normalized": 0.0,
+        "set_text": "Set 'X 2' (Visual Index 6) to 0.0000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": null,
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'X 2' (Visual Index 6): Normalized Value: 0.0000",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'X 2' (Visual Index 6) to 0.0000"
+        },
+        {
+          "display": null,
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'X 2' (Visual Index 6): Normalized Value: 0.0000",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'X 2' (Visual Index 6) to 0.2500"
+        },
+        {
+          "display": null,
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'X 2' (Visual Index 6): Normalized Value: 0.0000",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'X 2' (Visual Index 6) to 0.5000"
+        },
+        {
+          "display": null,
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'X 2' (Visual Index 6): Normalized Value: 1.0000",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'X 2' (Visual Index 6) to 0.7500"
+        },
+        {
+          "display": null,
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'X 2' (Visual Index 6): Normalized Value: 1.0000",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'X 2' (Visual Index 6) to 1.0000"
+        }
+      ]
+    }
+  ],
+  "plugin": {
+    "loaded_name": "Fruity Filter",
+    "requested_name": "Fruity Filter",
+    "slug": "fruity-filter"
+  },
+  "probe": {
+    "mixer_track": 47,
+    "visual_slot": 10
+  },
+  "schema_version": 1,
+  "status": "complete",
+  "validation": {
+    "all_parameters_restored": true,
+    "errors": [],
+    "ok": true,
+    "unique_indices": true
+  }
+}

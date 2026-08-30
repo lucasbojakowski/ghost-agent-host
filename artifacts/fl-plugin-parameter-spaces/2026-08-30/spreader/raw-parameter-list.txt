@@ -1,0 +1,6 @@
+Parameters for 'Spreader':
+  Index 1: Spread
+  Index 2: Stereo separation
+  Index 3: Low-Frequency Bypass
+  Index 4: Mono
+  Index 5: Enabled

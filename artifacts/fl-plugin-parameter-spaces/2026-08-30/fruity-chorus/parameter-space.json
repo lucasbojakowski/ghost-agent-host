@@ -1,0 +1,824 @@
+{
+  "cleanup": {
+    "status": "succeeded",
+    "text": "Removed effects from slot(s) [10] for 1 track(s): [47].",
+    "verified_empty": true
+  },
+  "evidence": {
+    "add_effect_result": "Added effect 'Fruity Chorus' to visual slot 10 for 1 track(s): [47].",
+    "kind": "live FL Studio Gopher observations from a fresh temporary effect instance",
+    "parameter_list_result": "Parameters for 'Fruity Chorus':\n  Index 1: Delay\n  Index 2: Depth\n  Index 3: Stereo\n  Index 4: LFO 1 Frequency\n  Index 5: LFO 2 Frequency\n  Index 6: LFO 3 Frequency\n  Index 7: LFO 1 Wave\n  Index 8: LFO 2 Wave\n  Index 9: LFO 3 Wave\n  Index 10: Cross Type\n  Index 11: Cross Cutoff\n  Index 12: Wet only",
+    "plugin_resolution": {
+      "paths": [
+        "D:\\Image-Line\\FL Studio 2026\\Data\\Patches\\Plugin database\\Effects\\Flanger\\Fruity Chorus.fst"
+      ],
+      "source": "installed_plugin_database_fst",
+      "status": "resolved"
+    }
+  },
+  "limitations": [
+    "Continuous domains cannot be exhaustively enumerated; five normalized anchors were measured.",
+    "Discrete controls may contain states between sampled anchors.",
+    "Display strings can be tempo-, mode-, or neighboring-parameter-dependent.",
+    "Patcher exposes only parameters currently published by a fresh empty Patcher instance."
+  ],
+  "parameter_count": 12,
+  "parameter_space": {
+    "anchor_points": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "authoritative_automation_domain": "normalized 0.0..1.0",
+    "display_mapping": "empirical five-anchor sampling; not a proof of every intermediate or context-dependent display value"
+  },
+  "parameters": [
+    {
+      "default_observation": {
+        "display": "15.02500 ms",
+        "normalized": 0.5,
+        "raw_text": "Value for 'Delay' (Visual Index 1): Normalized Value: 0.5000, String Value: '15.02500 ms'"
+      },
+      "index": 1,
+      "name": "Delay",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "15.02500 ms",
+        "observed_normalized": 0.5,
+        "set_text": "Set 'Delay' (Visual Index 1) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "0.05000 ms",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Delay' (Visual Index 1): Normalized Value: 0.0000, String Value: '0.05000 ms'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Delay' (Visual Index 1) to 0.0000"
+        },
+        {
+          "display": "7.53750 ms",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Delay' (Visual Index 1): Normalized Value: 0.2500, String Value: '7.53750 ms'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Delay' (Visual Index 1) to 0.2500"
+        },
+        {
+          "display": "15.02500 ms",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Delay' (Visual Index 1): Normalized Value: 0.5000, String Value: '15.02500 ms'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Delay' (Visual Index 1) to 0.5000"
+        },
+        {
+          "display": "22.51250 ms",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Delay' (Visual Index 1): Normalized Value: 0.7500, String Value: '22.51250 ms'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Delay' (Visual Index 1) to 0.7500"
+        },
+        {
+          "display": "30.00000 ms",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Delay' (Visual Index 1): Normalized Value: 1.0000, String Value: '30.00000 ms'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Delay' (Visual Index 1) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "2.25000 ms",
+        "normalized": 0.45,
+        "raw_text": "Value for 'Depth' (Visual Index 2): Normalized Value: 0.4500, String Value: '2.25000 ms'"
+      },
+      "index": 2,
+      "name": "Depth",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "2.25000 ms",
+        "observed_normalized": 0.45,
+        "set_text": "Set 'Depth' (Visual Index 2) to 0.4500",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "0.00000 ms",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Depth' (Visual Index 2): Normalized Value: 0.0000, String Value: '0.00000 ms'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Depth' (Visual Index 2) to 0.0000"
+        },
+        {
+          "display": "1.25000 ms",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Depth' (Visual Index 2): Normalized Value: 0.2500, String Value: '1.25000 ms'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Depth' (Visual Index 2) to 0.2500"
+        },
+        {
+          "display": "2.50000 ms",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Depth' (Visual Index 2): Normalized Value: 0.5000, String Value: '2.50000 ms'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Depth' (Visual Index 2) to 0.5000"
+        },
+        {
+          "display": "3.75000 ms",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Depth' (Visual Index 2): Normalized Value: 0.7500, String Value: '3.75000 ms'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Depth' (Visual Index 2) to 0.7500"
+        },
+        {
+          "display": "5.00000 ms",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Depth' (Visual Index 2): Normalized Value: 1.0000, String Value: '5.00000 ms'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Depth' (Visual Index 2) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "59 degrees",
+        "normalized": 0.333,
+        "raw_text": "Value for 'Stereo' (Visual Index 3): Normalized Value: 0.3330, String Value: '59 degrees'"
+      },
+      "index": 3,
+      "name": "Stereo",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "59 degrees",
+        "observed_normalized": 0.333,
+        "set_text": "Set 'Stereo' (Visual Index 3) to 0.3330",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "0 degrees",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Stereo' (Visual Index 3): Normalized Value: 0.0000, String Value: '0 degrees'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Stereo' (Visual Index 3) to 0.0000"
+        },
+        {
+          "display": "45 degrees",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Stereo' (Visual Index 3): Normalized Value: 0.2500, String Value: '45 degrees'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Stereo' (Visual Index 3) to 0.2500"
+        },
+        {
+          "display": "90 degrees",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Stereo' (Visual Index 3): Normalized Value: 0.5000, String Value: '90 degrees'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Stereo' (Visual Index 3) to 0.5000"
+        },
+        {
+          "display": "135 degrees",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Stereo' (Visual Index 3): Normalized Value: 0.7500, String Value: '135 degrees'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Stereo' (Visual Index 3) to 0.7500"
+        },
+        {
+          "display": "180 degrees",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Stereo' (Visual Index 3): Normalized Value: 1.0000, String Value: '180 degrees'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Stereo' (Visual Index 3) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "0.45000 Hz",
+        "normalized": 0.3,
+        "raw_text": "Value for 'LFO 1 Frequency' (Visual Index 4): Normalized Value: 0.3000, String Value: '0.45000 Hz'"
+      },
+      "index": 4,
+      "name": "LFO 1 Frequency",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "0.45000 Hz",
+        "observed_normalized": 0.3,
+        "set_text": "Set 'LFO 1 Frequency' (Visual Index 4) to 0.3000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "0.00000 Hz",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'LFO 1 Frequency' (Visual Index 4): Normalized Value: 0.0000, String Value: '0.00000 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'LFO 1 Frequency' (Visual Index 4) to 0.0000"
+        },
+        {
+          "display": "0.31250 Hz",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'LFO 1 Frequency' (Visual Index 4): Normalized Value: 0.2500, String Value: '0.31250 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'LFO 1 Frequency' (Visual Index 4) to 0.2500"
+        },
+        {
+          "display": "1.25000 Hz",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'LFO 1 Frequency' (Visual Index 4): Normalized Value: 0.5000, String Value: '1.25000 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'LFO 1 Frequency' (Visual Index 4) to 0.5000"
+        },
+        {
+          "display": "2.81250 Hz",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'LFO 1 Frequency' (Visual Index 4): Normalized Value: 0.7500, String Value: '2.81250 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'LFO 1 Frequency' (Visual Index 4) to 0.7500"
+        },
+        {
+          "display": "5.00000 Hz",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'LFO 1 Frequency' (Visual Index 4): Normalized Value: 1.0000, String Value: '5.00000 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'LFO 1 Frequency' (Visual Index 4) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "1.25000 Hz",
+        "normalized": 0.5,
+        "raw_text": "Value for 'LFO 2 Frequency' (Visual Index 5): Normalized Value: 0.5000, String Value: '1.25000 Hz'"
+      },
+      "index": 5,
+      "name": "LFO 2 Frequency",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "1.25000 Hz",
+        "observed_normalized": 0.5,
+        "set_text": "Set 'LFO 2 Frequency' (Visual Index 5) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "0.00000 Hz",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'LFO 2 Frequency' (Visual Index 5): Normalized Value: 0.0000, String Value: '0.00000 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'LFO 2 Frequency' (Visual Index 5) to 0.0000"
+        },
+        {
+          "display": "0.31250 Hz",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'LFO 2 Frequency' (Visual Index 5): Normalized Value: 0.2500, String Value: '0.31250 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'LFO 2 Frequency' (Visual Index 5) to 0.2500"
+        },
+        {
+          "display": "1.25000 Hz",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'LFO 2 Frequency' (Visual Index 5): Normalized Value: 0.5000, String Value: '1.25000 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'LFO 2 Frequency' (Visual Index 5) to 0.5000"
+        },
+        {
+          "display": "2.81250 Hz",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'LFO 2 Frequency' (Visual Index 5): Normalized Value: 0.7500, String Value: '2.81250 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'LFO 2 Frequency' (Visual Index 5) to 0.7500"
+        },
+        {
+          "display": "5.00000 Hz",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'LFO 2 Frequency' (Visual Index 5): Normalized Value: 1.0000, String Value: '5.00000 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'LFO 2 Frequency' (Visual Index 5) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "2.45000 Hz",
+        "normalized": 0.7,
+        "raw_text": "Value for 'LFO 3 Frequency' (Visual Index 6): Normalized Value: 0.7000, String Value: '2.45000 Hz'"
+      },
+      "index": 6,
+      "name": "LFO 3 Frequency",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "2.45000 Hz",
+        "observed_normalized": 0.7,
+        "set_text": "Set 'LFO 3 Frequency' (Visual Index 6) to 0.7000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "0.00000 Hz",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'LFO 3 Frequency' (Visual Index 6): Normalized Value: 0.0000, String Value: '0.00000 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'LFO 3 Frequency' (Visual Index 6) to 0.0000"
+        },
+        {
+          "display": "0.31250 Hz",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'LFO 3 Frequency' (Visual Index 6): Normalized Value: 0.2500, String Value: '0.31250 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'LFO 3 Frequency' (Visual Index 6) to 0.2500"
+        },
+        {
+          "display": "1.25000 Hz",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'LFO 3 Frequency' (Visual Index 6): Normalized Value: 0.5000, String Value: '1.25000 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'LFO 3 Frequency' (Visual Index 6) to 0.5000"
+        },
+        {
+          "display": "2.81250 Hz",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'LFO 3 Frequency' (Visual Index 6): Normalized Value: 0.7500, String Value: '2.81250 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'LFO 3 Frequency' (Visual Index 6) to 0.7500"
+        },
+        {
+          "display": "5.00000 Hz",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'LFO 3 Frequency' (Visual Index 6): Normalized Value: 1.0000, String Value: '5.00000 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'LFO 3 Frequency' (Visual Index 6) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "sin",
+        "normalized": 0.0225,
+        "raw_text": "Value for 'LFO 1 Wave' (Visual Index 7): Normalized Value: 0.0225, String Value: 'sin'"
+      },
+      "index": 7,
+      "name": "LFO 1 Wave",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 4,
+      "restore": {
+        "error": null,
+        "observed_display": "sin",
+        "observed_normalized": 0.0225,
+        "set_text": "Set 'LFO 1 Wave' (Visual Index 7) to 0.0225",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "sin",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'LFO 1 Wave' (Visual Index 7): Normalized Value: 0.0000, String Value: 'sin'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'LFO 1 Wave' (Visual Index 7) to 0.0000"
+        },
+        {
+          "display": "sin",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'LFO 1 Wave' (Visual Index 7): Normalized Value: 0.2500, String Value: 'sin'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'LFO 1 Wave' (Visual Index 7) to 0.2500"
+        },
+        {
+          "display": "sin^3",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'LFO 1 Wave' (Visual Index 7): Normalized Value: 0.5000, String Value: 'sin^3'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'LFO 1 Wave' (Visual Index 7) to 0.5000"
+        },
+        {
+          "display": "multi-sin",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'LFO 1 Wave' (Visual Index 7): Normalized Value: 0.7500, String Value: 'multi-sin'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'LFO 1 Wave' (Visual Index 7) to 0.7500"
+        },
+        {
+          "display": "multi-sin^3",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'LFO 1 Wave' (Visual Index 7): Normalized Value: 1.0000, String Value: 'multi-sin^3'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'LFO 1 Wave' (Visual Index 7) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "sin",
+        "normalized": 0.0,
+        "raw_text": "Value for 'LFO 2 Wave' (Visual Index 8): Normalized Value: 0.0000, String Value: 'sin'"
+      },
+      "index": 8,
+      "name": "LFO 2 Wave",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 4,
+      "restore": {
+        "error": null,
+        "observed_display": "sin",
+        "observed_normalized": 0.0,
+        "set_text": "Set 'LFO 2 Wave' (Visual Index 8) to 0.0000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "sin",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'LFO 2 Wave' (Visual Index 8): Normalized Value: 0.0000, String Value: 'sin'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'LFO 2 Wave' (Visual Index 8) to 0.0000"
+        },
+        {
+          "display": "sin",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'LFO 2 Wave' (Visual Index 8): Normalized Value: 0.2500, String Value: 'sin'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'LFO 2 Wave' (Visual Index 8) to 0.2500"
+        },
+        {
+          "display": "sin^3",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'LFO 2 Wave' (Visual Index 8): Normalized Value: 0.5000, String Value: 'sin^3'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'LFO 2 Wave' (Visual Index 8) to 0.5000"
+        },
+        {
+          "display": "multi-sin",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'LFO 2 Wave' (Visual Index 8): Normalized Value: 0.7500, String Value: 'multi-sin'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'LFO 2 Wave' (Visual Index 8) to 0.7500"
+        },
+        {
+          "display": "multi-sin^3",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'LFO 2 Wave' (Visual Index 8): Normalized Value: 1.0000, String Value: 'multi-sin^3'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'LFO 2 Wave' (Visual Index 8) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "sin",
+        "normalized": 0.0,
+        "raw_text": "Value for 'LFO 3 Wave' (Visual Index 9): Normalized Value: 0.0000, String Value: 'sin'"
+      },
+      "index": 9,
+      "name": "LFO 3 Wave",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 4,
+      "restore": {
+        "error": null,
+        "observed_display": "sin",
+        "observed_normalized": 0.0,
+        "set_text": "Set 'LFO 3 Wave' (Visual Index 9) to 0.0000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "sin",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'LFO 3 Wave' (Visual Index 9): Normalized Value: 0.0000, String Value: 'sin'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'LFO 3 Wave' (Visual Index 9) to 0.0000"
+        },
+        {
+          "display": "sin",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'LFO 3 Wave' (Visual Index 9): Normalized Value: 0.2500, String Value: 'sin'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'LFO 3 Wave' (Visual Index 9) to 0.2500"
+        },
+        {
+          "display": "sin^3",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'LFO 3 Wave' (Visual Index 9): Normalized Value: 0.5000, String Value: 'sin^3'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'LFO 3 Wave' (Visual Index 9) to 0.5000"
+        },
+        {
+          "display": "multi-sin",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'LFO 3 Wave' (Visual Index 9): Normalized Value: 0.7500, String Value: 'multi-sin'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'LFO 3 Wave' (Visual Index 9) to 0.7500"
+        },
+        {
+          "display": "multi-sin^3",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'LFO 3 Wave' (Visual Index 9): Normalized Value: 1.0000, String Value: 'multi-sin^3'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'LFO 3 Wave' (Visual Index 9) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "Process HF",
+        "normalized": 0.0,
+        "raw_text": "Value for 'Cross Type' (Visual Index 10): Normalized Value: 0.0000, String Value: 'Process HF'"
+      },
+      "index": 10,
+      "name": "Cross Type",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 2,
+      "restore": {
+        "error": null,
+        "observed_display": "Process HF",
+        "observed_normalized": 0.0,
+        "set_text": "Set 'Cross Type' (Visual Index 10) to 0.0000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "Process HF",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Cross Type' (Visual Index 10): Normalized Value: 0.0000, String Value: 'Process HF'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Cross Type' (Visual Index 10) to 0.0000"
+        },
+        {
+          "display": "Process HF",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Cross Type' (Visual Index 10): Normalized Value: 0.2500, String Value: 'Process HF'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Cross Type' (Visual Index 10) to 0.2500"
+        },
+        {
+          "display": "Process LF",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Cross Type' (Visual Index 10): Normalized Value: 0.5000, String Value: 'Process LF'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Cross Type' (Visual Index 10) to 0.5000"
+        },
+        {
+          "display": "Process LF",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Cross Type' (Visual Index 10): Normalized Value: 0.7500, String Value: 'Process LF'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Cross Type' (Visual Index 10) to 0.7500"
+        },
+        {
+          "display": "Process LF",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Cross Type' (Visual Index 10): Normalized Value: 1.0000, String Value: 'Process LF'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Cross Type' (Visual Index 10) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "320.24371 Hz",
+        "normalized": 0.5,
+        "raw_text": "Value for 'Cross Cutoff' (Visual Index 11): Normalized Value: 0.5000, String Value: '320.24371 Hz'"
+      },
+      "index": 11,
+      "name": "Cross Cutoff",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "320.24371 Hz",
+        "observed_normalized": 0.5,
+        "set_text": "Set 'Cross Cutoff' (Visual Index 11) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "8.17580 Hz",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Cross Cutoff' (Visual Index 11): Normalized Value: 0.0000, String Value: '8.17580 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Cross Cutoff' (Visual Index 11) to 0.0000"
+        },
+        {
+          "display": "51.16882 Hz",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Cross Cutoff' (Visual Index 11): Normalized Value: 0.2500, String Value: '51.16882 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Cross Cutoff' (Visual Index 11) to 0.2500"
+        },
+        {
+          "display": "320.24371 Hz",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Cross Cutoff' (Visual Index 11): Normalized Value: 0.5000, String Value: '320.24371 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Cross Cutoff' (Visual Index 11) to 0.5000"
+        },
+        {
+          "display": "2004.26794 Hz",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Cross Cutoff' (Visual Index 11): Normalized Value: 0.7500, String Value: '2004.26794 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Cross Cutoff' (Visual Index 11) to 0.7500"
+        },
+        {
+          "display": "12543.85352 Hz",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Cross Cutoff' (Visual Index 11): Normalized Value: 1.0000, String Value: '12543.85352 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Cross Cutoff' (Visual Index 11) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "no",
+        "normalized": 0.0,
+        "raw_text": "Value for 'Wet only' (Visual Index 12): Normalized Value: 0.0000, String Value: 'no'"
+      },
+      "index": 12,
+      "name": "Wet only",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 2,
+      "restore": {
+        "error": null,
+        "observed_display": "no",
+        "observed_normalized": 0.0,
+        "set_text": "Set 'Wet only' (Visual Index 12) to 0.0000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "no",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Wet only' (Visual Index 12): Normalized Value: 0.0000, String Value: 'no'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Wet only' (Visual Index 12) to 0.0000"
+        },
+        {
+          "display": "no",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Wet only' (Visual Index 12): Normalized Value: 0.2500, String Value: 'no'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Wet only' (Visual Index 12) to 0.2500"
+        },
+        {
+          "display": "yes",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Wet only' (Visual Index 12): Normalized Value: 0.5000, String Value: 'yes'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Wet only' (Visual Index 12) to 0.5000"
+        },
+        {
+          "display": "yes",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Wet only' (Visual Index 12): Normalized Value: 0.7500, String Value: 'yes'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Wet only' (Visual Index 12) to 0.7500"
+        },
+        {
+          "display": "yes",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Wet only' (Visual Index 12): Normalized Value: 1.0000, String Value: 'yes'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Wet only' (Visual Index 12) to 1.0000"
+        }
+      ]
+    }
+  ],
+  "plugin": {
+    "loaded_name": "Fruity Chorus",
+    "requested_name": "Fruity Chorus",
+    "slug": "fruity-chorus"
+  },
+  "probe": {
+    "mixer_track": 47,
+    "visual_slot": 10
+  },
+  "schema_version": 1,
+  "status": "complete",
+  "validation": {
+    "all_parameters_restored": true,
+    "errors": [],
+    "ok": true,
+    "unique_indices": true
+  }
+}

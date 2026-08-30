@@ -1,0 +1,632 @@
+{
+  "cleanup": {
+    "status": "succeeded",
+    "text": "Removed effects from slot(s) [10] for 1 track(s): [47].",
+    "verified_empty": true
+  },
+  "evidence": {
+    "add_effect_result": "Added effect 'Fruity Phaser' to visual slot 10 for 1 track(s): [47].",
+    "kind": "live FL Studio Gopher observations from a fresh temporary effect instance",
+    "parameter_list_result": "Parameters for 'Fruity Phaser':\n  Index 1: Sweep frequency\n  Index 2: Minimum depth\n  Index 3: Maximum depth\n  Index 4: Frequency range\n  Index 5: Stereo\n  Index 6: Number of stages\n  Index 7: Feedback\n  Index 8: Dry - Wet\n  Index 9: Output gain",
+    "plugin_resolution": {
+      "paths": [
+        "D:\\Image-Line\\FL Studio 2026\\Data\\Patches\\Plugin database\\Effects\\Flanger\\Fruity Phaser.fst"
+      ],
+      "source": "installed_plugin_database_fst",
+      "status": "resolved"
+    }
+  },
+  "limitations": [
+    "Continuous domains cannot be exhaustively enumerated; five normalized anchors were measured.",
+    "Discrete controls may contain states between sampled anchors.",
+    "Display strings can be tempo-, mode-, or neighboring-parameter-dependent.",
+    "Patcher exposes only parameters currently published by a fresh empty Patcher instance."
+  ],
+  "parameter_count": 9,
+  "parameter_space": {
+    "anchor_points": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "authoritative_automation_domain": "normalized 0.0..1.0",
+    "display_mapping": "empirical five-anchor sampling; not a proof of every intermediate or context-dependent display value"
+  },
+  "parameters": [
+    {
+      "default_observation": {
+        "display": "0.50000 Hz",
+        "normalized": 0.5,
+        "raw_text": "Value for 'Sweep frequency' (Visual Index 1): Normalized Value: 0.5000, String Value: '0.50000 Hz'"
+      },
+      "index": 1,
+      "name": "Sweep frequency",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "0.50000 Hz",
+        "observed_normalized": 0.5,
+        "set_text": "Set 'Sweep frequency' (Visual Index 1) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "0.00000 Hz",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Sweep frequency' (Visual Index 1): Normalized Value: 0.0000, String Value: '0.00000 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Sweep frequency' (Visual Index 1) to 0.0000"
+        },
+        {
+          "display": "0.25000 Hz",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Sweep frequency' (Visual Index 1): Normalized Value: 0.2500, String Value: '0.25000 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Sweep frequency' (Visual Index 1) to 0.2500"
+        },
+        {
+          "display": "0.50000 Hz",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Sweep frequency' (Visual Index 1): Normalized Value: 0.5000, String Value: '0.50000 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Sweep frequency' (Visual Index 1) to 0.5000"
+        },
+        {
+          "display": "0.75000 Hz",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Sweep frequency' (Visual Index 1): Normalized Value: 0.7500, String Value: '0.75000 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Sweep frequency' (Visual Index 1) to 0.7500"
+        },
+        {
+          "display": "1.00000 Hz",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Sweep frequency' (Visual Index 1): Normalized Value: 1.0000, String Value: '1.00000 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Sweep frequency' (Visual Index 1) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "0.10000",
+        "normalized": 0.1,
+        "raw_text": "Value for 'Minimum depth' (Visual Index 2): Normalized Value: 0.1000, String Value: '0.10000'"
+      },
+      "index": 2,
+      "name": "Minimum depth",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "0.10000",
+        "observed_normalized": 0.1,
+        "set_text": "Set 'Minimum depth' (Visual Index 2) to 0.1000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "0.00000",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Minimum depth' (Visual Index 2): Normalized Value: 0.0000, String Value: '0.00000'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Minimum depth' (Visual Index 2) to 0.0000"
+        },
+        {
+          "display": "0.25000",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Minimum depth' (Visual Index 2): Normalized Value: 0.2500, String Value: '0.25000'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Minimum depth' (Visual Index 2) to 0.2500"
+        },
+        {
+          "display": "0.50000",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Minimum depth' (Visual Index 2): Normalized Value: 0.5000, String Value: '0.50000'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Minimum depth' (Visual Index 2) to 0.5000"
+        },
+        {
+          "display": "0.75000",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Minimum depth' (Visual Index 2): Normalized Value: 0.7500, String Value: '0.75000'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Minimum depth' (Visual Index 2) to 0.7500"
+        },
+        {
+          "display": "1.00000",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Minimum depth' (Visual Index 2): Normalized Value: 1.0000, String Value: '1.00000'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Minimum depth' (Visual Index 2) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "0.80000",
+        "normalized": 0.8,
+        "raw_text": "Value for 'Maximum depth' (Visual Index 3): Normalized Value: 0.8000, String Value: '0.80000'"
+      },
+      "index": 3,
+      "name": "Maximum depth",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "0.80000",
+        "observed_normalized": 0.8,
+        "set_text": "Set 'Maximum depth' (Visual Index 3) to 0.8000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "0.00000",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Maximum depth' (Visual Index 3): Normalized Value: 0.0000, String Value: '0.00000'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Maximum depth' (Visual Index 3) to 0.0000"
+        },
+        {
+          "display": "0.25000",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Maximum depth' (Visual Index 3): Normalized Value: 0.2500, String Value: '0.25000'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Maximum depth' (Visual Index 3) to 0.2500"
+        },
+        {
+          "display": "0.50000",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Maximum depth' (Visual Index 3): Normalized Value: 0.5000, String Value: '0.50000'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Maximum depth' (Visual Index 3) to 0.5000"
+        },
+        {
+          "display": "0.75000",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Maximum depth' (Visual Index 3): Normalized Value: 0.7500, String Value: '0.75000'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Maximum depth' (Visual Index 3) to 0.7500"
+        },
+        {
+          "display": "1.00000",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Maximum depth' (Visual Index 3): Normalized Value: 1.0000, String Value: '1.00000'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Maximum depth' (Visual Index 3) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "small",
+        "normalized": 0.0,
+        "raw_text": "Value for 'Frequency range' (Visual Index 4): Normalized Value: 0.0000, String Value: 'small'"
+      },
+      "index": 4,
+      "name": "Frequency range",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 2,
+      "restore": {
+        "error": null,
+        "observed_display": "small",
+        "observed_normalized": 0.0,
+        "set_text": "Set 'Frequency range' (Visual Index 4) to 0.0000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "small",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Frequency range' (Visual Index 4): Normalized Value: 0.0000, String Value: 'small'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Frequency range' (Visual Index 4) to 0.0000"
+        },
+        {
+          "display": "small",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Frequency range' (Visual Index 4): Normalized Value: 0.2500, String Value: 'small'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Frequency range' (Visual Index 4) to 0.2500"
+        },
+        {
+          "display": "small",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Frequency range' (Visual Index 4): Normalized Value: 0.5000, String Value: 'small'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Frequency range' (Visual Index 4) to 0.5000"
+        },
+        {
+          "display": "large",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Frequency range' (Visual Index 4): Normalized Value: 0.7500, String Value: 'large'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Frequency range' (Visual Index 4) to 0.7500"
+        },
+        {
+          "display": "large",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Frequency range' (Visual Index 4): Normalized Value: 1.0000, String Value: 'large'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Frequency range' (Visual Index 4) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "0.50000 phase",
+        "normalized": 0.5,
+        "raw_text": "Value for 'Stereo' (Visual Index 5): Normalized Value: 0.5000, String Value: '0.50000 phase'"
+      },
+      "index": 5,
+      "name": "Stereo",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "0.50000 phase",
+        "observed_normalized": 0.5,
+        "set_text": "Set 'Stereo' (Visual Index 5) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "0.00000 phase",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Stereo' (Visual Index 5): Normalized Value: 0.0000, String Value: '0.00000 phase'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Stereo' (Visual Index 5) to 0.0000"
+        },
+        {
+          "display": "0.25000 phase",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Stereo' (Visual Index 5): Normalized Value: 0.2500, String Value: '0.25000 phase'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Stereo' (Visual Index 5) to 0.2500"
+        },
+        {
+          "display": "0.50000 phase",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Stereo' (Visual Index 5): Normalized Value: 0.5000, String Value: '0.50000 phase'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Stereo' (Visual Index 5) to 0.5000"
+        },
+        {
+          "display": "0.75000 phase",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Stereo' (Visual Index 5): Normalized Value: 0.7500, String Value: '0.75000 phase'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Stereo' (Visual Index 5) to 0.7500"
+        },
+        {
+          "display": "1.00000 phase",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Stereo' (Visual Index 5): Normalized Value: 1.0000, String Value: '1.00000 phase'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Stereo' (Visual Index 5) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "8",
+        "normalized": 0.3182,
+        "raw_text": "Value for 'Number of stages' (Visual Index 6): Normalized Value: 0.3182, String Value: '8'"
+      },
+      "index": 6,
+      "name": "Number of stages",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "8",
+        "observed_normalized": 0.3182,
+        "set_text": "Set 'Number of stages' (Visual Index 6) to 0.3182",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "1",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Number of stages' (Visual Index 6): Normalized Value: 0.0000, String Value: '1'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Number of stages' (Visual Index 6) to 0.0000"
+        },
+        {
+          "display": "7",
+          "observed_normalized": 0.2727,
+          "read_text": "Value for 'Number of stages' (Visual Index 6): Normalized Value: 0.2727, String Value: '7'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Number of stages' (Visual Index 6) to 0.2500"
+        },
+        {
+          "display": "12",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Number of stages' (Visual Index 6): Normalized Value: 0.5000, String Value: '12'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Number of stages' (Visual Index 6) to 0.5000"
+        },
+        {
+          "display": "17",
+          "observed_normalized": 0.7273,
+          "read_text": "Value for 'Number of stages' (Visual Index 6): Normalized Value: 0.7273, String Value: '17'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Number of stages' (Visual Index 6) to 0.7500"
+        },
+        {
+          "display": "23",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Number of stages' (Visual Index 6): Normalized Value: 1.0000, String Value: '23'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Number of stages' (Visual Index 6) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "0.40000 amount",
+        "normalized": 0.4,
+        "raw_text": "Value for 'Feedback' (Visual Index 7): Normalized Value: 0.4000, String Value: '0.40000 amount'"
+      },
+      "index": 7,
+      "name": "Feedback",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "0.40000 amount",
+        "observed_normalized": 0.4,
+        "set_text": "Set 'Feedback' (Visual Index 7) to 0.4000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "0.00000 amount",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Feedback' (Visual Index 7): Normalized Value: 0.0000, String Value: '0.00000 amount'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Feedback' (Visual Index 7) to 0.0000"
+        },
+        {
+          "display": "0.25000 amount",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Feedback' (Visual Index 7): Normalized Value: 0.2500, String Value: '0.25000 amount'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Feedback' (Visual Index 7) to 0.2500"
+        },
+        {
+          "display": "0.50000 amount",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Feedback' (Visual Index 7): Normalized Value: 0.5000, String Value: '0.50000 amount'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Feedback' (Visual Index 7) to 0.5000"
+        },
+        {
+          "display": "0.75000 amount",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Feedback' (Visual Index 7): Normalized Value: 0.7500, String Value: '0.75000 amount'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Feedback' (Visual Index 7) to 0.7500"
+        },
+        {
+          "display": "1.00000 amount",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Feedback' (Visual Index 7): Normalized Value: 1.0000, String Value: '1.00000 amount'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Feedback' (Visual Index 7) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "50 % wet",
+        "normalized": 0.5,
+        "raw_text": "Value for 'Dry - Wet' (Visual Index 8): Normalized Value: 0.5000, String Value: '50 % wet'"
+      },
+      "index": 8,
+      "name": "Dry - Wet",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "50 % wet",
+        "observed_normalized": 0.5,
+        "set_text": "Set 'Dry - Wet' (Visual Index 8) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "100 % wet",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Dry - Wet' (Visual Index 8): Normalized Value: 0.0000, String Value: '100 % wet'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Dry - Wet' (Visual Index 8) to 0.0000"
+        },
+        {
+          "display": "75 % wet",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Dry - Wet' (Visual Index 8): Normalized Value: 0.2500, String Value: '75 % wet'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Dry - Wet' (Visual Index 8) to 0.2500"
+        },
+        {
+          "display": "50 % wet",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Dry - Wet' (Visual Index 8): Normalized Value: 0.5000, String Value: '50 % wet'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Dry - Wet' (Visual Index 8) to 0.5000"
+        },
+        {
+          "display": "25 % wet",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Dry - Wet' (Visual Index 8): Normalized Value: 0.7500, String Value: '25 % wet'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Dry - Wet' (Visual Index 8) to 0.7500"
+        },
+        {
+          "display": "0 % wet",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Dry - Wet' (Visual Index 8): Normalized Value: 1.0000, String Value: '0 % wet'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Dry - Wet' (Visual Index 8) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "4.08240 dB",
+        "normalized": 0.8,
+        "raw_text": "Value for 'Output gain' (Visual Index 9): Normalized Value: 0.8000, String Value: '4.08240 dB'"
+      },
+      "index": 9,
+      "name": "Output gain",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "4.08240 dB",
+        "observed_normalized": 0.8,
+        "set_text": "Set 'Output gain' (Visual Index 9) to 0.8000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "-oo   dB",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Output gain' (Visual Index 9): Normalized Value: 0.0000, String Value: '-oo   dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Output gain' (Visual Index 9) to 0.0000"
+        },
+        {
+          "display": "-6.02060 dB",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Output gain' (Visual Index 9): Normalized Value: 0.2500, String Value: '-6.02060 dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Output gain' (Visual Index 9) to 0.2500"
+        },
+        {
+          "display": "0.00000 dB",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Output gain' (Visual Index 9): Normalized Value: 0.5000, String Value: '0.00000 dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Output gain' (Visual Index 9) to 0.5000"
+        },
+        {
+          "display": "3.52183 dB",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Output gain' (Visual Index 9): Normalized Value: 0.7500, String Value: '3.52183 dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Output gain' (Visual Index 9) to 0.7500"
+        },
+        {
+          "display": "6.02060 dB",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Output gain' (Visual Index 9): Normalized Value: 1.0000, String Value: '6.02060 dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Output gain' (Visual Index 9) to 1.0000"
+        }
+      ]
+    }
+  ],
+  "plugin": {
+    "loaded_name": "Fruity Phaser",
+    "requested_name": "Fruity Phaser",
+    "slug": "fruity-phaser"
+  },
+  "probe": {
+    "mixer_track": 47,
+    "visual_slot": 10
+  },
+  "schema_version": 1,
+  "status": "complete",
+  "validation": {
+    "all_parameters_restored": true,
+    "errors": [],
+    "ok": true,
+    "unique_indices": true
+  }
+}

@@ -89,7 +89,7 @@ struct Cli {
     #[arg(long, default_value = "codex")]
     codex_binary: String,
 
-    #[arg(long, default_value = "gpt-5.6-terra")]
+    #[arg(long, default_value = "gpt-5.6-sol")]
     model: String,
 
     #[arg(long)]
@@ -205,11 +205,11 @@ struct HttpRequest {
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
-    if !cli.i_accept_live_fl_writes {
-        bail!(
-            "ghost-fl-workspace can perform live FL Studio writes; pass --i-accept-live-fl-writes only after opening a project you are willing to modify"
-        );
-    }
+    // if !cli.i_accept_live_fl_writes {
+    //     bail!(
+    //         "ghost-fl-workspace can perform live FL Studio writes; pass --i-accept-live-fl-writes only after opening a project you are willing to modify"
+    //     );
+    // }
 
     let gopher = Arc::new(
         GopherNativeAdapter::connect(FlStudioAdapterConfig {

@@ -1,0 +1,376 @@
+{
+  "cleanup": {
+    "status": "succeeded",
+    "text": "Removed effects from slot(s) [10] for 1 track(s): [47].",
+    "verified_empty": true
+  },
+  "evidence": {
+    "add_effect_result": "Added effect 'Spreader' to visual slot 10 for 1 track(s): [47].",
+    "kind": "live FL Studio Gopher observations from a fresh temporary effect instance",
+    "parameter_list_result": "Parameters for 'Spreader':\n  Index 1: Spread\n  Index 2: Stereo separation\n  Index 3: Low-Frequency Bypass\n  Index 4: Mono\n  Index 5: Enabled",
+    "plugin_resolution": {
+      "paths": [
+        "D:\\Image-Line\\FL Studio 2026\\Data\\Patches\\Plugin database\\Effects\\Gain\\Spreader.fst"
+      ],
+      "source": "installed_plugin_database_fst",
+      "status": "resolved"
+    }
+  },
+  "limitations": [
+    "Continuous domains cannot be exhaustively enumerated; five normalized anchors were measured.",
+    "Discrete controls may contain states between sampled anchors.",
+    "Display strings can be tempo-, mode-, or neighboring-parameter-dependent.",
+    "Patcher exposes only parameters currently published by a fresh empty Patcher instance."
+  ],
+  "parameter_count": 5,
+  "parameter_space": {
+    "anchor_points": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "authoritative_automation_domain": "normalized 0.0..1.0",
+    "display_mapping": "empirical five-anchor sampling; not a proof of every intermediate or context-dependent display value"
+  },
+  "parameters": [
+    {
+      "default_observation": {
+        "display": "50.0%",
+        "normalized": 0.5,
+        "raw_text": "Value for 'Spread' (Visual Index 1): Normalized Value: 0.5000, String Value: '50.0%'"
+      },
+      "index": 1,
+      "name": "Spread",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "50.0%",
+        "observed_normalized": 0.5,
+        "set_text": "Set 'Spread' (Visual Index 1) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "0.0%",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Spread' (Visual Index 1): Normalized Value: 0.0000, String Value: '0.0%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Spread' (Visual Index 1) to 0.0000"
+        },
+        {
+          "display": "25.0%",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Spread' (Visual Index 1): Normalized Value: 0.2500, String Value: '25.0%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Spread' (Visual Index 1) to 0.2500"
+        },
+        {
+          "display": "50.0%",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Spread' (Visual Index 1): Normalized Value: 0.5000, String Value: '50.0%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Spread' (Visual Index 1) to 0.5000"
+        },
+        {
+          "display": "75.0%",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Spread' (Visual Index 1): Normalized Value: 0.7500, String Value: '75.0%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Spread' (Visual Index 1) to 0.7500"
+        },
+        {
+          "display": "100.0%",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Spread' (Visual Index 1): Normalized Value: 1.0000, String Value: '100.0%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Spread' (Visual Index 1) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "Original",
+        "normalized": 0.5,
+        "raw_text": "Value for 'Stereo separation' (Visual Index 2): Normalized Value: 0.5000, String Value: 'Original'"
+      },
+      "index": 2,
+      "name": "Stereo separation",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "Original",
+        "observed_normalized": 0.5,
+        "set_text": "Set 'Stereo separation' (Visual Index 2) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "100% merged",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Stereo separation' (Visual Index 2): Normalized Value: 0.0000, String Value: '100% merged'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Stereo separation' (Visual Index 2) to 0.0000"
+        },
+        {
+          "display": "50% merged",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Stereo separation' (Visual Index 2): Normalized Value: 0.2500, String Value: '50% merged'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Stereo separation' (Visual Index 2) to 0.2500"
+        },
+        {
+          "display": "Original",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Stereo separation' (Visual Index 2): Normalized Value: 0.5000, String Value: 'Original'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Stereo separation' (Visual Index 2) to 0.5000"
+        },
+        {
+          "display": "50% separated",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Stereo separation' (Visual Index 2): Normalized Value: 0.7500, String Value: '50% separated'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Stereo separation' (Visual Index 2) to 0.7500"
+        },
+        {
+          "display": "100% separated",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Stereo separation' (Visual Index 2): Normalized Value: 1.0000, String Value: '100% separated'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Stereo separation' (Visual Index 2) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "10.00 Hz",
+        "normalized": 0.01,
+        "raw_text": "Value for 'Low-Frequency Bypass' (Visual Index 3): Normalized Value: 0.0100, String Value: '10.00 Hz'"
+      },
+      "index": 3,
+      "name": "Low-Frequency Bypass",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "10.00 Hz",
+        "observed_normalized": 0.01,
+        "set_text": "Set 'Low-Frequency Bypass' (Visual Index 3) to 0.0100",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "0.00 Hz",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Low-Frequency Bypass' (Visual Index 3): Normalized Value: 0.0000, String Value: '0.00 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Low-Frequency Bypass' (Visual Index 3) to 0.0000"
+        },
+        {
+          "display": "250.00 Hz",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Low-Frequency Bypass' (Visual Index 3): Normalized Value: 0.2500, String Value: '250.00 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Low-Frequency Bypass' (Visual Index 3) to 0.2500"
+        },
+        {
+          "display": "500.00 Hz",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Low-Frequency Bypass' (Visual Index 3): Normalized Value: 0.5000, String Value: '500.00 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Low-Frequency Bypass' (Visual Index 3) to 0.5000"
+        },
+        {
+          "display": "5250.00 Hz",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Low-Frequency Bypass' (Visual Index 3): Normalized Value: 0.7500, String Value: '5250.00 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Low-Frequency Bypass' (Visual Index 3) to 0.7500"
+        },
+        {
+          "display": "10000.00 Hz",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Low-Frequency Bypass' (Visual Index 3): Normalized Value: 1.0000, String Value: '10000.00 Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Low-Frequency Bypass' (Visual Index 3) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "Off",
+        "normalized": 0.0,
+        "raw_text": "Value for 'Mono' (Visual Index 4): Normalized Value: 0.0000, String Value: 'Off'"
+      },
+      "index": 4,
+      "name": "Mono",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 2,
+      "restore": {
+        "error": null,
+        "observed_display": "Off",
+        "observed_normalized": 0.0,
+        "set_text": "Set 'Mono' (Visual Index 4) to 0.0000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "Off",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Mono' (Visual Index 4): Normalized Value: 0.0000, String Value: 'Off'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Mono' (Visual Index 4) to 0.0000"
+        },
+        {
+          "display": "Off",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Mono' (Visual Index 4): Normalized Value: 0.0000, String Value: 'Off'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Mono' (Visual Index 4) to 0.2500"
+        },
+        {
+          "display": "Off",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Mono' (Visual Index 4): Normalized Value: 0.0000, String Value: 'Off'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Mono' (Visual Index 4) to 0.5000"
+        },
+        {
+          "display": "On",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Mono' (Visual Index 4): Normalized Value: 1.0000, String Value: 'On'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Mono' (Visual Index 4) to 0.7500"
+        },
+        {
+          "display": "On",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Mono' (Visual Index 4): Normalized Value: 1.0000, String Value: 'On'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Mono' (Visual Index 4) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "On",
+        "normalized": 1.0,
+        "raw_text": "Value for 'Enabled' (Visual Index 5): Normalized Value: 1.0000, String Value: 'On'"
+      },
+      "index": 5,
+      "name": "Enabled",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 2,
+      "restore": {
+        "error": null,
+        "observed_display": "On",
+        "observed_normalized": 1.0,
+        "set_text": "Set 'Enabled' (Visual Index 5) to 1.0000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "Off",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Enabled' (Visual Index 5): Normalized Value: 0.0000, String Value: 'Off'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Enabled' (Visual Index 5) to 0.0000"
+        },
+        {
+          "display": "Off",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Enabled' (Visual Index 5): Normalized Value: 0.0000, String Value: 'Off'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Enabled' (Visual Index 5) to 0.2500"
+        },
+        {
+          "display": "Off",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Enabled' (Visual Index 5): Normalized Value: 0.0000, String Value: 'Off'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Enabled' (Visual Index 5) to 0.5000"
+        },
+        {
+          "display": "On",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Enabled' (Visual Index 5): Normalized Value: 1.0000, String Value: 'On'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Enabled' (Visual Index 5) to 0.7500"
+        },
+        {
+          "display": "On",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Enabled' (Visual Index 5): Normalized Value: 1.0000, String Value: 'On'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Enabled' (Visual Index 5) to 1.0000"
+        }
+      ]
+    }
+  ],
+  "plugin": {
+    "loaded_name": "Spreader",
+    "requested_name": "Spreader",
+    "slug": "spreader"
+  },
+  "probe": {
+    "mixer_track": 47,
+    "visual_slot": 10
+  },
+  "schema_version": 1,
+  "status": "complete",
+  "validation": {
+    "all_parameters_restored": true,
+    "errors": [],
+    "ok": true,
+    "unique_indices": true
+  }
+}

@@ -1,0 +1,2360 @@
+{
+  "cleanup": {
+    "status": "succeeded",
+    "text": "Removed effects from slot(s) [10] for 1 track(s): [47].",
+    "verified_empty": true
+  },
+  "evidence": {
+    "add_effect_result": "Added effect 'Fruity Parametric EQ 2' to visual slot 10 for 1 track(s): [47].",
+    "kind": "live FL Studio Gopher observations from a fresh temporary effect instance",
+    "parameter_list_result": "Parameters for 'Fruity parametric EQ 2':\n  Index 1: Band 1 level\n  Index 2: Band 2 level\n  Index 3: Band 3 level\n  Index 4: Band 4 level\n  Index 5: Band 5 level\n  Index 6: Band 6 level\n  Index 7: Band 7 level\n  Index 8: Band 1 freq\n  Index 9: Band 2 freq\n  Index 10: Band 3 freq\n  Index 11: Band 4 freq\n  Index 12: Band 5 freq\n  Index 13: Band 6 freq\n  Index 14: Band 7 freq\n  Index 15: Band 1 width\n  Index 16: Band 2 width\n  Index 17: Band 3 width\n  Index 18: Band 4 width\n  Index 19: Band 5 width\n  Index 20: Band 6 width\n  Index 21: Band 7 width\n  Index 22: Band 1 type\n  Index 23: Band 2 type\n  Index 24: Band 3 type\n  Index 25: Band 4 type\n  Index 26: Band 5 type\n  Index 27: Band 6 type\n  Index 28: Band 7 type\n  Index 29: Band 1 order\n  Index 30: Band 2 order\n  Index 31: Band 3 order\n  Index 32: Band 4 order\n  Index 33: Band 5 order\n  Index 34: Band 6 order\n  Index 35: Band 7 order\n  Index 36: Main level",
+    "plugin_resolution": {
+      "paths": [
+        "D:\\Image-Line\\FL Studio 2026\\Data\\Patches\\Plugin database\\Effects\\Filter\\Fruity Parametric EQ 2.fst"
+      ],
+      "source": "installed_plugin_database_fst",
+      "status": "resolved"
+    }
+  },
+  "limitations": [
+    "Continuous domains cannot be exhaustively enumerated; five normalized anchors were measured.",
+    "Discrete controls may contain states between sampled anchors.",
+    "Display strings can be tempo-, mode-, or neighboring-parameter-dependent.",
+    "Patcher exposes only parameters currently published by a fresh empty Patcher instance."
+  ],
+  "parameter_count": 36,
+  "parameter_space": {
+    "anchor_points": [
+      0.0,
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "authoritative_automation_domain": "normalized 0.0..1.0",
+    "display_mapping": "empirical five-anchor sampling; not a proof of every intermediate or context-dependent display value"
+  },
+  "parameters": [
+    {
+      "default_observation": {
+        "display": "0.0dB",
+        "normalized": 0.5,
+        "raw_text": "Value for 'Band 1 level' (Visual Index 1): Normalized Value: 0.5000, String Value: '0.0dB'"
+      },
+      "index": 1,
+      "name": "Band 1 level",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "0.0dB",
+        "observed_normalized": 0.5,
+        "set_text": "Set 'Band 1 level' (Visual Index 1) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "-18.0dB",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 1 level' (Visual Index 1): Normalized Value: 0.0000, String Value: '-18.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 1 level' (Visual Index 1) to 0.0000"
+        },
+        {
+          "display": "-9.0dB",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Band 1 level' (Visual Index 1): Normalized Value: 0.2500, String Value: '-9.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 1 level' (Visual Index 1) to 0.2500"
+        },
+        {
+          "display": "0.0dB",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 1 level' (Visual Index 1): Normalized Value: 0.5000, String Value: '0.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 1 level' (Visual Index 1) to 0.5000"
+        },
+        {
+          "display": "9.0dB",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Band 1 level' (Visual Index 1): Normalized Value: 0.7500, String Value: '9.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 1 level' (Visual Index 1) to 0.7500"
+        },
+        {
+          "display": "18.0dB",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 1 level' (Visual Index 1): Normalized Value: 1.0000, String Value: '18.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 1 level' (Visual Index 1) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "0.0dB",
+        "normalized": 0.5,
+        "raw_text": "Value for 'Band 2 level' (Visual Index 2): Normalized Value: 0.5000, String Value: '0.0dB'"
+      },
+      "index": 2,
+      "name": "Band 2 level",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "0.0dB",
+        "observed_normalized": 0.5,
+        "set_text": "Set 'Band 2 level' (Visual Index 2) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "-18.0dB",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 2 level' (Visual Index 2): Normalized Value: 0.0000, String Value: '-18.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 2 level' (Visual Index 2) to 0.0000"
+        },
+        {
+          "display": "-9.0dB",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Band 2 level' (Visual Index 2): Normalized Value: 0.2500, String Value: '-9.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 2 level' (Visual Index 2) to 0.2500"
+        },
+        {
+          "display": "0.0dB",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 2 level' (Visual Index 2): Normalized Value: 0.5000, String Value: '0.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 2 level' (Visual Index 2) to 0.5000"
+        },
+        {
+          "display": "9.0dB",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Band 2 level' (Visual Index 2): Normalized Value: 0.7500, String Value: '9.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 2 level' (Visual Index 2) to 0.7500"
+        },
+        {
+          "display": "18.0dB",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 2 level' (Visual Index 2): Normalized Value: 1.0000, String Value: '18.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 2 level' (Visual Index 2) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "0.0dB",
+        "normalized": 0.5,
+        "raw_text": "Value for 'Band 3 level' (Visual Index 3): Normalized Value: 0.5000, String Value: '0.0dB'"
+      },
+      "index": 3,
+      "name": "Band 3 level",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "0.0dB",
+        "observed_normalized": 0.5,
+        "set_text": "Set 'Band 3 level' (Visual Index 3) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "-18.0dB",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 3 level' (Visual Index 3): Normalized Value: 0.0000, String Value: '-18.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 3 level' (Visual Index 3) to 0.0000"
+        },
+        {
+          "display": "-9.0dB",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Band 3 level' (Visual Index 3): Normalized Value: 0.2500, String Value: '-9.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 3 level' (Visual Index 3) to 0.2500"
+        },
+        {
+          "display": "0.0dB",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 3 level' (Visual Index 3): Normalized Value: 0.5000, String Value: '0.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 3 level' (Visual Index 3) to 0.5000"
+        },
+        {
+          "display": "9.0dB",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Band 3 level' (Visual Index 3): Normalized Value: 0.7500, String Value: '9.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 3 level' (Visual Index 3) to 0.7500"
+        },
+        {
+          "display": "18.0dB",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 3 level' (Visual Index 3): Normalized Value: 1.0000, String Value: '18.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 3 level' (Visual Index 3) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "0.0dB",
+        "normalized": 0.5,
+        "raw_text": "Value for 'Band 4 level' (Visual Index 4): Normalized Value: 0.5000, String Value: '0.0dB'"
+      },
+      "index": 4,
+      "name": "Band 4 level",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "0.0dB",
+        "observed_normalized": 0.5,
+        "set_text": "Set 'Band 4 level' (Visual Index 4) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "-18.0dB",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 4 level' (Visual Index 4): Normalized Value: 0.0000, String Value: '-18.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 4 level' (Visual Index 4) to 0.0000"
+        },
+        {
+          "display": "-9.0dB",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Band 4 level' (Visual Index 4): Normalized Value: 0.2500, String Value: '-9.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 4 level' (Visual Index 4) to 0.2500"
+        },
+        {
+          "display": "0.0dB",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 4 level' (Visual Index 4): Normalized Value: 0.5000, String Value: '0.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 4 level' (Visual Index 4) to 0.5000"
+        },
+        {
+          "display": "9.0dB",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Band 4 level' (Visual Index 4): Normalized Value: 0.7500, String Value: '9.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 4 level' (Visual Index 4) to 0.7500"
+        },
+        {
+          "display": "18.0dB",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 4 level' (Visual Index 4): Normalized Value: 1.0000, String Value: '18.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 4 level' (Visual Index 4) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "0.0dB",
+        "normalized": 0.5,
+        "raw_text": "Value for 'Band 5 level' (Visual Index 5): Normalized Value: 0.5000, String Value: '0.0dB'"
+      },
+      "index": 5,
+      "name": "Band 5 level",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "0.0dB",
+        "observed_normalized": 0.5,
+        "set_text": "Set 'Band 5 level' (Visual Index 5) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "-18.0dB",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 5 level' (Visual Index 5): Normalized Value: 0.0000, String Value: '-18.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 5 level' (Visual Index 5) to 0.0000"
+        },
+        {
+          "display": "-9.0dB",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Band 5 level' (Visual Index 5): Normalized Value: 0.2500, String Value: '-9.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 5 level' (Visual Index 5) to 0.2500"
+        },
+        {
+          "display": "0.0dB",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 5 level' (Visual Index 5): Normalized Value: 0.5000, String Value: '0.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 5 level' (Visual Index 5) to 0.5000"
+        },
+        {
+          "display": "9.0dB",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Band 5 level' (Visual Index 5): Normalized Value: 0.7500, String Value: '9.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 5 level' (Visual Index 5) to 0.7500"
+        },
+        {
+          "display": "18.0dB",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 5 level' (Visual Index 5): Normalized Value: 1.0000, String Value: '18.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 5 level' (Visual Index 5) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "0.0dB",
+        "normalized": 0.5,
+        "raw_text": "Value for 'Band 6 level' (Visual Index 6): Normalized Value: 0.5000, String Value: '0.0dB'"
+      },
+      "index": 6,
+      "name": "Band 6 level",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "0.0dB",
+        "observed_normalized": 0.5,
+        "set_text": "Set 'Band 6 level' (Visual Index 6) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "-18.0dB",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 6 level' (Visual Index 6): Normalized Value: 0.0000, String Value: '-18.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 6 level' (Visual Index 6) to 0.0000"
+        },
+        {
+          "display": "-9.0dB",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Band 6 level' (Visual Index 6): Normalized Value: 0.2500, String Value: '-9.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 6 level' (Visual Index 6) to 0.2500"
+        },
+        {
+          "display": "0.0dB",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 6 level' (Visual Index 6): Normalized Value: 0.5000, String Value: '0.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 6 level' (Visual Index 6) to 0.5000"
+        },
+        {
+          "display": "9.0dB",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Band 6 level' (Visual Index 6): Normalized Value: 0.7500, String Value: '9.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 6 level' (Visual Index 6) to 0.7500"
+        },
+        {
+          "display": "18.0dB",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 6 level' (Visual Index 6): Normalized Value: 1.0000, String Value: '18.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 6 level' (Visual Index 6) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "0.0dB",
+        "normalized": 0.5,
+        "raw_text": "Value for 'Band 7 level' (Visual Index 7): Normalized Value: 0.5000, String Value: '0.0dB'"
+      },
+      "index": 7,
+      "name": "Band 7 level",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "0.0dB",
+        "observed_normalized": 0.5,
+        "set_text": "Set 'Band 7 level' (Visual Index 7) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "-18.0dB",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 7 level' (Visual Index 7): Normalized Value: 0.0000, String Value: '-18.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 7 level' (Visual Index 7) to 0.0000"
+        },
+        {
+          "display": "-9.0dB",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Band 7 level' (Visual Index 7): Normalized Value: 0.2500, String Value: '-9.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 7 level' (Visual Index 7) to 0.2500"
+        },
+        {
+          "display": "0.0dB",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 7 level' (Visual Index 7): Normalized Value: 0.5000, String Value: '0.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 7 level' (Visual Index 7) to 0.5000"
+        },
+        {
+          "display": "9.0dB",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Band 7 level' (Visual Index 7): Normalized Value: 0.7500, String Value: '9.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 7 level' (Visual Index 7) to 0.7500"
+        },
+        {
+          "display": "18.0dB",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 7 level' (Visual Index 7): Normalized Value: 1.0000, String Value: '18.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 7 level' (Visual Index 7) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "63Hz",
+        "normalized": 0.1667,
+        "raw_text": "Value for 'Band 1 freq' (Visual Index 8): Normalized Value: 0.1667, String Value: '63Hz'"
+      },
+      "index": 8,
+      "name": "Band 1 freq",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "63Hz",
+        "observed_normalized": 0.1667,
+        "set_text": "Set 'Band 1 freq' (Visual Index 8) to 0.1667",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "20Hz",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 1 freq' (Visual Index 8): Normalized Value: 0.0000, String Value: '20Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 1 freq' (Visual Index 8) to 0.0000"
+        },
+        {
+          "display": "112Hz",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Band 1 freq' (Visual Index 8): Normalized Value: 0.2500, String Value: '112Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 1 freq' (Visual Index 8) to 0.2500"
+        },
+        {
+          "display": "632Hz",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 1 freq' (Visual Index 8): Normalized Value: 0.5000, String Value: '632Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 1 freq' (Visual Index 8) to 0.5000"
+        },
+        {
+          "display": "3557Hz",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Band 1 freq' (Visual Index 8): Normalized Value: 0.7500, String Value: '3557Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 1 freq' (Visual Index 8) to 0.7500"
+        },
+        {
+          "display": "20000Hz",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 1 freq' (Visual Index 8): Normalized Value: 1.0000, String Value: '20000Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 1 freq' (Visual Index 8) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "136Hz",
+        "normalized": 0.2778,
+        "raw_text": "Value for 'Band 2 freq' (Visual Index 9): Normalized Value: 0.2778, String Value: '136Hz'"
+      },
+      "index": 9,
+      "name": "Band 2 freq",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "136Hz",
+        "observed_normalized": 0.2778,
+        "set_text": "Set 'Band 2 freq' (Visual Index 9) to 0.2778",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "20Hz",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 2 freq' (Visual Index 9): Normalized Value: 0.0000, String Value: '20Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 2 freq' (Visual Index 9) to 0.0000"
+        },
+        {
+          "display": "112Hz",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Band 2 freq' (Visual Index 9): Normalized Value: 0.2500, String Value: '112Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 2 freq' (Visual Index 9) to 0.2500"
+        },
+        {
+          "display": "632Hz",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 2 freq' (Visual Index 9): Normalized Value: 0.5000, String Value: '632Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 2 freq' (Visual Index 9) to 0.5000"
+        },
+        {
+          "display": "3557Hz",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Band 2 freq' (Visual Index 9): Normalized Value: 0.7500, String Value: '3557Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 2 freq' (Visual Index 9) to 0.7500"
+        },
+        {
+          "display": "20000Hz",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 2 freq' (Visual Index 9): Normalized Value: 1.0000, String Value: '20000Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 2 freq' (Visual Index 9) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "294Hz",
+        "normalized": 0.3889,
+        "raw_text": "Value for 'Band 3 freq' (Visual Index 10): Normalized Value: 0.3889, String Value: '294Hz'"
+      },
+      "index": 10,
+      "name": "Band 3 freq",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "294Hz",
+        "observed_normalized": 0.3889,
+        "set_text": "Set 'Band 3 freq' (Visual Index 10) to 0.3889",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "20Hz",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 3 freq' (Visual Index 10): Normalized Value: 0.0000, String Value: '20Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 3 freq' (Visual Index 10) to 0.0000"
+        },
+        {
+          "display": "112Hz",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Band 3 freq' (Visual Index 10): Normalized Value: 0.2500, String Value: '112Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 3 freq' (Visual Index 10) to 0.2500"
+        },
+        {
+          "display": "632Hz",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 3 freq' (Visual Index 10): Normalized Value: 0.5000, String Value: '632Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 3 freq' (Visual Index 10) to 0.5000"
+        },
+        {
+          "display": "3557Hz",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Band 3 freq' (Visual Index 10): Normalized Value: 0.7500, String Value: '3557Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 3 freq' (Visual Index 10) to 0.7500"
+        },
+        {
+          "display": "20000Hz",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 3 freq' (Visual Index 10): Normalized Value: 1.0000, String Value: '20000Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 3 freq' (Visual Index 10) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "632Hz",
+        "normalized": 0.5,
+        "raw_text": "Value for 'Band 4 freq' (Visual Index 11): Normalized Value: 0.5000, String Value: '632Hz'"
+      },
+      "index": 11,
+      "name": "Band 4 freq",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "632Hz",
+        "observed_normalized": 0.5,
+        "set_text": "Set 'Band 4 freq' (Visual Index 11) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "20Hz",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 4 freq' (Visual Index 11): Normalized Value: 0.0000, String Value: '20Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 4 freq' (Visual Index 11) to 0.0000"
+        },
+        {
+          "display": "112Hz",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Band 4 freq' (Visual Index 11): Normalized Value: 0.2500, String Value: '112Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 4 freq' (Visual Index 11) to 0.2500"
+        },
+        {
+          "display": "632Hz",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 4 freq' (Visual Index 11): Normalized Value: 0.5000, String Value: '632Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 4 freq' (Visual Index 11) to 0.5000"
+        },
+        {
+          "display": "3557Hz",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Band 4 freq' (Visual Index 11): Normalized Value: 0.7500, String Value: '3557Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 4 freq' (Visual Index 11) to 0.7500"
+        },
+        {
+          "display": "20000Hz",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 4 freq' (Visual Index 11): Normalized Value: 1.0000, String Value: '20000Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 4 freq' (Visual Index 11) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "1363Hz",
+        "normalized": 0.6111,
+        "raw_text": "Value for 'Band 5 freq' (Visual Index 12): Normalized Value: 0.6111, String Value: '1363Hz'"
+      },
+      "index": 12,
+      "name": "Band 5 freq",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "1362Hz",
+        "observed_normalized": 0.6111,
+        "set_text": "Set 'Band 5 freq' (Visual Index 12) to 0.6111",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "20Hz",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 5 freq' (Visual Index 12): Normalized Value: 0.0000, String Value: '20Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 5 freq' (Visual Index 12) to 0.0000"
+        },
+        {
+          "display": "112Hz",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Band 5 freq' (Visual Index 12): Normalized Value: 0.2500, String Value: '112Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 5 freq' (Visual Index 12) to 0.2500"
+        },
+        {
+          "display": "632Hz",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 5 freq' (Visual Index 12): Normalized Value: 0.5000, String Value: '632Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 5 freq' (Visual Index 12) to 0.5000"
+        },
+        {
+          "display": "3557Hz",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Band 5 freq' (Visual Index 12): Normalized Value: 0.7500, String Value: '3557Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 5 freq' (Visual Index 12) to 0.7500"
+        },
+        {
+          "display": "20000Hz",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 5 freq' (Visual Index 12): Normalized Value: 1.0000, String Value: '20000Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 5 freq' (Visual Index 12) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "2936Hz",
+        "normalized": 0.7222,
+        "raw_text": "Value for 'Band 6 freq' (Visual Index 13): Normalized Value: 0.7222, String Value: '2936Hz'"
+      },
+      "index": 13,
+      "name": "Band 6 freq",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "2935Hz",
+        "observed_normalized": 0.7222,
+        "set_text": "Set 'Band 6 freq' (Visual Index 13) to 0.7222",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "20Hz",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 6 freq' (Visual Index 13): Normalized Value: 0.0000, String Value: '20Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 6 freq' (Visual Index 13) to 0.0000"
+        },
+        {
+          "display": "112Hz",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Band 6 freq' (Visual Index 13): Normalized Value: 0.2500, String Value: '112Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 6 freq' (Visual Index 13) to 0.2500"
+        },
+        {
+          "display": "632Hz",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 6 freq' (Visual Index 13): Normalized Value: 0.5000, String Value: '632Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 6 freq' (Visual Index 13) to 0.5000"
+        },
+        {
+          "display": "3557Hz",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Band 6 freq' (Visual Index 13): Normalized Value: 0.7500, String Value: '3557Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 6 freq' (Visual Index 13) to 0.7500"
+        },
+        {
+          "display": "20000Hz",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 6 freq' (Visual Index 13): Normalized Value: 1.0000, String Value: '20000Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 6 freq' (Visual Index 13) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "6324Hz",
+        "normalized": 0.8333,
+        "raw_text": "Value for 'Band 7 freq' (Visual Index 14): Normalized Value: 0.8333, String Value: '6324Hz'"
+      },
+      "index": 14,
+      "name": "Band 7 freq",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "6323Hz",
+        "observed_normalized": 0.8333,
+        "set_text": "Set 'Band 7 freq' (Visual Index 14) to 0.8333",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "20Hz",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 7 freq' (Visual Index 14): Normalized Value: 0.0000, String Value: '20Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 7 freq' (Visual Index 14) to 0.0000"
+        },
+        {
+          "display": "112Hz",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Band 7 freq' (Visual Index 14): Normalized Value: 0.2500, String Value: '112Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 7 freq' (Visual Index 14) to 0.2500"
+        },
+        {
+          "display": "632Hz",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 7 freq' (Visual Index 14): Normalized Value: 0.5000, String Value: '632Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 7 freq' (Visual Index 14) to 0.5000"
+        },
+        {
+          "display": "3557Hz",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Band 7 freq' (Visual Index 14): Normalized Value: 0.7500, String Value: '3557Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 7 freq' (Visual Index 14) to 0.7500"
+        },
+        {
+          "display": "20000Hz",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 7 freq' (Visual Index 14): Normalized Value: 1.0000, String Value: '20000Hz'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 7 freq' (Visual Index 14) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "61%",
+        "normalized": 0.6122,
+        "raw_text": "Value for 'Band 1 width' (Visual Index 15): Normalized Value: 0.6122, String Value: '61%'"
+      },
+      "index": 15,
+      "name": "Band 1 width",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "61%",
+        "observed_normalized": 0.6122,
+        "set_text": "Set 'Band 1 width' (Visual Index 15) to 0.6122",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "0%",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 1 width' (Visual Index 15): Normalized Value: 0.0000, String Value: '0%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 1 width' (Visual Index 15) to 0.0000"
+        },
+        {
+          "display": "25%",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Band 1 width' (Visual Index 15): Normalized Value: 0.2500, String Value: '25%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 1 width' (Visual Index 15) to 0.2500"
+        },
+        {
+          "display": "50%",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 1 width' (Visual Index 15): Normalized Value: 0.5000, String Value: '50%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 1 width' (Visual Index 15) to 0.5000"
+        },
+        {
+          "display": "75%",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Band 1 width' (Visual Index 15): Normalized Value: 0.7500, String Value: '75%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 1 width' (Visual Index 15) to 0.7500"
+        },
+        {
+          "display": "100%",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 1 width' (Visual Index 15): Normalized Value: 1.0000, String Value: '100%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 1 width' (Visual Index 15) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "39%",
+        "normalized": 0.3878,
+        "raw_text": "Value for 'Band 2 width' (Visual Index 16): Normalized Value: 0.3878, String Value: '39%'"
+      },
+      "index": 16,
+      "name": "Band 2 width",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "39%",
+        "observed_normalized": 0.3878,
+        "set_text": "Set 'Band 2 width' (Visual Index 16) to 0.3878",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "0%",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 2 width' (Visual Index 16): Normalized Value: 0.0000, String Value: '0%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 2 width' (Visual Index 16) to 0.0000"
+        },
+        {
+          "display": "25%",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Band 2 width' (Visual Index 16): Normalized Value: 0.2500, String Value: '25%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 2 width' (Visual Index 16) to 0.2500"
+        },
+        {
+          "display": "50%",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 2 width' (Visual Index 16): Normalized Value: 0.5000, String Value: '50%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 2 width' (Visual Index 16) to 0.5000"
+        },
+        {
+          "display": "75%",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Band 2 width' (Visual Index 16): Normalized Value: 0.7500, String Value: '75%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 2 width' (Visual Index 16) to 0.7500"
+        },
+        {
+          "display": "100%",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 2 width' (Visual Index 16): Normalized Value: 1.0000, String Value: '100%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 2 width' (Visual Index 16) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "39%",
+        "normalized": 0.3878,
+        "raw_text": "Value for 'Band 3 width' (Visual Index 17): Normalized Value: 0.3878, String Value: '39%'"
+      },
+      "index": 17,
+      "name": "Band 3 width",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "39%",
+        "observed_normalized": 0.3878,
+        "set_text": "Set 'Band 3 width' (Visual Index 17) to 0.3878",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "0%",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 3 width' (Visual Index 17): Normalized Value: 0.0000, String Value: '0%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 3 width' (Visual Index 17) to 0.0000"
+        },
+        {
+          "display": "25%",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Band 3 width' (Visual Index 17): Normalized Value: 0.2500, String Value: '25%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 3 width' (Visual Index 17) to 0.2500"
+        },
+        {
+          "display": "50%",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 3 width' (Visual Index 17): Normalized Value: 0.5000, String Value: '50%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 3 width' (Visual Index 17) to 0.5000"
+        },
+        {
+          "display": "75%",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Band 3 width' (Visual Index 17): Normalized Value: 0.7500, String Value: '75%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 3 width' (Visual Index 17) to 0.7500"
+        },
+        {
+          "display": "100%",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 3 width' (Visual Index 17): Normalized Value: 1.0000, String Value: '100%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 3 width' (Visual Index 17) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "39%",
+        "normalized": 0.3878,
+        "raw_text": "Value for 'Band 4 width' (Visual Index 18): Normalized Value: 0.3878, String Value: '39%'"
+      },
+      "index": 18,
+      "name": "Band 4 width",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "39%",
+        "observed_normalized": 0.3878,
+        "set_text": "Set 'Band 4 width' (Visual Index 18) to 0.3878",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "0%",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 4 width' (Visual Index 18): Normalized Value: 0.0000, String Value: '0%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 4 width' (Visual Index 18) to 0.0000"
+        },
+        {
+          "display": "25%",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Band 4 width' (Visual Index 18): Normalized Value: 0.2500, String Value: '25%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 4 width' (Visual Index 18) to 0.2500"
+        },
+        {
+          "display": "50%",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 4 width' (Visual Index 18): Normalized Value: 0.5000, String Value: '50%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 4 width' (Visual Index 18) to 0.5000"
+        },
+        {
+          "display": "75%",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Band 4 width' (Visual Index 18): Normalized Value: 0.7500, String Value: '75%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 4 width' (Visual Index 18) to 0.7500"
+        },
+        {
+          "display": "100%",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 4 width' (Visual Index 18): Normalized Value: 1.0000, String Value: '100%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 4 width' (Visual Index 18) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "39%",
+        "normalized": 0.3878,
+        "raw_text": "Value for 'Band 5 width' (Visual Index 19): Normalized Value: 0.3878, String Value: '39%'"
+      },
+      "index": 19,
+      "name": "Band 5 width",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "39%",
+        "observed_normalized": 0.3878,
+        "set_text": "Set 'Band 5 width' (Visual Index 19) to 0.3878",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "0%",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 5 width' (Visual Index 19): Normalized Value: 0.0000, String Value: '0%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 5 width' (Visual Index 19) to 0.0000"
+        },
+        {
+          "display": "25%",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Band 5 width' (Visual Index 19): Normalized Value: 0.2500, String Value: '25%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 5 width' (Visual Index 19) to 0.2500"
+        },
+        {
+          "display": "50%",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 5 width' (Visual Index 19): Normalized Value: 0.5000, String Value: '50%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 5 width' (Visual Index 19) to 0.5000"
+        },
+        {
+          "display": "75%",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Band 5 width' (Visual Index 19): Normalized Value: 0.7500, String Value: '75%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 5 width' (Visual Index 19) to 0.7500"
+        },
+        {
+          "display": "100%",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 5 width' (Visual Index 19): Normalized Value: 1.0000, String Value: '100%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 5 width' (Visual Index 19) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "39%",
+        "normalized": 0.3878,
+        "raw_text": "Value for 'Band 6 width' (Visual Index 20): Normalized Value: 0.3878, String Value: '39%'"
+      },
+      "index": 20,
+      "name": "Band 6 width",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "39%",
+        "observed_normalized": 0.3878,
+        "set_text": "Set 'Band 6 width' (Visual Index 20) to 0.3878",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "0%",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 6 width' (Visual Index 20): Normalized Value: 0.0000, String Value: '0%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 6 width' (Visual Index 20) to 0.0000"
+        },
+        {
+          "display": "25%",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Band 6 width' (Visual Index 20): Normalized Value: 0.2500, String Value: '25%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 6 width' (Visual Index 20) to 0.2500"
+        },
+        {
+          "display": "50%",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 6 width' (Visual Index 20): Normalized Value: 0.5000, String Value: '50%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 6 width' (Visual Index 20) to 0.5000"
+        },
+        {
+          "display": "75%",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Band 6 width' (Visual Index 20): Normalized Value: 0.7500, String Value: '75%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 6 width' (Visual Index 20) to 0.7500"
+        },
+        {
+          "display": "100%",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 6 width' (Visual Index 20): Normalized Value: 1.0000, String Value: '100%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 6 width' (Visual Index 20) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "61%",
+        "normalized": 0.6122,
+        "raw_text": "Value for 'Band 7 width' (Visual Index 21): Normalized Value: 0.6122, String Value: '61%'"
+      },
+      "index": 21,
+      "name": "Band 7 width",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "61%",
+        "observed_normalized": 0.6122,
+        "set_text": "Set 'Band 7 width' (Visual Index 21) to 0.6122",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "0%",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 7 width' (Visual Index 21): Normalized Value: 0.0000, String Value: '0%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 7 width' (Visual Index 21) to 0.0000"
+        },
+        {
+          "display": "25%",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Band 7 width' (Visual Index 21): Normalized Value: 0.2500, String Value: '25%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 7 width' (Visual Index 21) to 0.2500"
+        },
+        {
+          "display": "50%",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 7 width' (Visual Index 21): Normalized Value: 0.5000, String Value: '50%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 7 width' (Visual Index 21) to 0.5000"
+        },
+        {
+          "display": "75%",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Band 7 width' (Visual Index 21): Normalized Value: 0.7500, String Value: '75%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 7 width' (Visual Index 21) to 0.7500"
+        },
+        {
+          "display": "100%",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 7 width' (Visual Index 21): Normalized Value: 1.0000, String Value: '100%'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 7 width' (Visual Index 21) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "Low shelf",
+        "normalized": 0.7143,
+        "raw_text": "Value for 'Band 1 type' (Visual Index 22): Normalized Value: 0.7143, String Value: 'Low shelf'"
+      },
+      "index": 22,
+      "name": "Band 1 type",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "Low shelf",
+        "observed_normalized": 0.7143,
+        "set_text": "Set 'Band 1 type' (Visual Index 22) to 0.7143",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "Disabled",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 1 type' (Visual Index 22): Normalized Value: 0.0000, String Value: 'Disabled'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 1 type' (Visual Index 22) to 0.0000"
+        },
+        {
+          "display": "Band pass",
+          "observed_normalized": 0.2857,
+          "read_text": "Value for 'Band 1 type' (Visual Index 22): Normalized Value: 0.2857, String Value: 'Band pass'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 1 type' (Visual Index 22) to 0.2500"
+        },
+        {
+          "display": "Notch",
+          "observed_normalized": 0.5714,
+          "read_text": "Value for 'Band 1 type' (Visual Index 22): Normalized Value: 0.5714, String Value: 'Notch'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 1 type' (Visual Index 22) to 0.5000"
+        },
+        {
+          "display": "Low shelf",
+          "observed_normalized": 0.7143,
+          "read_text": "Value for 'Band 1 type' (Visual Index 22): Normalized Value: 0.7143, String Value: 'Low shelf'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 1 type' (Visual Index 22) to 0.7500"
+        },
+        {
+          "display": "High shelf",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 1 type' (Visual Index 22): Normalized Value: 1.0000, String Value: 'High shelf'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 1 type' (Visual Index 22) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "Peaking",
+        "normalized": 0.8571,
+        "raw_text": "Value for 'Band 2 type' (Visual Index 23): Normalized Value: 0.8571, String Value: 'Peaking'"
+      },
+      "index": 23,
+      "name": "Band 2 type",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "Peaking",
+        "observed_normalized": 0.8571,
+        "set_text": "Set 'Band 2 type' (Visual Index 23) to 0.8571",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "Disabled",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 2 type' (Visual Index 23): Normalized Value: 0.0000, String Value: 'Disabled'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 2 type' (Visual Index 23) to 0.0000"
+        },
+        {
+          "display": "Band pass",
+          "observed_normalized": 0.2857,
+          "read_text": "Value for 'Band 2 type' (Visual Index 23): Normalized Value: 0.2857, String Value: 'Band pass'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 2 type' (Visual Index 23) to 0.2500"
+        },
+        {
+          "display": "Notch",
+          "observed_normalized": 0.5714,
+          "read_text": "Value for 'Band 2 type' (Visual Index 23): Normalized Value: 0.5714, String Value: 'Notch'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 2 type' (Visual Index 23) to 0.5000"
+        },
+        {
+          "display": "Low shelf",
+          "observed_normalized": 0.7143,
+          "read_text": "Value for 'Band 2 type' (Visual Index 23): Normalized Value: 0.7143, String Value: 'Low shelf'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 2 type' (Visual Index 23) to 0.7500"
+        },
+        {
+          "display": "High shelf",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 2 type' (Visual Index 23): Normalized Value: 1.0000, String Value: 'High shelf'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 2 type' (Visual Index 23) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "Peaking",
+        "normalized": 0.8571,
+        "raw_text": "Value for 'Band 3 type' (Visual Index 24): Normalized Value: 0.8571, String Value: 'Peaking'"
+      },
+      "index": 24,
+      "name": "Band 3 type",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "Peaking",
+        "observed_normalized": 0.8571,
+        "set_text": "Set 'Band 3 type' (Visual Index 24) to 0.8571",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "Disabled",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 3 type' (Visual Index 24): Normalized Value: 0.0000, String Value: 'Disabled'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 3 type' (Visual Index 24) to 0.0000"
+        },
+        {
+          "display": "Band pass",
+          "observed_normalized": 0.2857,
+          "read_text": "Value for 'Band 3 type' (Visual Index 24): Normalized Value: 0.2857, String Value: 'Band pass'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 3 type' (Visual Index 24) to 0.2500"
+        },
+        {
+          "display": "Notch",
+          "observed_normalized": 0.5714,
+          "read_text": "Value for 'Band 3 type' (Visual Index 24): Normalized Value: 0.5714, String Value: 'Notch'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 3 type' (Visual Index 24) to 0.5000"
+        },
+        {
+          "display": "Low shelf",
+          "observed_normalized": 0.7143,
+          "read_text": "Value for 'Band 3 type' (Visual Index 24): Normalized Value: 0.7143, String Value: 'Low shelf'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 3 type' (Visual Index 24) to 0.7500"
+        },
+        {
+          "display": "High shelf",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 3 type' (Visual Index 24): Normalized Value: 1.0000, String Value: 'High shelf'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 3 type' (Visual Index 24) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "Peaking",
+        "normalized": 0.8571,
+        "raw_text": "Value for 'Band 4 type' (Visual Index 25): Normalized Value: 0.8571, String Value: 'Peaking'"
+      },
+      "index": 25,
+      "name": "Band 4 type",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "Peaking",
+        "observed_normalized": 0.8571,
+        "set_text": "Set 'Band 4 type' (Visual Index 25) to 0.8571",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "Disabled",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 4 type' (Visual Index 25): Normalized Value: 0.0000, String Value: 'Disabled'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 4 type' (Visual Index 25) to 0.0000"
+        },
+        {
+          "display": "Band pass",
+          "observed_normalized": 0.2857,
+          "read_text": "Value for 'Band 4 type' (Visual Index 25): Normalized Value: 0.2857, String Value: 'Band pass'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 4 type' (Visual Index 25) to 0.2500"
+        },
+        {
+          "display": "Notch",
+          "observed_normalized": 0.5714,
+          "read_text": "Value for 'Band 4 type' (Visual Index 25): Normalized Value: 0.5714, String Value: 'Notch'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 4 type' (Visual Index 25) to 0.5000"
+        },
+        {
+          "display": "Low shelf",
+          "observed_normalized": 0.7143,
+          "read_text": "Value for 'Band 4 type' (Visual Index 25): Normalized Value: 0.7143, String Value: 'Low shelf'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 4 type' (Visual Index 25) to 0.7500"
+        },
+        {
+          "display": "High shelf",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 4 type' (Visual Index 25): Normalized Value: 1.0000, String Value: 'High shelf'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 4 type' (Visual Index 25) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "Peaking",
+        "normalized": 0.8571,
+        "raw_text": "Value for 'Band 5 type' (Visual Index 26): Normalized Value: 0.8571, String Value: 'Peaking'"
+      },
+      "index": 26,
+      "name": "Band 5 type",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "Peaking",
+        "observed_normalized": 0.8571,
+        "set_text": "Set 'Band 5 type' (Visual Index 26) to 0.8571",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "Disabled",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 5 type' (Visual Index 26): Normalized Value: 0.0000, String Value: 'Disabled'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 5 type' (Visual Index 26) to 0.0000"
+        },
+        {
+          "display": "Band pass",
+          "observed_normalized": 0.2857,
+          "read_text": "Value for 'Band 5 type' (Visual Index 26): Normalized Value: 0.2857, String Value: 'Band pass'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 5 type' (Visual Index 26) to 0.2500"
+        },
+        {
+          "display": "Notch",
+          "observed_normalized": 0.5714,
+          "read_text": "Value for 'Band 5 type' (Visual Index 26): Normalized Value: 0.5714, String Value: 'Notch'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 5 type' (Visual Index 26) to 0.5000"
+        },
+        {
+          "display": "Low shelf",
+          "observed_normalized": 0.7143,
+          "read_text": "Value for 'Band 5 type' (Visual Index 26): Normalized Value: 0.7143, String Value: 'Low shelf'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 5 type' (Visual Index 26) to 0.7500"
+        },
+        {
+          "display": "High shelf",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 5 type' (Visual Index 26): Normalized Value: 1.0000, String Value: 'High shelf'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 5 type' (Visual Index 26) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "Peaking",
+        "normalized": 0.8571,
+        "raw_text": "Value for 'Band 6 type' (Visual Index 27): Normalized Value: 0.8571, String Value: 'Peaking'"
+      },
+      "index": 27,
+      "name": "Band 6 type",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "Peaking",
+        "observed_normalized": 0.8571,
+        "set_text": "Set 'Band 6 type' (Visual Index 27) to 0.8571",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "Disabled",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 6 type' (Visual Index 27): Normalized Value: 0.0000, String Value: 'Disabled'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 6 type' (Visual Index 27) to 0.0000"
+        },
+        {
+          "display": "Band pass",
+          "observed_normalized": 0.2857,
+          "read_text": "Value for 'Band 6 type' (Visual Index 27): Normalized Value: 0.2857, String Value: 'Band pass'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 6 type' (Visual Index 27) to 0.2500"
+        },
+        {
+          "display": "Notch",
+          "observed_normalized": 0.5714,
+          "read_text": "Value for 'Band 6 type' (Visual Index 27): Normalized Value: 0.5714, String Value: 'Notch'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 6 type' (Visual Index 27) to 0.5000"
+        },
+        {
+          "display": "Low shelf",
+          "observed_normalized": 0.7143,
+          "read_text": "Value for 'Band 6 type' (Visual Index 27): Normalized Value: 0.7143, String Value: 'Low shelf'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 6 type' (Visual Index 27) to 0.7500"
+        },
+        {
+          "display": "High shelf",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 6 type' (Visual Index 27): Normalized Value: 1.0000, String Value: 'High shelf'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 6 type' (Visual Index 27) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "High shelf",
+        "normalized": 1.0,
+        "raw_text": "Value for 'Band 7 type' (Visual Index 28): Normalized Value: 1.0000, String Value: 'High shelf'"
+      },
+      "index": 28,
+      "name": "Band 7 type",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "High shelf",
+        "observed_normalized": 1.0,
+        "set_text": "Set 'Band 7 type' (Visual Index 28) to 1.0000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "Disabled",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 7 type' (Visual Index 28): Normalized Value: 0.0000, String Value: 'Disabled'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 7 type' (Visual Index 28) to 0.0000"
+        },
+        {
+          "display": "Band pass",
+          "observed_normalized": 0.2857,
+          "read_text": "Value for 'Band 7 type' (Visual Index 28): Normalized Value: 0.2857, String Value: 'Band pass'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 7 type' (Visual Index 28) to 0.2500"
+        },
+        {
+          "display": "Notch",
+          "observed_normalized": 0.5714,
+          "read_text": "Value for 'Band 7 type' (Visual Index 28): Normalized Value: 0.5714, String Value: 'Notch'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 7 type' (Visual Index 28) to 0.5000"
+        },
+        {
+          "display": "Low shelf",
+          "observed_normalized": 0.7143,
+          "read_text": "Value for 'Band 7 type' (Visual Index 28): Normalized Value: 0.7143, String Value: 'Low shelf'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 7 type' (Visual Index 28) to 0.7500"
+        },
+        {
+          "display": "High shelf",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 7 type' (Visual Index 28): Normalized Value: 1.0000, String Value: 'High shelf'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 7 type' (Visual Index 28) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "2",
+        "normalized": 0.5,
+        "raw_text": "Value for 'Band 1 order' (Visual Index 29): Normalized Value: 0.5000, String Value: '2'"
+      },
+      "index": 29,
+      "name": "Band 1 order",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "2",
+        "observed_normalized": 0.5,
+        "set_text": "Set 'Band 1 order' (Visual Index 29) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "Steep 8",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 1 order' (Visual Index 29): Normalized Value: 0.0000, String Value: 'Steep 8'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 1 order' (Visual Index 29) to 0.0000"
+        },
+        {
+          "display": "Steep 4",
+          "observed_normalized": 0.3333,
+          "read_text": "Value for 'Band 1 order' (Visual Index 29): Normalized Value: 0.3333, String Value: 'Steep 4'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 1 order' (Visual Index 29) to 0.2500"
+        },
+        {
+          "display": "2",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 1 order' (Visual Index 29): Normalized Value: 0.5000, String Value: '2'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 1 order' (Visual Index 29) to 0.5000"
+        },
+        {
+          "display": "Gentle 4",
+          "observed_normalized": 0.6667,
+          "read_text": "Value for 'Band 1 order' (Visual Index 29): Normalized Value: 0.6667, String Value: 'Gentle 4'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 1 order' (Visual Index 29) to 0.7500"
+        },
+        {
+          "display": "Gentle 8",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 1 order' (Visual Index 29): Normalized Value: 1.0000, String Value: 'Gentle 8'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 1 order' (Visual Index 29) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "2",
+        "normalized": 0.5,
+        "raw_text": "Value for 'Band 2 order' (Visual Index 30): Normalized Value: 0.5000, String Value: '2'"
+      },
+      "index": 30,
+      "name": "Band 2 order",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "2",
+        "observed_normalized": 0.5,
+        "set_text": "Set 'Band 2 order' (Visual Index 30) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "Steep 8",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 2 order' (Visual Index 30): Normalized Value: 0.0000, String Value: 'Steep 8'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 2 order' (Visual Index 30) to 0.0000"
+        },
+        {
+          "display": "Steep 4",
+          "observed_normalized": 0.3333,
+          "read_text": "Value for 'Band 2 order' (Visual Index 30): Normalized Value: 0.3333, String Value: 'Steep 4'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 2 order' (Visual Index 30) to 0.2500"
+        },
+        {
+          "display": "2",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 2 order' (Visual Index 30): Normalized Value: 0.5000, String Value: '2'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 2 order' (Visual Index 30) to 0.5000"
+        },
+        {
+          "display": "Gentle 4",
+          "observed_normalized": 0.6667,
+          "read_text": "Value for 'Band 2 order' (Visual Index 30): Normalized Value: 0.6667, String Value: 'Gentle 4'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 2 order' (Visual Index 30) to 0.7500"
+        },
+        {
+          "display": "Gentle 8",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 2 order' (Visual Index 30): Normalized Value: 1.0000, String Value: 'Gentle 8'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 2 order' (Visual Index 30) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "2",
+        "normalized": 0.5,
+        "raw_text": "Value for 'Band 3 order' (Visual Index 31): Normalized Value: 0.5000, String Value: '2'"
+      },
+      "index": 31,
+      "name": "Band 3 order",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "2",
+        "observed_normalized": 0.5,
+        "set_text": "Set 'Band 3 order' (Visual Index 31) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "Steep 8",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 3 order' (Visual Index 31): Normalized Value: 0.0000, String Value: 'Steep 8'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 3 order' (Visual Index 31) to 0.0000"
+        },
+        {
+          "display": "Steep 4",
+          "observed_normalized": 0.3333,
+          "read_text": "Value for 'Band 3 order' (Visual Index 31): Normalized Value: 0.3333, String Value: 'Steep 4'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 3 order' (Visual Index 31) to 0.2500"
+        },
+        {
+          "display": "2",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 3 order' (Visual Index 31): Normalized Value: 0.5000, String Value: '2'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 3 order' (Visual Index 31) to 0.5000"
+        },
+        {
+          "display": "Gentle 4",
+          "observed_normalized": 0.6667,
+          "read_text": "Value for 'Band 3 order' (Visual Index 31): Normalized Value: 0.6667, String Value: 'Gentle 4'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 3 order' (Visual Index 31) to 0.7500"
+        },
+        {
+          "display": "Gentle 8",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 3 order' (Visual Index 31): Normalized Value: 1.0000, String Value: 'Gentle 8'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 3 order' (Visual Index 31) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "2",
+        "normalized": 0.5,
+        "raw_text": "Value for 'Band 4 order' (Visual Index 32): Normalized Value: 0.5000, String Value: '2'"
+      },
+      "index": 32,
+      "name": "Band 4 order",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "2",
+        "observed_normalized": 0.5,
+        "set_text": "Set 'Band 4 order' (Visual Index 32) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "Steep 8",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 4 order' (Visual Index 32): Normalized Value: 0.0000, String Value: 'Steep 8'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 4 order' (Visual Index 32) to 0.0000"
+        },
+        {
+          "display": "Steep 4",
+          "observed_normalized": 0.3333,
+          "read_text": "Value for 'Band 4 order' (Visual Index 32): Normalized Value: 0.3333, String Value: 'Steep 4'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 4 order' (Visual Index 32) to 0.2500"
+        },
+        {
+          "display": "2",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 4 order' (Visual Index 32): Normalized Value: 0.5000, String Value: '2'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 4 order' (Visual Index 32) to 0.5000"
+        },
+        {
+          "display": "Gentle 4",
+          "observed_normalized": 0.6667,
+          "read_text": "Value for 'Band 4 order' (Visual Index 32): Normalized Value: 0.6667, String Value: 'Gentle 4'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 4 order' (Visual Index 32) to 0.7500"
+        },
+        {
+          "display": "Gentle 8",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 4 order' (Visual Index 32): Normalized Value: 1.0000, String Value: 'Gentle 8'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 4 order' (Visual Index 32) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "2",
+        "normalized": 0.5,
+        "raw_text": "Value for 'Band 5 order' (Visual Index 33): Normalized Value: 0.5000, String Value: '2'"
+      },
+      "index": 33,
+      "name": "Band 5 order",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "2",
+        "observed_normalized": 0.5,
+        "set_text": "Set 'Band 5 order' (Visual Index 33) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "Steep 8",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 5 order' (Visual Index 33): Normalized Value: 0.0000, String Value: 'Steep 8'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 5 order' (Visual Index 33) to 0.0000"
+        },
+        {
+          "display": "Steep 4",
+          "observed_normalized": 0.3333,
+          "read_text": "Value for 'Band 5 order' (Visual Index 33): Normalized Value: 0.3333, String Value: 'Steep 4'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 5 order' (Visual Index 33) to 0.2500"
+        },
+        {
+          "display": "2",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 5 order' (Visual Index 33): Normalized Value: 0.5000, String Value: '2'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 5 order' (Visual Index 33) to 0.5000"
+        },
+        {
+          "display": "Gentle 4",
+          "observed_normalized": 0.6667,
+          "read_text": "Value for 'Band 5 order' (Visual Index 33): Normalized Value: 0.6667, String Value: 'Gentle 4'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 5 order' (Visual Index 33) to 0.7500"
+        },
+        {
+          "display": "Gentle 8",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 5 order' (Visual Index 33): Normalized Value: 1.0000, String Value: 'Gentle 8'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 5 order' (Visual Index 33) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "2",
+        "normalized": 0.5,
+        "raw_text": "Value for 'Band 6 order' (Visual Index 34): Normalized Value: 0.5000, String Value: '2'"
+      },
+      "index": 34,
+      "name": "Band 6 order",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "2",
+        "observed_normalized": 0.5,
+        "set_text": "Set 'Band 6 order' (Visual Index 34) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "Steep 8",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 6 order' (Visual Index 34): Normalized Value: 0.0000, String Value: 'Steep 8'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 6 order' (Visual Index 34) to 0.0000"
+        },
+        {
+          "display": "Steep 4",
+          "observed_normalized": 0.3333,
+          "read_text": "Value for 'Band 6 order' (Visual Index 34): Normalized Value: 0.3333, String Value: 'Steep 4'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 6 order' (Visual Index 34) to 0.2500"
+        },
+        {
+          "display": "2",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 6 order' (Visual Index 34): Normalized Value: 0.5000, String Value: '2'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 6 order' (Visual Index 34) to 0.5000"
+        },
+        {
+          "display": "Gentle 4",
+          "observed_normalized": 0.6667,
+          "read_text": "Value for 'Band 6 order' (Visual Index 34): Normalized Value: 0.6667, String Value: 'Gentle 4'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 6 order' (Visual Index 34) to 0.7500"
+        },
+        {
+          "display": "Gentle 8",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 6 order' (Visual Index 34): Normalized Value: 1.0000, String Value: 'Gentle 8'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 6 order' (Visual Index 34) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "2",
+        "normalized": 0.5,
+        "raw_text": "Value for 'Band 7 order' (Visual Index 35): Normalized Value: 0.5000, String Value: '2'"
+      },
+      "index": 35,
+      "name": "Band 7 order",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "2",
+        "observed_normalized": 0.5,
+        "set_text": "Set 'Band 7 order' (Visual Index 35) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "Steep 8",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Band 7 order' (Visual Index 35): Normalized Value: 0.0000, String Value: 'Steep 8'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Band 7 order' (Visual Index 35) to 0.0000"
+        },
+        {
+          "display": "Steep 4",
+          "observed_normalized": 0.3333,
+          "read_text": "Value for 'Band 7 order' (Visual Index 35): Normalized Value: 0.3333, String Value: 'Steep 4'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Band 7 order' (Visual Index 35) to 0.2500"
+        },
+        {
+          "display": "2",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Band 7 order' (Visual Index 35): Normalized Value: 0.5000, String Value: '2'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Band 7 order' (Visual Index 35) to 0.5000"
+        },
+        {
+          "display": "Gentle 4",
+          "observed_normalized": 0.6667,
+          "read_text": "Value for 'Band 7 order' (Visual Index 35): Normalized Value: 0.6667, String Value: 'Gentle 4'",
+          "readback_within_0_001": false,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Band 7 order' (Visual Index 35) to 0.7500"
+        },
+        {
+          "display": "Gentle 8",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Band 7 order' (Visual Index 35): Normalized Value: 1.0000, String Value: 'Gentle 8'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Band 7 order' (Visual Index 35) to 1.0000"
+        }
+      ]
+    },
+    {
+      "default_observation": {
+        "display": "0.0dB",
+        "normalized": 0.5,
+        "raw_text": "Value for 'Main level' (Visual Index 36): Normalized Value: 0.5000, String Value: '0.0dB'"
+      },
+      "index": 36,
+      "name": "Main level",
+      "normalized_domain": {
+        "maximum": 1.0,
+        "minimum": 0.0
+      },
+      "observed_display_cardinality_at_anchors": 5,
+      "restore": {
+        "error": null,
+        "observed_display": "0.0dB",
+        "observed_normalized": 0.5,
+        "set_text": "Set 'Main level' (Visual Index 36) to 0.5000",
+        "verified": true
+      },
+      "sample_errors": [],
+      "samples": [
+        {
+          "display": "-18.0dB",
+          "observed_normalized": 0.0,
+          "read_text": "Value for 'Main level' (Visual Index 36): Normalized Value: 0.0000, String Value: '-18.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.0,
+          "set_text": "Set 'Main level' (Visual Index 36) to 0.0000"
+        },
+        {
+          "display": "-9.0dB",
+          "observed_normalized": 0.25,
+          "read_text": "Value for 'Main level' (Visual Index 36): Normalized Value: 0.2500, String Value: '-9.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.25,
+          "set_text": "Set 'Main level' (Visual Index 36) to 0.2500"
+        },
+        {
+          "display": "0.0dB",
+          "observed_normalized": 0.5,
+          "read_text": "Value for 'Main level' (Visual Index 36): Normalized Value: 0.5000, String Value: '0.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.5,
+          "set_text": "Set 'Main level' (Visual Index 36) to 0.5000"
+        },
+        {
+          "display": "9.0dB",
+          "observed_normalized": 0.75,
+          "read_text": "Value for 'Main level' (Visual Index 36): Normalized Value: 0.7500, String Value: '9.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 0.75,
+          "set_text": "Set 'Main level' (Visual Index 36) to 0.7500"
+        },
+        {
+          "display": "18.0dB",
+          "observed_normalized": 1.0,
+          "read_text": "Value for 'Main level' (Visual Index 36): Normalized Value: 1.0000, String Value: '18.0dB'",
+          "readback_within_0_001": true,
+          "requested_normalized": 1.0,
+          "set_text": "Set 'Main level' (Visual Index 36) to 1.0000"
+        }
+      ]
+    }
+  ],
+  "plugin": {
+    "loaded_name": "Fruity Parametric EQ 2",
+    "requested_name": "Fruity Parametric EQ 2",
+    "slug": "fruity-parametric-eq-2"
+  },
+  "probe": {
+    "mixer_track": 47,
+    "visual_slot": 10
+  },
+  "schema_version": 1,
+  "status": "complete",
+  "validation": {
+    "all_parameters_restored": true,
+    "errors": [],
+    "ok": true,
+    "unique_indices": true
+  }
+}

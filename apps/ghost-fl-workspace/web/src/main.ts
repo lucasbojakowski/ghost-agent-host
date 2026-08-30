@@ -604,8 +604,8 @@ function renderFlInspector() {
       <div class="kv-list">
         ${kv('Project', values.projectTitle || '—')}
         ${kv('Transport', playing ? 'Playing' : 'Stopped')}
-        ${kv('Position', values.songPositionHint || values.songPosition ?? '—')}
-        ${kv('Pattern', values.currentPatternName || values.currentPattern ?? '—')}
+        ${kv('Position', (values.songPositionHint || values.songPosition) ?? '—')}
+        ${kv('Pattern', (values.currentPatternName || values.currentPattern) ?? '—')}
         ${kv('Channel', values.selectedChannel ?? '—')}
         ${kv('Mixer', values.selectedMixerTrack ?? '—')}
         ${kv('Safe to edit', Number(values.safeToEdit) ? 'Yes' : 'No')}
