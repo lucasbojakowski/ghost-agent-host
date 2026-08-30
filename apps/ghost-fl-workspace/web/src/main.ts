@@ -1,5 +1,8 @@
 const $ = (selector) => document.querySelector(selector);
 
+const RIGHT_RAIL_STORAGE_KEY = 'ghost.workspace.rightRailWidth';
+const DEFAULT_RIGHT_RAIL_WIDTH = 286;
+
 const elements = {
   messages: $('#messages'),
   prompt: $('#prompt'),
@@ -23,6 +26,7 @@ const elements = {
   inspectorFl: $('#inspector-fl'),
   inspectorAnalysis: $('#inspector-analysis'),
   inspectorPlan: $('#inspector-plan'),
+  rightResizer: $('#right-resizer'),
   threadDialog: $('#thread-dialog'),
   threadFilter: $('#thread-filter'),
   threadList: $('#thread-list'),
@@ -43,7 +47,9 @@ const elements = {
   skillsDialog: $('#skills-dialog'),
   skillList: $('#skill-list'),
   skillContent: $('#skill-content'),
-  closeSkills: $('#close-skills')
+  closeSkills: $('#close-skills'),
+  planDialog: $('#plan-dialog'),
+  planDialogContent: $('#plan-dialog-content')
 };
 
 const state = {
@@ -88,6 +94,11 @@ function setBusy(value, label = '') {
   elements.turnStatus.textContent = value ? (label || 'Ghost is working…') : '';
   elements.turnStatus.classList.toggle('working', value);
   elements.send.textContent = value ? 'Working…' : 'Send';
+}
+
+function setTurnStatus(label) {
+  if (!state.busy) return;
+  elements.turnStatus.textContent = label || 'Ghost is working…';
 }
 
 function escapeHtml(value) {
@@ -185,6 +196,18 @@ function traceText(trace) {
   }).join('\n');
 }
 
+function appendTraceDetails(article, trace) {
+  if (!trace?.length) return;
+  const details = document.createElement('details');
+  details.className = 'tool-trace';
+  const summary = document.createElement('summary');
+  summary.textContent = `${trace.filter((event) => event.kind === 'tool_started').length} tool calls`;
+  const pre = document.createElement('pre');
+  pre.textContent = traceText(trace);
+  details.append(summary, pre);
+  article.append(details);
+}
+
 function addMessage(role, text, trace = [], scroll = true, isError = false) {
   const article = document.createElement('article');
   article.className = `message ${role}`;
@@ -195,18 +218,187 @@ function addMessage(role, text, trace = [], scroll = true, isError = false) {
   body.className = `message-body markdown-body${isError ? ' message-error' : ''}`;
   body.innerHTML = renderMarkdown(text);
   article.append(roleNode, body);
-  if (trace?.length) {
-    const details = document.createElement('details');
-    details.className = 'tool-trace';
-    const summary = document.createElement('summary');
-    summary.textContent = `${trace.filter((event) => event.kind === 'tool_started').length} tool calls`;
-    const pre = document.createElement('pre');
-    pre.textContent = traceText(trace);
-    details.append(summary, pre);
-    article.append(details);
-  }
+  appendTraceDetails(article, trace);
   elements.messages.append(article);
   if (scroll) article.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  return article;
+}
+
+function createLiveAssistant() {
+  const article = document.createElement('article');
+  article.className = 'message assistant';
+  const roleNode = document.createElement('div');
+  roleNode.className = 'message-role';
+  roleNode.textContent = 'Ghost';
+
+  const activity = document.createElement('div');
+  activity.className = 'turn-activity';
+  const status = document.createElement('div');
+  status.className = 'activity-status';
+  status.textContent = 'Thinking';
+  const reasoning = document.createElement('div');
+  reasoning.className = 'reasoning-stream markdown-body';
+  const tools = document.createElement('div');
+  tools.className = 'live-tool-list';
+  activity.append(status, reasoning, tools);
+
+  const body = document.createElement('div');
+  body.className = 'message-body markdown-body pending';
+  article.append(roleNode, activity, body);
+  elements.messages.append(article);
+  article.scrollIntoView({ behavior: 'smooth', block: 'end' });
+
+  return {
+    article,
+    activity,
+    status,
+    reasoning,
+    tools,
+    body,
+    reasoningText: '',
+    toolQueues: new Map(),
+    toolCount: 0
+  };
+}
+
+function appendLiveToolStart(live, event) {
+  const details = document.createElement('details');
+  details.className = 'live-tool';
+  const summary = document.createElement('summary');
+  const dot = document.createElement('span');
+  dot.className = 'tool-state-dot';
+  const name = document.createElement('span');
+  name.textContent = event.tool || '<unknown>';
+  const duration = document.createElement('span');
+  duration.className = 'tool-duration';
+  duration.textContent = 'running';
+  summary.append(dot, name, duration);
+  const pre = document.createElement('pre');
+  pre.textContent = JSON.stringify(event.arguments ?? {}, null, 2);
+  details.append(summary, pre);
+  live.tools.append(details);
+  const queue = live.toolQueues.get(event.tool) || [];
+  queue.push({ details, duration });
+  live.toolQueues.set(event.tool, queue);
+  live.toolCount += 1;
+  live.article.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  return { details, duration };
+}
+
+function completeLiveTool(live, event) {
+  const queue = live.toolQueues.get(event.tool) || [];
+  const entry = queue.shift() || appendLiveToolStart(live, event);
+  if (queue.length) live.toolQueues.set(event.tool, queue);
+  else live.toolQueues.delete(event.tool);
+  entry.details.classList.add(event.success === false ? 'failed' : 'completed');
+  entry.duration.textContent = event.durationMs === null || event.durationMs === undefined
+    ? (event.success === false ? 'failed' : 'done')
+    : `${event.durationMs} ms`;
+}
+
+function handleLiveTurnEvent(live, event) {
+  switch (event.type) {
+    case 'status':
+      live.status.textContent = event.label || 'Working';
+      setTurnStatus(event.label || 'Ghost is working…');
+      break;
+    case 'reasoning_section':
+      if (live.reasoningText && !live.reasoningText.endsWith('\n\n')) live.reasoningText += '\n\n';
+      break;
+    case 'reasoning_delta':
+      live.reasoningText += event.delta || '';
+      live.reasoning.innerHTML = renderMarkdown(live.reasoningText);
+      live.article.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      break;
+    case 'reasoning_complete':
+      if (event.text) {
+        live.reasoningText = event.text;
+        live.reasoning.innerHTML = renderMarkdown(live.reasoningText);
+      }
+      break;
+    case 'tool_started':
+      live.status.textContent = `Using ${event.tool || 'tool'}`;
+      setTurnStatus(live.status.textContent);
+      appendLiveToolStart(live, event);
+      break;
+    case 'tool_completed':
+      completeLiveTool(live, event);
+      live.status.textContent = event.success === false ? `${event.tool} failed` : 'Reasoning';
+      setTurnStatus(live.status.textContent);
+      break;
+    default:
+      break;
+  }
+}
+
+function finalizeLiveAssistant(live, result) {
+  live.activity.classList.add('complete');
+  live.status.textContent = 'Completed';
+  live.body.classList.remove('pending');
+  live.body.innerHTML = renderMarkdown(result.text || '');
+  if (!live.toolCount && result.trace?.length) appendTraceDetails(live.article, result.trace);
+  live.article.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+function failLiveAssistant(live, error) {
+  live.activity.classList.add('complete');
+  live.status.textContent = 'Turn failed';
+  live.body.classList.remove('pending');
+  live.body.classList.add('message-error');
+  live.body.innerHTML = renderMarkdown(`Request failed: ${error.message}`);
+  live.article.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+async function streamChat(payload, onEvent) {
+  const response = await fetch('/api/chat/stream', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  if (!response.ok) {
+    const text = await response.text();
+    let message = text || `HTTP ${response.status}`;
+    try { message = JSON.parse(text).error || message; } catch { /* plain response */ }
+    throw new Error(message);
+  }
+  if (!response.body) throw new Error('Live turn stream is unavailable in this webview');
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let finalResult = null;
+  let streamError = null;
+
+  const consumeLine = (line) => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+    const event = JSON.parse(trimmed);
+    if (event.type === 'final') {
+      finalResult = event.response;
+      return;
+    }
+    if (event.type === 'error') {
+      streamError = new Error(event.error || 'Ghost turn failed');
+      return;
+    }
+    onEvent(event);
+  };
+
+  while (true) {
+    const { value, done } = await reader.read();
+    buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+    let newline = buffer.indexOf('\n');
+    while (newline >= 0) {
+      consumeLine(buffer.slice(0, newline));
+      buffer = buffer.slice(newline + 1);
+      newline = buffer.indexOf('\n');
+    }
+    if (done) break;
+  }
+  if (buffer.trim()) consumeLine(buffer);
+  if (streamError) throw streamError;
+  if (!finalResult) throw new Error('Ghost turn stream ended without a final response');
+  return finalResult;
 }
 
 function renderHistory(history) {
@@ -398,6 +590,7 @@ function renderProject() {
   elements.projectMeta.textContent = project ? [project.tempoBpm ? `${formatNumber(project.tempoBpm, 1)} BPM` : null, project.timeSignature || null].filter(Boolean).join(' · ') || shortId(project.threadId) : (state.threads.selectedThreadId ? 'Project unavailable' : 'Select or create a thread');
   renderAssets();
   renderPlanInspector();
+  if (elements.planDialog?.open) renderPlanDialog();
   renderAnalysisInspector();
 }
 
@@ -623,33 +816,118 @@ function kv(label, value) {
   return `<div class="kv"><span>${escapeHtml(label)}</span><span>${escapeHtml(value)}</span></div>`;
 }
 
+function planGroups(plan) {
+  return [
+    ['Sections', plan.sections],
+    ['Channels', plan.channels],
+    ['Playlist', plan.playlistTracks],
+    ['Mixer', plan.mixerInserts],
+    ['Markers', plan.markers],
+    ['Timbres', plan.timbres],
+    ['Next steps', plan.nextSteps]
+  ];
+}
+
+function humanizeKey(key) {
+  return String(key || '')
+    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+    .replaceAll('_', ' ')
+    .replace(/^./, (value) => value.toUpperCase());
+}
+
+function planValueText(value, depth = 0) {
+  if (value === null || value === undefined || value === '') return '';
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) return value.map((entry) => planValueText(entry, depth + 1)).filter(Boolean).join(', ');
+  if (typeof value === 'object' && depth < 2) {
+    return Object.entries(value)
+      .map(([key, entry]) => {
+        const text = planValueText(entry, depth + 1);
+        return text ? `${humanizeKey(key)}: ${text}` : '';
+      })
+      .filter(Boolean)
+      .join(' · ');
+  }
+  return '';
+}
+
+function planItemParts(item) {
+  if (typeof item === 'string') return { title: item, detail: '', fields: [] };
+  if (!item || typeof item !== 'object') return { title: String(item ?? ''), detail: '', fields: [] };
+
+  const entries = Object.entries(item).filter(([, value]) => value !== null && value !== undefined && value !== '');
+  const preferredKeys = ['name', 'title', 'label', 'action', 'task', 'step', 'goal', 'role', 'description', 'intent', 'summary', 'type'];
+  let primaryKey = preferredKeys.find((key) => item[key] !== null && item[key] !== undefined && item[key] !== '');
+  if (!primaryKey) primaryKey = entries.find(([, value]) => ['string', 'number'].includes(typeof value))?.[0];
+
+  const title = primaryKey ? planValueText(item[primaryKey]) : (entries[0] ? humanizeKey(entries[0][0]) : 'Plan item');
+  const detailParts = [];
+  if (item.startBar !== undefined || item.endBar !== undefined) {
+    const start = item.startBar ?? '?';
+    const end = item.endBar ?? start;
+    detailParts.push(`bars ${start}–${end}`);
+  }
+  if (item.description && primaryKey !== 'description') detailParts.push(planValueText(item.description));
+  if (item.intent && primaryKey !== 'intent' && item.intent !== item.description) detailParts.push(planValueText(item.intent));
+
+  const excluded = new Set([primaryKey, 'description', 'intent', 'startBar', 'endBar']);
+  const fields = entries
+    .filter(([key]) => !excluded.has(key))
+    .map(([key, value]) => [humanizeKey(key), planValueText(value)])
+    .filter(([, value]) => value);
+  return { title: title || 'Plan item', detail: detailParts.filter(Boolean).join(' · '), fields };
+}
+
+function planItemHtml(item) {
+  const parts = planItemParts(item);
+  const fieldSummary = parts.fields.slice(0, 2).map(([key, value]) => `${key}: ${value}`).join(' · ');
+  const detail = [parts.detail, fieldSummary].filter(Boolean).join(' · ');
+  return `<div class="plan-item"><span class="plan-item-title">${escapeHtml(parts.title)}</span>${detail ? `<span class="plan-item-detail">${escapeHtml(detail)}</span>` : ''}</div>`;
+}
+
 function renderPlanInspector() {
   const plan = state.project?.productionPlan;
   if (!plan) {
     elements.inspectorPlan.innerHTML = '<div class="inspector-empty">The Production Plan will appear here once a thread has project context.</div>';
     return;
   }
-  const groups = [
-    ['Sections', plan.sections],
-    ['Channels', plan.channels],
-    ['Playlist', plan.playlistTracks],
-    ['Mixer', plan.mixerInserts],
-    ['Timbres', plan.timbres],
-    ['Next steps', plan.nextSteps]
-  ];
-  const populated = groups.filter(([, items]) => Array.isArray(items) && items.length);
+  const populated = planGroups(plan).filter(([, items]) => Array.isArray(items) && items.length);
   elements.inspectorPlan.innerHTML = `
-    <section class="inspector-section"><div class="inspector-section-title">Production plan</div><h3>${escapeHtml(plan.title || state.project?.title || 'Untitled')}</h3><div class="subtle">Semantic intent · live FL remains authoritative.</div></section>
-    ${populated.length ? populated.map(([name, items]) => `<div class="plan-group"><h4>${escapeHtml(name)}</h4>${items.slice(0, 16).map((item) => `<div class="plan-item">${escapeHtml(planItemText(item))}</div>`).join('')}</div>`).join('') : '<div class="inspector-empty">No structured plan yet. Ask Ghost to analyze the references and create one before scaffolding FL.</div>'}`;
+    <section class="inspector-section">
+      <div class="plan-heading-row">
+        <div><div class="inspector-section-title">Production plan</div><h3>${escapeHtml(plan.title || state.project?.title || 'Untitled')}</h3></div>
+        <button id="expand-plan" class="plan-expand-button" type="button">Open</button>
+      </div>
+      <div class="subtle">Semantic intent · live FL remains authoritative.</div>
+    </section>
+    ${populated.length ? populated.map(([name, items]) => `<div class="plan-group"><h4>${escapeHtml(name)}</h4>${items.slice(0, 16).map(planItemHtml).join('')}</div>`).join('') : '<div class="inspector-empty">No structured plan yet. Ask Ghost to analyze the references and create one before scaffolding FL.</div>'}`;
+  $('#expand-plan')?.addEventListener('click', openPlanDialog);
 }
 
-function planItemText(item) {
-  if (typeof item === 'string') return item;
-  if (!item || typeof item !== 'object') return String(item ?? '');
-  const primary = item.name || item.title || item.role || item.description || item.intent;
-  const range = item.startBar && item.endBar ? ` · bars ${item.startBar}–${item.endBar}` : '';
-  const detail = item.description && item.description !== primary ? ` — ${item.description}` : '';
-  return `${primary || JSON.stringify(item)}${range}${detail}`;
+function fullPlanItemHtml(item) {
+  const parts = planItemParts(item);
+  return `<article class="plan-full-item"><strong>${escapeHtml(parts.title)}</strong>${parts.detail ? `<div class="subtle">${escapeHtml(parts.detail)}</div>` : ''}${parts.fields.length ? `<div class="plan-fields">${parts.fields.map(([key, value]) => `<div class="plan-field"><span>${escapeHtml(key)}</span><span>${escapeHtml(value)}</span></div>`).join('')}</div>` : ''}</article>`;
+}
+
+function renderPlanDialog() {
+  const plan = state.project?.productionPlan;
+  if (!plan) {
+    elements.planDialogContent.innerHTML = '<div class="inspector-empty">No Production Plan is available for this thread.</div>';
+    return;
+  }
+  const populated = planGroups(plan).filter(([, items]) => Array.isArray(items) && items.length);
+  elements.planDialogContent.innerHTML = `
+    <section class="plan-full-intro">
+      <span class="eyebrow">SEMANTIC PROJECT INTENT</span>
+      <h3>${escapeHtml(plan.title || state.project?.title || 'Untitled production')}</h3>
+      <div class="subtle">This plan describes intended production structure. Live FL Studio state remains authoritative.</div>
+    </section>
+    ${populated.length ? populated.map(([name, items]) => `<section class="plan-full-group"><h3>${escapeHtml(name)}</h3><div class="plan-full-grid">${items.map(fullPlanItemHtml).join('')}</div></section>`).join('') : '<div class="inspector-empty">The plan is currently empty.</div>'}`;
+}
+
+function openPlanDialog() {
+  renderPlanDialog();
+  if (!elements.planDialog.open) elements.planDialog.showModal();
 }
 
 function activateInspector(name) {
@@ -705,17 +983,18 @@ async function sendPrompt() {
   elements.prompt.value = '';
   autoResizePrompt();
   addMessage('user', message);
+  const live = createLiveAssistant();
   setBusy(true, `Thinking · ${effort}`);
   try {
-    const result = await post('/api/chat', { message, model, effort });
-    addMessage('assistant', result.text, result.trace || []);
+    const result = await streamChat({ message, model, effort }, (event) => handleLiveTurnEvent(live, event));
+    finalizeLiveAssistant(live, result);
     state.snapshot = result.snapshot;
     if (result.model) syncModelControl(result.model);
     elements.effortSelect.value = result.effort || effort;
     await Promise.all([refreshThreads(), loadProject()]);
     renderFlInspector();
   } catch (error) {
-    addMessage('assistant', `Request failed: ${error.message}`, [], true, true);
+    failLiveAssistant(live, error);
   } finally {
     setBusy(false);
     elements.prompt.focus();
@@ -727,6 +1006,66 @@ async function sendPrompt() {
 function autoResizePrompt() {
   elements.prompt.style.height = 'auto';
   elements.prompt.style.height = `${Math.min(elements.prompt.scrollHeight, 220)}px`;
+}
+
+function rightRailBounds() {
+  if (window.innerWidth <= 900) return { min: 0, max: 0 };
+  const left = window.innerWidth <= 1100 ? 210 : 244;
+  const centerMinimum = window.innerWidth <= 1100 ? 420 : 440;
+  const min = 240;
+  const max = Math.max(min, Math.min(760, window.innerWidth - left - centerMinimum));
+  return { min, max };
+}
+
+function applyRightRailWidth(width, persist = false) {
+  const { min, max } = rightRailBounds();
+  if (!max) return;
+  const clamped = Math.max(min, Math.min(max, Number(width) || DEFAULT_RIGHT_RAIL_WIDTH));
+  document.documentElement.style.setProperty('--right-rail-width', `${Math.round(clamped)}px`);
+  if (persist) localStorage.setItem(RIGHT_RAIL_STORAGE_KEY, String(Math.round(clamped)));
+}
+
+function setupRightResizer() {
+  if (!elements.rightResizer) return;
+  const saved = Number(localStorage.getItem(RIGHT_RAIL_STORAGE_KEY));
+  applyRightRailWidth(Number.isFinite(saved) && saved > 0 ? saved : DEFAULT_RIGHT_RAIL_WIDTH);
+  let activePointer = null;
+
+  elements.rightResizer.addEventListener('pointerdown', (event) => {
+    if (window.innerWidth <= 900) return;
+    activePointer = event.pointerId;
+    elements.rightResizer.setPointerCapture?.(event.pointerId);
+    document.body.classList.add('resizing-inspector');
+    event.preventDefault();
+  });
+  elements.rightResizer.addEventListener('pointermove', (event) => {
+    if (activePointer !== event.pointerId) return;
+    applyRightRailWidth(window.innerWidth - event.clientX);
+  });
+  const finish = (event) => {
+    if (activePointer !== event.pointerId) return;
+    activePointer = null;
+    document.body.classList.remove('resizing-inspector');
+    applyRightRailWidth(elements.rightResizer.closest('.right-rail')?.getBoundingClientRect().width || DEFAULT_RIGHT_RAIL_WIDTH, true);
+  };
+  elements.rightResizer.addEventListener('pointerup', finish);
+  elements.rightResizer.addEventListener('pointercancel', finish);
+  elements.rightResizer.addEventListener('dblclick', () => applyRightRailWidth(DEFAULT_RIGHT_RAIL_WIDTH, true));
+  window.addEventListener('resize', () => {
+    const width = elements.rightResizer.closest('.right-rail')?.getBoundingClientRect().width || DEFAULT_RIGHT_RAIL_WIDTH;
+    applyRightRailWidth(width);
+  });
+}
+
+function setupDialogs() {
+  document.querySelectorAll('dialog.workspace-dialog').forEach((dialog) => {
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+  });
+  document.querySelectorAll('[data-dialog-close]').forEach((button) => {
+    button.addEventListener('click', () => button.closest('dialog')?.close());
+  });
 }
 
 async function bootstrap() {
@@ -758,5 +1097,7 @@ elements.openSkills.addEventListener('click', () => { elements.skillsDialog.show
 elements.closeSkills.addEventListener('click', () => elements.skillsDialog.close());
 document.querySelectorAll('.inspector-tab').forEach((tab) => tab.addEventListener('click', () => activateInspector(tab.dataset.tab)));
 
+setupDialogs();
+setupRightResizer();
 bootstrap();
 setInterval(() => { if (!state.busy) { refreshInfo(); refreshSnapshot(); } }, 2500);

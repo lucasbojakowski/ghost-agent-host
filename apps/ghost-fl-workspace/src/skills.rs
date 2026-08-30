@@ -129,9 +129,11 @@ mod tests {
     fn capture_skill_encodes_arm_play_collect_order() {
         let capture = read_skill("fl-audio-capture").unwrap();
         let content = capture["content"].as_str().unwrap();
-        let arm = content.find("ghost_tap_arm").unwrap();
-        let play = content.find("Start playback").unwrap();
-        let collect = content.find("ghost_tap_collect").unwrap();
+        let arm = content.find("6. **Arm before playback.**").unwrap();
+        let play = content
+            .find("7. **Start playback through FL tools.**")
+            .unwrap();
+        let collect = content.find("9. **Collect the exact request.**").unwrap();
         assert!(arm < play && play < collect);
     }
 }

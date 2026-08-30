@@ -5,6 +5,7 @@ mod project;
 mod skills;
 mod snapshot;
 mod threads;
+mod turn_stream;
 mod workspace_tools;
 
 use std::collections::BTreeSet;
@@ -30,6 +31,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use snapshot::{capture_workspace_snapshot, WorkspaceSnapshot};
 use threads::{WorkspaceThreadRecord, WorkspaceThreadStore};
+use turn_stream::{agent_event_value, finish_chunked_json, send_chunked_json, start_chunked_json};
 use workspace_tools::{register_workspace_tools, WorkspaceToolState, WORKSPACE_TOOL_NAMES};
 
 const INDEX_HTML: &str = include_str!("../web/index.html");
@@ -461,11 +463,20 @@ impl AgentSession {
     }
 
     fn run_user_turn(&mut self, request: &ChatRequest) -> Result<ChatResponse> {
+        self.run_user_turn_stream(request, &mut |_| {})
+    }
+
+    fn run_user_turn_stream(
+        &mut self,
+        request: &ChatRequest,
+        events: &mut dyn FnMut(Value),
+    ) -> Result<ChatResponse> {
         let message = request.message.trim();
         if message.is_empty() {
             bail!("message must not be empty");
         }
 
+        events(json!({"type": "status", "label": "Preparing context"}));
         let thread = self.ensure_active_thread()?;
         let model = validate_model(request.model.as_deref().unwrap_or(&self.model))?;
         let effort = validate_effort(request.effort.as_deref().unwrap_or(&self.effort))?;
@@ -513,7 +524,17 @@ impl AgentSession {
                 if verbose {
                     println!("[ghost-fl-workspace] agent event: {event:?}");
                 }
+                if let Some(stream_event) = agent_event_value(&event) {
+                    events(stream_event);
+                }
                 if let Some(trace_event) = trace_event(&event) {
+                    events(json!({
+                        "type": trace_event.kind,
+                        "tool": &trace_event.tool,
+                        "arguments": &trace_event.arguments,
+                        "success": trace_event.success,
+                        "durationMs": trace_event.duration_ms
+                    }));
                     if !verbose {
                         match trace_event.kind {
                             "tool_started" => println!(
@@ -828,6 +849,32 @@ fn handle_connection(stream: &mut TcpStream, session: &mut AgentSession) -> Resu
                 .context("invalid /api/threads/rename JSON body")?;
             let response = session.rename_thread(request.thread_id.as_deref(), &request.name)?;
             send_json(stream, "200 OK", &response)
+        }
+        ("POST", "/api/chat/stream") => {
+            let request: ChatRequest = serde_json::from_slice(&request.body)
+                .context("invalid /api/chat/stream JSON body")?;
+            start_chunked_json(stream)?;
+            let mut stream_open = true;
+            {
+                let mut emit = |event: Value| {
+                    if stream_open {
+                        if let Err(error) = send_chunked_json(stream, &event) {
+                            stream_open = false;
+                            eprintln!(
+                                "[ghost-fl-workspace] live turn stream disconnected: {error:#}"
+                            );
+                        }
+                    }
+                };
+                match session.run_user_turn_stream(&request, &mut emit) {
+                    Ok(response) => emit(json!({"type": "final", "response": response})),
+                    Err(error) => emit(json!({"type": "error", "error": error.to_string()})),
+                }
+            }
+            if stream_open {
+                finish_chunked_json(stream)?;
+            }
+            Ok(())
         }
         ("POST", "/api/chat") => {
             let request: ChatRequest =
