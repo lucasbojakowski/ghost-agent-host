@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "parameter_count": {
+      "minimum": 0,
+      "type": "integer"
+    },
+    "parameters": {
+      "items": {
+        "required": [
+          "index",
+          "name",
+          "default_observation",
+          "samples",
+          "restore"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "plugin": {
+      "type": "object"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "status": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "plugin",
+    "status"
+  ],
+  "title": "Ghost FL plugin parameter-space artifact (compact contract)",
+  "type": "object"
+}
